@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createProgressController } from '@/experience/loading/progressController';
 import { createCriticalAssetRegistry, preloadImage } from '@/experience/loading/criticalAssetRegistry';
+import { countdownDelay, FINAL_ZERO_HOLD_MS } from '@/experience/loading/countdownTiming';
 import { LoaderCountdown } from './LoaderCountdown';
 import { LoaderCompletion } from './LoaderCompletion';
 
@@ -22,6 +23,7 @@ export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: Lo
   const [display, setDisplay] = useState(100);
   const [criticalProgress, setCriticalProgress] = useState(0);
   const criticalDispatched = useRef(false);
+  const zeroHoldTimer = useRef<number | null>(null);
 
   const registry = useMemo(
     () => createCriticalAssetRegistry([
@@ -50,20 +52,32 @@ export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: Lo
   }, [display]);
 
   useEffect(() => {
-    if (phase !== 'loading') return;
+    if (phase !== 'loading' || display === 0) return;
     const snapshot = progress.current.snapshot();
-    if (display === 0 && snapshot.ready && !criticalDispatched.current) {
-      criticalDispatched.current = true;
-      onCriticalReady();
-      return;
-    }
     if (display <= snapshot.target) return;
 
-    const distance = display - snapshot.target;
-    const delay = reducedMotion ? 4 : distance > 55 ? 12 : distance > 20 ? 18 : distance > 6 ? 28 : 42;
-    const timer = window.setTimeout(step, delay);
+    const timer = window.setTimeout(step, countdownDelay(display, snapshot.target, reducedMotion));
     return () => window.clearTimeout(timer);
-  }, [display, criticalProgress, onCriticalReady, phase, reducedMotion, step]);
+  }, [display, criticalProgress, phase, reducedMotion, step]);
+
+  useEffect(() => {
+    if (phase !== 'loading' || display !== 0 || !progress.current.snapshot().ready || criticalDispatched.current) return;
+    if (zeroHoldTimer.current !== null) return;
+
+    zeroHoldTimer.current = window.setTimeout(() => {
+      zeroHoldTimer.current = null;
+      if (criticalDispatched.current) return;
+      criticalDispatched.current = true;
+      onCriticalReady();
+    }, reducedMotion ? 80 : FINAL_ZERO_HOLD_MS);
+
+    return () => {
+      if (zeroHoldTimer.current !== null) {
+        window.clearTimeout(zeroHoldTimer.current);
+        zeroHoldTimer.current = null;
+      }
+    };
+  }, [criticalProgress, display, onCriticalReady, phase, reducedMotion]);
 
   if (phase === 'loaderCompletion') {
     return <LoaderCompletion onComplete={onComplete} reducedMotion={reducedMotion} />;
