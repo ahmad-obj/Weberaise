@@ -104,14 +104,6 @@ Target character is a **dense coherent liquid/blob mask**:
 - visible lifetime remains roughly 3–4 seconds;
 - old regions disappear by **clean contour contraction / erosion inward**, not by becoming progressively translucent smoke.
 
-Implementation direction:
-- retain the persistent low-resolution history-mask architecture;
-- use a high/narrow composite threshold so weak residual density is invisible;
-- retain a spatially graded splat field so decay causes the visible boundary to shrink inward;
-- significantly reduce flow/advection and settling amplitude;
-- replace temporal hash/grain with subtle low-frequency contour warp;
-- modestly raise the full-quality mask resolution while preserving adaptive lite/reduced-motion fallbacks.
-
 ## Nothin reference findings
 Reference site: `https://www.noth.in/`
 
@@ -121,6 +113,57 @@ Publicly verifiable implementation signals:
 - therefore the reference reveal is treated as a shader-driven interactive compositor/mask, not as a CSS blur/fade effect.
 
 The Weberaise implementation should reproduce the approved observable behavior and quality characteristics. Do not wholesale copy proprietary deployed source code merely because browser-delivered bundles may be inspectable.
+
+---
+
+# 2026-08-11 OVERRIDE LOCK — SOLID AGE-AWARE IMPLICIT LIQUID SURFACE
+
+This section supersedes the earlier implementation direction that relied on a decaying feedback/history density mask.
+
+## Why the previous model is rejected
+The feedback-density model could be tuned to reduce noise, but its healing mechanism still depended on stored density losing strength over time. That produces a perceptual tendency toward translucent/fog-like disappearance and does not match the approved Nothin reference closely enough.
+
+## New production model — LOCKED
+The hero reveal is now modeled as a **solid age-aware implicit liquid surface**:
+
+1. pointer/autonomous samples become time-stamped liquid primitives;
+2. neighboring primitives contribute to one low-resolution implicit field;
+3. contributions are combined additively so nearby primitives merge into smooth metaball-like necks;
+4. the visible liquid surface is extracted with a narrow threshold/level set;
+5. primitive opacity does not fade as the main healing mechanism;
+6. each primitive keeps nearly full radius during a hold phase, then its radius contracts geometrically during healing;
+7. as old radii shrink, bridges narrow naturally and may pinch apart into rounded islands;
+8. detached remnants remain solid/rounded and shrink away without a smoke/fog residue.
+
+## Hard visual requirements
+- interior remains visually solid;
+- only the narrow antialias band may be partially transparent;
+- terminal stroke ends remain rounded blobs;
+- oldest trail visibly retracts inward;
+- no broad low-alpha halo;
+- no temporal hash/grain;
+- no screen-wide advection drift;
+- small contour deformation is allowed only at the boundary;
+- fast strokes remain continuous;
+- overlapping strokes union organically;
+- lifetime remains approximately 3–4 seconds;
+- autonomous intro uses the exact same primitive/lifetime model.
+
+## Performance architecture
+- rebuild the low-resolution field from the bounded active primitive list each frame instead of running a multi-pass fluid solver;
+- use instanced primitive quads and additive blending;
+- full profile uses a bounded primitive count and adaptive field resolution suitable for integrated GPUs;
+- lite/reduced-motion profiles preserve the same geometric healing behavior at lower cost;
+- no-WebGL fallback remains intentional.
+
+## Reference runtime inspection
+A local diagnostic tool is permitted to inspect publicly delivered runtime WebGL characteristics from Nothin on the user's machine. It may record shader/program counts, shader strings for local analysis, uniforms, texture/framebuffer formats/dimensions and draw-call structure.
+
+Captured proprietary shader text is **analysis-only**. Do not paste or transplant Nothin production shader code into Weberaise. Use the evidence to identify architectural techniques and independently reproduce the observable effect.
+
+Tool/documentation:
+- `scripts/probe-nothin-webgl.mjs`
+- `docs/reference/NOTHIN_RUNTIME_PROBE.md`
 
 ---
 
