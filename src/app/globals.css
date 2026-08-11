@@ -58,7 +58,7 @@ button, input { font: inherit; }
 .loader, .loader-completion { position: fixed; inset: 0; background: var(--wr-black); color: var(--wr-white); overflow: hidden; }
 .loader-countdown { position: absolute; inset: 0; }
 .loader-countdown__number {
-  position: absolute; transform: translate(-50%, -50%); font: 800 clamp(72px, 10vw, 160px)/.8 var(--font-hero), Arial, sans-serif;
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font: 800 clamp(72px, 10vw, 160px)/.8 var(--font-hero), Arial, sans-serif;
   letter-spacing: -.07em; will-change: transform, opacity; user-select: none;
 }
 .loader-countdown__number--current { animation: loader-number-in 160ms cubic-bezier(.2,.8,.2,1) both; }
@@ -89,6 +89,7 @@ button, input { font: inherit; }
   width: min(94vw, 1500px); height: min(78svh, 900px); display: grid;
   grid-template-rows: minmax(0, 1fr) minmax(120px, 24%); align-content: center;
   padding-top: clamp(20px, 5vh, 70px);
+  transform: translateY(clamp(-30px, -2.8vh, -18px));
 }
 .hero-typography { align-self: end; text-align: center; font-family: var(--font-hero), Arial, sans-serif; font-weight: 800; letter-spacing: -.075em; }
 .hero-typography__line { display: block; font-size: clamp(84px, 14.2vw, 230px); line-height: .78; white-space: nowrap; }
@@ -104,13 +105,30 @@ button, input { font: inherit; }
 .hero-opening__line { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--wr-white); will-change: transform; }
 
 @media (max-width: 720px) {
-  .hero-composition { width: 94vw; height: 73svh; grid-template-rows: minmax(0,1fr) minmax(92px,22%); }
+  .hero-composition {
+    width: 94vw; height: 73svh; grid-template-rows: minmax(0,1fr) minmax(92px,22%);
+    transform: translateY(clamp(-18px, -1.8vh, -10px));
+  }
   .hero-typography__line { font-size: clamp(68px, 18vw, 132px); letter-spacing: -.07em; }
   .hero-brand-lockup { width: 92vw; }
 }
 
 /* Interactive hero reveal — GPU canvas only owns the reveal mask. */
 .hero-experience { isolation: isolate; }
+.hero-experience::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 46%,
+    transparent 0%,
+    transparent 58%,
+    rgba(0, 0, 0, 0.006) 76%,
+    rgba(0, 0, 0, 0.026) 100%
+  );
+}
 .hero-reveal-canvas {
   position: absolute;
   inset: 0;
