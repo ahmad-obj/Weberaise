@@ -18,21 +18,27 @@
 - `0` is gated by actual critical readiness;
 - registry progress is React-observable, fixing the earlier stuck-at-100 bug;
 - all countdown numbers are fixed at viewport center;
-- digit replacement now uses cadence-aware transition duration rather than one fixed animation duration;
-- replacement motion is a soft crossfade with only ~5px vertical travel and very small scale change;
-- 10→0 progressively slows, with 5→0 deliberately paced;
+- digit cadence now slows progressively toward zero;
+- each digit transition finishes before the next cadence tick, avoiding repeated animation restarts;
+- digit replacement is now a stationary opacity/blur crossfade with no vertical jump or scale hop;
 - the real countdown `0` holds for `700ms` before the completion phase begins;
 - countdown `0` and completion `0` share `.loader-zero-glyph` font metrics and the same viewport-center registration;
 - tagline is exactly `Need a website for business?`;
-- completion line now uses `min(92vw, 1100px)` so it comfortably covers the tagline;
-- existing `0` → line → tagline → vertical/twin-line choreography is preserved.
+- tagline starts pre-hidden in CSS at `translateY(130%)`, preventing the pre-GSAP first-paint flicker;
+- horizontal line uses `min(92vw, 1100px)` and a reduced `48px–72px` offset so it sits closer to the centered zero/tagline;
+- before rotating vertical, the line animates to exact `top: 50%`;
+- vertical scale is computed against `window.innerHeight + 24`, giving a small overscan so the vertical line clears the full viewport height;
+- existing `0` → line → tagline → vertical/twin-line choreography is otherwise preserved.
 
 ### Hero layout
 - front/reveal typography share one registered composition;
 - centered Inter Tight heavy typography;
 - approved horizontal WEBERAISE lockup;
-- shared typography/brand composition is now raised to approximately `-4.2vh` on desktop, with a gentler mobile offset;
-- `EXPLORE` stays bottom-anchored and uses `mix-blend-mode: difference`, so it is black on the white hero and white wherever the black reveal crosses behind it;
+- shared typography/brand composition is raised to approximately `-4.2vh` on desktop, with a gentler mobile offset;
+- `EXPLORE` is now a real black front label placed below the reveal compositor (`z-index: 4` vs canvas `z-index: 5`);
+- the same difference compositor that reveals the black hero therefore inverts the black label to white only where the liquid passes over it;
+- no separate white-only Explore state is required in the normal WebGL path;
+- no-WebGL fallback retains difference blending explicitly;
 - light hero has an extremely faint radial edge vignette (~2–3% black at the far perimeter only).
 
 ### Interactive reveal — current architecture
@@ -56,13 +62,17 @@ Current production model:
 - bottom-fill Explore mode remains separate inside the same compositor.
 
 ### Pointer footprint + inertia polish
-- normal pointer radius is reduced to `0.078` desktop / `0.10` mobile;
-- interpolation spacing is tightened so the smaller radius still produces a continuous stroke;
-- pointer stop now triggers a short velocity-based afterglide after a ~48ms idle threshold;
-- afterglide is bounded to about 3.8% viewport-space maximum carry;
-- it advances only a smaller/weaker portion of the liquid surface, rather than moving the entire blob as a sphere;
-- deterministic lateral wobble makes the advancing edge slightly irregular without spray/smoke;
-- afterglide radius and strength decrease across ~340ms;
+- normal pointer radius remains `0.078` desktop / `0.10` mobile;
+- interpolation spacing remains tightened for continuity;
+- pointer stop uses a short recent-velocity memory so the browser's final near-zero pointer event does not erase the intended inertial cue;
+- the main blob does **not** translate after the pointer stops;
+- only `2–4` small rogue satellite patches continue forward;
+- satellites start ahead of the cursor path instead of forming a second connected cursor sphere;
+- maximum carry is about `5%` viewport-space and typical fast-motion carry is lower;
+- small deterministic lateral offsets make the satellites irregular rather than symmetric;
+- satellite radii stay below ~42% of the main pointer radius;
+- satellite strength stays above the current implicit-surface threshold so the effect remains actually visible;
+- the sequence finishes in roughly `300ms`;
 - slow movement below the speed threshold produces no afterglide;
 - any new pointer input immediately cancels pending inertial emissions;
 - reduced-motion mode disables afterglide.
@@ -95,21 +105,13 @@ Reference:
 
 ## Verification evidence
 
-### New loader/inertia polish — red/green TDD
-A focused pre-change reproduction was run against the previous values. All five new acceptance checks failed for the expected reasons: old pointer radius, missing cadence-driven transition helper, narrower line, lower hero offset, and fixed digit animation duration.
+### Latest loader/inertia correction
+A focused pre-change reproduction confirmed the loader digit animation duration was longer than the early countdown cadence, explaining the repeated restart/jumpy feel.
 
-After the patch, the same focused checks produced:
-
-```text
-5 tests
-5 pass
-0 fail
-```
-
-### New pure TypeScript helpers
-`countdownTiming.ts`, `inertia.ts`, and reveal sample types were compiled with TypeScript 5.8.3 in strict mode using ES2022 + bundler resolution.
-
-Result: exit code `0`.
+After the latest correction:
+- focused timing/inertia contract script: **PASS**;
+- strict TypeScript compile of updated `countdownTiming.ts`, `inertia.ts`, and reveal sample types: **PASS**;
+- GitHub source inspection confirms the pre-hidden tagline, reduced line offset, line recenter-before-rotation, 24px vertical overscan, and black Explore-under-compositor stacking are present.
 
 ### Earlier reveal-core verification
 The age-aware implicit liquid core previously verified:
@@ -120,7 +122,7 @@ The age-aware implicit liquid core previously verified:
 
 ## Verification still required on the user's network-enabled machine
 
-The sandbox cannot clone/install the GitHub checkout because outbound DNS is unavailable. After pulling the latest branch, run:
+After pulling the latest branch, run:
 
 ```bash
 npm install
@@ -131,15 +133,15 @@ npm run dev
 ```
 
 Then visually check:
-- smaller reveal footprint still remains continuous;
-- stopping after a fast motion produces only a small forward irregular lobe;
+- EXPLORE is black on the untouched white hero and white only inside the liquid reveal;
+- horizontal loader line sits closer to the zero/tagline;
+- tagline never flashes before its intended entrance;
+- rotated vertical line reaches past both top and bottom viewport edges;
+- a fast mouse stop produces only a few visible rogue forward patches rather than moving the entire blob;
 - slow stops produce essentially no inertia;
-- digit changes feel smooth rather than abrupt;
+- digit changes crossfade softly without vertical jumping;
 - 10→0 progressively slows and `0` visibly rests before the line begins;
-- the countdown zero does not jump when it becomes the completion zero;
-- `Need a website for business?` is fully covered by the horizontal line width;
-- shared hero composition is slightly higher;
-- EXPLORE turns white wherever the black reveal crosses it.
+- countdown zero does not jump when it becomes the completion zero.
 
 Optional Nothin diagnostic:
 
@@ -152,7 +154,8 @@ npm run probe:nothin
 - no broad translucent residue;
 - proper rounded terminal blob;
 - smaller normal reveal radius;
-- small velocity-based inertial overrun only after meaningful motion;
+- visible but sparse velocity-based rogue patches after meaningful motion;
+- main blob remains anchored when pointer stops;
 - solid trail during hold stage;
 - oldest region retracts geometrically;
 - bridges may pinch naturally;
