@@ -26,17 +26,35 @@ test('front and reveal composition are raised together through the shared compos
   assert.match(css, /\.hero-composition\s*\{[^}]*transform:\s*translateY\(/s);
 });
 
-test('reveal compositor uses a coherent contour instead of temporal hash-grain fog', () => {
+test('reveal uses a solid implicit primitive field instead of feedback-density decay', () => {
   const shader = read('src/webgl/reveal/shaders.ts');
-  assert.doesNotMatch(shader, /float hash\s*\(/);
-  assert.doesNotMatch(shader, /floor\(vUv \* 260\.0\)/);
-  assert.match(shader, /contourWarp/);
-  assert.match(shader, /smoothstep\(0\.40,\s*0\.47,/);
+  const engine = read('src/webgl/reveal/RevealEngine.ts');
+
+  assert.match(shader, /FIELD_VERTEX/);
+  assert.match(shader, /FIELD_FRAGMENT/);
+  assert.match(engine, /drawArraysInstanced/);
+  assert.match(engine, /liquidRadiusScale/);
+  assert.match(engine, /blendFunc\(gl\.ONE,\s*gl\.ONE\)/);
+
+  assert.doesNotMatch(shader, /uPrevious|uHalfLife|uAdvection/);
+  assert.doesNotMatch(shader, /retention\s*=/);
+  assert.doesNotMatch(engine, /historyTargets|historyReadIndex|updateHistory/);
 });
 
-test('full reveal quality favors clean contour persistence over advection', () => {
+test('composite extracts a narrow hard liquid surface with contour-only deformation', () => {
+  const shader = read('src/webgl/reveal/shaders.ts');
+  assert.match(shader, /uSurfaceThreshold/);
+  assert.match(shader, /uContourWarp/);
+  assert.match(shader, /fwidth\(field\)/);
+  assert.doesNotMatch(shader, /float hash\s*\(/);
+  assert.doesNotMatch(shader, /floor\(vUv/);
+});
+
+test('full quality profile encodes age-aware lifetime and bounded primitive count', () => {
   const quality = read('src/webgl/reveal/quality.ts');
-  assert.match(quality, /halfLife:\s*2\.75/);
-  assert.match(quality, /advection:\s*0\.003/);
+  assert.match(quality, /lifetime:\s*3\.6/);
+  assert.match(quality, /holdFraction:\s*0\.6/);
+  assert.match(quality, /maxPrimitives:\s*420/);
+  assert.match(quality, /surfaceThreshold:\s*0\.4/);
   assert.match(quality, /maskShortAxis:\s*Math\.min\(512/);
 });
