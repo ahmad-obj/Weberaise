@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "test": "node --import=tsx --test tests/*.test.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "probe:nothin": "node scripts/probe-nothin-webgl.mjs --headed"
   },
   "dependencies": {
     "gsap": "3.15.0",
