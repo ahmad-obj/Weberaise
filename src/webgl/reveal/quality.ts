@@ -13,14 +13,25 @@ export type RevealQuality = {
   mode: RevealQualityMode;
   maskShortAxis: number;
   dprCap: number;
-  halfLife: number;
-  advection: number;
-  noiseAmount: number;
+  lifetime: number;
+  holdFraction: number;
+  maxPrimitives: number;
+  surfaceThreshold: number;
+  contourWarp: number;
 };
 
 export function chooseRevealQuality(input: RevealQualityInput): RevealQuality {
   if (!input.webgl2) {
-    return { mode: 'fallback', maskShortAxis: 0, dprCap: 1, halfLife: 2.5, advection: 0, noiseAmount: 0 };
+    return {
+      mode: 'fallback',
+      maskShortAxis: 0,
+      dprCap: 1,
+      lifetime: 2.8,
+      holdFraction: 0.58,
+      maxPrimitives: 0,
+      surfaceThreshold: 0.42,
+      contourWarp: 0,
+    };
   }
 
   const shortAxis = Math.min(input.width, input.height);
@@ -30,20 +41,24 @@ export function chooseRevealQuality(input: RevealQualityInput): RevealQuality {
   if (lite) {
     return {
       mode: 'lite',
-      maskShortAxis: Math.min(300, Math.max(208, Math.round(shortAxis * 0.48))),
+      maskShortAxis: Math.min(320, Math.max(216, Math.round(shortAxis * 0.50))),
       dprCap: 1.2,
-      halfLife: 2.5,
-      advection: input.reducedMotion ? 0 : 0.0015,
-      noiseAmount: input.reducedMotion ? 0 : 0.003,
+      lifetime: input.reducedMotion ? 2.5 : 3.15,
+      holdFraction: 0.58,
+      maxPrimitives: 240,
+      surfaceThreshold: 0.42,
+      contourWarp: input.reducedMotion ? 0 : 0.0045,
     };
   }
 
   return {
     mode: 'full',
-    maskShortAxis: Math.min(512, Math.max(336, Math.round(shortAxis * 0.52))),
+    maskShortAxis: Math.min(512, Math.max(352, Math.round(shortAxis * 0.54))),
     dprCap: 1.5,
-    halfLife: 2.75,
-    advection: 0.003,
-    noiseAmount: 0.006,
+    lifetime: 3.6,
+    holdFraction: 0.60,
+    maxPrimitives: 420,
+    surfaceThreshold: 0.40,
+    contourWarp: 0.010,
   };
 }
