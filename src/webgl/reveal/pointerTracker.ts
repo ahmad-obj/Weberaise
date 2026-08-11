@@ -1,5 +1,5 @@
-import { createPointerSamples, type PointerEmitterOptions } from './emitters/pointerEmitter.ts';
-import type { RevealSample, TimedPoint } from './emitters/types.ts';
+import { createPointerSamples, type PointerEmitterOptions } from './emitters/pointerEmitter';
+import type { RevealSample, TimedPoint } from './emitters/types';
 
 export type PointerTracker = {
   push(point: TimedPoint): RevealSample[];
