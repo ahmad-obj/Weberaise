@@ -4,6 +4,7 @@ import { useEffect, useRef, type MutableRefObject, type RefObject } from 'react'
 import { createRevealEngine } from '@/webgl/reveal/createRevealEngine';
 import { createPointerTracker } from '@/webgl/reveal/pointerTracker';
 import { createHeroAutonomousStroke } from '@/webgl/reveal/emitters/autonomousEmitter';
+import { createInertialAfterglide } from '@/webgl/reveal/inertia';
 import type { RevealEngine } from '@/webgl/reveal/RevealEngine';
 import type { RevealSample } from '@/webgl/reveal/emitters/types';
 
@@ -165,13 +166,45 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
     if (!root || !engine || phase !== 'heroInteractive') return;
 
     engine.setMode('reveal');
-    const radius = root.clientWidth < 720 ? 0.135 : 0.105;
+    const radius = root.clientWidth < 720 ? 0.11 : 0.085;
     const tracker = createPointerTracker({
-      maxSpacing: 0.028,
+      maxSpacing: 0.024,
       radius,
       maxVelocity: 1.85,
       strength: 1,
     });
+
+    let idleTimer = 0;
+    const afterglideTimers: number[] = [];
+    let lastSample: RevealSample | null = null;
+
+    const cancelAfterglide = () => {
+      if (idleTimer) window.clearTimeout(idleTimer);
+      idleTimer = 0;
+      afterglideTimers.forEach((id) => window.clearTimeout(id));
+      afterglideTimers.length = 0;
+    };
+
+    const scheduleAfterglide = (sample: RevealSample) => {
+      cancelAfterglide();
+      if (reducedMotion) return;
+
+      idleTimer = window.setTimeout(() => {
+        idleTimer = 0;
+        const emissions = createInertialAfterglide({
+          x: sample.x,
+          y: sample.y,
+          vx: sample.vx,
+          vy: sample.vy,
+          radius,
+          strength: sample.strength,
+        });
+        for (const emission of emissions) {
+          const id = window.setTimeout(() => engine.emit([emission.sample]), emission.delayMs);
+          afterglideTimers.push(id);
+        }
+      }, 55);
+    };
 
     const move = (event: PointerEvent) => {
       if (event.pointerType === 'touch') return;
@@ -183,17 +216,25 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       };
       const samples: RevealSample[] = tracker.push(point);
       engine.emit(samples);
+      lastSample = samples.at(-1) ?? lastSample;
+      if (lastSample) scheduleAfterglide(lastSample);
     };
-    const leave = () => tracker.reset();
+
+    const leave = () => {
+      cancelAfterglide();
+      tracker.reset();
+      lastSample = null;
+    };
 
     root.addEventListener('pointermove', move, { passive: true });
     root.addEventListener('pointerleave', leave, { passive: true });
     return () => {
       root.removeEventListener('pointermove', move);
       root.removeEventListener('pointerleave', leave);
+      cancelAfterglide();
       tracker.reset();
     };
-  }, [engineRef, phase, rootRef]);
+  }, [engineRef, phase, reducedMotion, rootRef]);
 
   useEffect(() => {
     const engine = engineRef.current;
