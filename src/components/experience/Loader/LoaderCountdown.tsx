@@ -6,6 +6,7 @@ type LoaderCountdownProps = {
 
 export function LoaderCountdown({ value }: LoaderCountdownProps) {
   const previousValue = Math.min(100, value + 1);
+  const zeroClass = value === 0 ? ' loader-zero-glyph' : '';
 
   return (
     <div className="loader-countdown" aria-hidden="true">
@@ -19,7 +20,7 @@ export function LoaderCountdown({ value }: LoaderCountdownProps) {
       )}
       <span
         key={`current-${value}`}
-        className="loader-countdown__number loader-countdown__number--current"
+        className={`loader-countdown__number loader-countdown__number--current${zeroClass}`}
       >
         {value}
       </span>
