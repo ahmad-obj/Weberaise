@@ -1,15 +1,26 @@
 'use client';
 
+import type { CSSProperties } from 'react';
+import { countdownTransitionMs } from '@/experience/loading/countdownTiming';
+
 type LoaderCountdownProps = {
   value: number;
+  reducedMotion: boolean;
 };
 
-export function LoaderCountdown({ value }: LoaderCountdownProps) {
+type LoaderCountdownStyle = CSSProperties & {
+  '--loader-digit-transition': string;
+};
+
+export function LoaderCountdown({ value, reducedMotion }: LoaderCountdownProps) {
   const previousValue = Math.min(100, value + 1);
   const zeroClass = value === 0 ? ' loader-zero-glyph' : '';
+  const style: LoaderCountdownStyle = {
+    '--loader-digit-transition': `${countdownTransitionMs(value, reducedMotion)}ms`,
+  };
 
   return (
-    <div className="loader-countdown" aria-hidden="true">
+    <div className="loader-countdown" aria-hidden="true" style={style}>
       {value < 100 && (
         <span
           key={`previous-${previousValue}`}
