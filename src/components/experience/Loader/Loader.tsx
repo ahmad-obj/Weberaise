@@ -21,7 +21,6 @@ export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: Lo
   const progress = useRef(createProgressController());
   const [display, setDisplay] = useState(100);
   const [criticalProgress, setCriticalProgress] = useState(0);
-  const [viewport, setViewport] = useState({ width: 1440, height: 900 });
   const criticalDispatched = useRef(false);
 
   const registry = useMemo(
@@ -32,13 +31,6 @@ export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: Lo
     ]),
     [],
   );
-
-  useEffect(() => {
-    const updateViewport = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
-    updateViewport();
-    window.addEventListener('resize', updateViewport, { passive: true });
-    return () => window.removeEventListener('resize', updateViewport);
-  }, []);
 
   useEffect(() => {
     if (phase !== 'loading') return;
@@ -80,7 +72,7 @@ export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: Lo
   return (
     <section className="loader" aria-label="Loading Weberaise">
       <p className="sr-only" role="status">Preparing the Weberaise experience.</p>
-      <LoaderCountdown value={display} viewport={viewport} />
+      <LoaderCountdown value={display} />
     </section>
   );
 }
