@@ -4,7 +4,7 @@
 **Branch:** `feature/signature-intro`  
 **Date:** 2026-08-11
 
-## Implemented and locally verified
+## Implemented
 
 ### Experience flow
 - explicit one-route experience reducer;
@@ -16,9 +16,9 @@
 - real weighted critical-resource registry;
 - every displayed integer can be traversed from 100→0;
 - `0` is gated by true readiness;
-- deterministic safe number positions;
+- progress updates are React-observable so the countdown cannot remain asleep at `100` after assets complete;
+- **all countdown integers are now fixed at viewport center**;
 - no required blank frame between number handoffs;
-- centered final `0`;
 - masked zero/tagline line choreography;
 - line contracts partially, rotates, expands vertically, and hands off to twin-line opening.
 
@@ -27,21 +27,34 @@
 - no global opacity shortcut;
 - front/reveal `WELCOME / TO` share one typography component;
 - centered large Inter Tight direction is encoded in production CSS/font setup;
-- approved horizontal WEBERAISE asset used in the hidden brand slot.
+- approved horizontal WEBERAISE asset used in the hidden brand slot;
+- shared typography/brand composition is shifted slightly upward as one registered unit;
+- light hero receives an extremely faint radial edge vignette (~2.6% maximum black influence at the far perimeter).
 
 ### Interactive reveal
 - WebGL2 low-resolution ping-pong history engine;
 - continuous pointer interpolation;
 - bounded velocity injection;
 - thick rounded high-viscosity trail;
-- restrained advection/settling rather than full fluid physics;
-- time-based persistence/healing;
 - explicit full/lightweight/no-WebGL quality profiles;
 - pointer loop avoids React state;
 - tiny custom cursor on fine pointers;
 - once-only autonomous reveal uses same sample pipeline;
-- autonomous path visually verified to expose roughly two wordmark letters;
-- first brand raster upload explicitly waits for image decode.
+- first brand raster upload explicitly waits for image decode;
+- **2026-08-11 refinement:** high-frequency temporal hash grain removed;
+- **2026-08-11 refinement:** composite boundary tightened to a narrow high threshold (`0.40→0.47`) so low-density history is invisible instead of fog-like;
+- **2026-08-11 refinement:** advection/settling and velocity injection reduced substantially;
+- **2026-08-11 refinement:** splat solid core increased so stroke endings remain proper rounded blobs;
+- **2026-08-11 refinement:** full-quality persistence increased to `2.75s` half-life so the clean threshold still yields roughly 3–4s visible lifetime;
+- **2026-08-11 refinement:** full-quality history short axis raised up to 512px for cleaner contours.
+
+### Nothin reference inspection
+Public sources were inspected before the refinement:
+- developer Thomas Carré publicly describes Nothin as built with Webflow, GSAP, WebGL and custom shaders;
+- independent stack analysis identifies Three.js and Lenis as well;
+- this supports treating the reference reveal as a custom shader-driven mask/compositor rather than CSS blur/fade.
+
+The Weberaise implementation reproduces the approved observable qualities without wholesale copying proprietary deployed source.
 
 ### Explore handoff
 - shared reveal engine switches to bottom-fill mode;
@@ -56,9 +69,8 @@
 
 ## Verification evidence
 
-### Node behavior suite
-
-Latest result:
+### Earlier sandbox verification
+Before the latest refinement pass, the dependency-free/prototype verification produced:
 
 ```text
 22 tests
@@ -66,69 +78,52 @@ Latest result:
 0 fail
 ```
 
-Command:
+and the Chromium WebGL prototype capture reported zero console/page errors.
+
+Those results apply to the pre-refinement tree and must not be treated as fresh verification of the newest shader/CSS changes.
+
+### User-machine runtime evidence
+The user successfully installed dependencies and started the actual Next.js application after upgrading to Next.js 16.3.0:
+
+```text
+Next.js 16.3.0 (Turbopack)
+Ready
+GET / 200
+```
+
+The first local verification attempt then exposed two toolchain issues:
+- Node 24.18.0 on the user's Kali build has built-in TypeScript stripping disabled;
+- two explicit `.ts` production import suffixes failed TypeScript/Next type checking.
+
+Branch fixes already applied:
+- tests now use `tsx` rather than Node built-in stripping;
+- production imports returned to normal extensionless TypeScript imports.
+
+The user has not yet supplied a fresh `npm test`, `npm run typecheck`, and `npm run build` result after those fixes and after the newest visual refinement pass. Therefore those checks remain pending.
+
+## Current local verification request
+After pulling the latest `feature/signature-intro`, run:
 
 ```bash
+npm install
 npm test
+npm run typecheck
+npm run build
+npm run dev
 ```
 
-### Dependency-free TypeScript core compile
-
-Verified with the sandbox's global TypeScript `5.8.3` using `--noEmit`, `ES2022`, bundler resolution, DOM libs, and the dependency-free state/loading/reveal modules.
-
-Result: exit code `0`.
-
-### Prototype smoke
-
-```bash
-./scripts/smoke-prototype.sh
-```
-
-Result: pass.
-
-### Chromium visual/WebGL QA
-
-Because sandbox policy blocks Chromium navigation to localhost/file URLs, `scripts/capture-prototype.py` inlines the same prototype HTML/CSS/JS into a page via Playwright. Chromium runs under Xvfb with WebGL2/SwiftShader enabled.
-
-Latest capture reported:
-
-```text
-webgl2= True
-main_hidden= None
-body_class=
-errors_count= 0
-```
-
-Manually inspected states:
-- loader number handoff;
-- clean hero + autonomous brand reveal;
-- pointer viscous trail;
-- post-EXPLORE black First Impression.
-
-## Verification blocked by sandbox network
-
-`npm install` was attempted on 2026-08-11 and timed out. npm debug log shows registry DNS/network failure:
-
-```text
-fetch manifest gsap@3.15.0
-GET https://registry.npmjs.org/gsap attempt 1 failed with EAI_AGAIN
-GET https://registry.npmjs.org/gsap attempt 2 failed with EAI_AGAIN
-```
-
-No `node_modules/` or `package-lock.json` was created.
-
-Therefore these claims are **not** made in this sandbox:
-- full Next.js `npm run typecheck` passed;
-- full Next.js production `npm run build` passed;
-- browser QA of the actual Next.js bundle passed.
-
-Run those three checks in a network-enabled environment before deployment.
+Then visually inspect:
+- countdown stays centered;
+- edge vignette is barely perceptible;
+- hero composition is slightly higher without breaking front/reveal registration;
+- pointer trail has a clean coherent border;
+- old marks contract/erode without smoke/fog;
+- stroke endpoint remains a rounded blob;
+- autonomous reveal and Explore handoff still behave correctly.
 
 ## Next design phase
 
-Do not randomly polish downstream sections yet.
-
-Next approved design work should begin with **First Impression**:
+After this refinement is accepted, return to **First Impression**:
 - final copy;
 - exact black-state entrance choreography;
 - composition and typography;
