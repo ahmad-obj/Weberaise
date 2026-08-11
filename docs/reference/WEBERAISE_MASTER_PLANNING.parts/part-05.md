@@ -64,6 +64,66 @@ The exact First Impression entrance choreography and its final light/dark compos
 
 ---
 
+# 2026-08-11 LOCKED REFINEMENT — CENTERED LOADER / HERO DEPTH / CLEAN BLOB REVEAL
+
+These decisions override earlier loader-position and reveal-edge behavior where they conflict.
+
+## Loader position — OVERRIDE LOCK
+- The numeric countdown is now **always centered in the viewport**.
+- Remove the earlier art-directed pseudo-random number positions.
+- Preserve truthful real loading, every integer 100→0, no skipped integers, and the existing final centered `0` choreography.
+- Current and outgoing number may overlap at the same center position for seamless handoff.
+
+## White hero edge depth — LOCKED OPTION A
+- Add an extremely faint **radial vignette** over the light hero surface.
+- The center remains visually white/clean.
+- Only the far perimeter receives a tiny black influence; target maximum visual strength is about 2–3%.
+- It must read as barely perceptible depth, never as a visible gray frame, border, spotlight or dramatic vignette.
+
+## Hero composition vertical position — LOCK
+- Raise the entire shared hero composition slightly upward.
+- Move `WELCOME / TO` and the hidden WEBERAISE lockup together as one registered unit.
+- Do not independently offset the front/reveal copies.
+- Desktop working target: approximately 2.5–3vh upward with sensible clamps.
+- Mobile shift is smaller.
+- `EXPLORE` remains anchored near the bottom and is not dragged upward with the typography/brand composition.
+
+## Reveal character — OVERRIDE LOCK
+The old trail must no longer read as smoke, fog, mist or vapor.
+
+Target character is a **dense coherent liquid/blob mask**:
+- thick and rounded;
+- clear coherent silhouette;
+- proper rounded blob termination at the end of a stroke;
+- crisp but antialiased border;
+- low-frequency organic contour movement only;
+- almost no high-frequency grain/noise;
+- very low advection/drift;
+- no expanding haze around aging marks;
+- overlapping marks merge naturally;
+- visible lifetime remains roughly 3–4 seconds;
+- old regions disappear by **clean contour contraction / erosion inward**, not by becoming progressively translucent smoke.
+
+Implementation direction:
+- retain the persistent low-resolution history-mask architecture;
+- use a high/narrow composite threshold so weak residual density is invisible;
+- retain a spatially graded splat field so decay causes the visible boundary to shrink inward;
+- significantly reduce flow/advection and settling amplitude;
+- replace temporal hash/grain with subtle low-frequency contour warp;
+- modestly raise the full-quality mask resolution while preserving adaptive lite/reduced-motion fallbacks.
+
+## Nothin reference findings
+Reference site: `https://www.noth.in/`
+
+Publicly verifiable implementation signals:
+- developer Thomas Carré describes the project as built with **Webflow, GSAP, WebGL and custom shaders**;
+- independent tech-stack detection also identifies **Three.js and Lenis**;
+- therefore the reference reveal is treated as a shader-driven interactive compositor/mask, not as a CSS blur/fade effect.
+
+The Weberaise implementation should reproduce the approved observable behavior and quality characteristics. Do not wholesale copy proprietary deployed source code merely because browser-delivered bundles may be inspectable.
+
+---
+
 # IMPLEMENTATION STATUS CROSS-REFERENCE
 
 Implementation progress, verification evidence, and sandbox/build blockers are tracked separately in:
