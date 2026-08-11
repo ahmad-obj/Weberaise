@@ -27,14 +27,15 @@ export function runLoaderCompletionTimeline(
   }
 
   const verticalScale = Math.max(1, window.innerHeight / Math.max(1, line.offsetWidth));
+  const zeroDrop = Math.max(126, window.innerHeight * 0.18);
   const timeline = gsap.timeline({ defaults: { ease: 'power3.inOut' }, onComplete: options.onComplete });
   timeline
     .set(line, { transformOrigin: '50% 50%', scaleX: 0, rotation: 0 })
-    .set(zero, { yPercent: 0 })
+    .set(zero, { y: 0 })
     .set(tagline, { yPercent: 130 })
     .to(line, { scaleX: 1, duration: 0.72 })
-    .to(zero, { yPercent: 135, duration: 0.64 }, '<0.06')
-    .to(tagline, { yPercent: 0, duration: 0.64 }, '<0.04')
+    .to(zero, { y: zeroDrop, duration: 0.68 }, '<0.06')
+    .to(tagline, { yPercent: 0, duration: 0.68 }, '<0.04')
     .to({}, { duration: 2.25 })
     .to(tagline, { yPercent: 135, duration: 0.66 })
     .to(line, { scaleX: 0.16, duration: 0.72 }, '<0.08')
