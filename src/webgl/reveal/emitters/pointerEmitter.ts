@@ -1,4 +1,4 @@
-import { interpolateSegment } from '../math.ts';
+import { interpolateSegment } from '../math';
 import type { RevealSample, TimedPoint } from './types';
 
 export type PointerEmitterOptions = {
