@@ -20,6 +20,7 @@ function fontReady(): Promise<void> {
 export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: LoaderProps) {
   const progress = useRef(createProgressController());
   const [display, setDisplay] = useState(100);
+  const [criticalProgress, setCriticalProgress] = useState(0);
   const [viewport, setViewport] = useState({ width: 1440, height: 900 });
   const criticalDispatched = useRef(false);
 
@@ -41,7 +42,10 @@ export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: Lo
 
   useEffect(() => {
     if (phase !== 'loading') return;
-    const unsubscribe = registry.subscribe((snapshot) => progress.current.updateRealProgress(snapshot.progress));
+    const unsubscribe = registry.subscribe((snapshot) => {
+      progress.current.updateRealProgress(snapshot.progress);
+      setCriticalProgress(snapshot.progress);
+    });
     void registry.start();
     return unsubscribe;
   }, [phase, registry]);
@@ -67,7 +71,7 @@ export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: Lo
     const delay = reducedMotion ? 4 : distance > 55 ? 12 : distance > 20 ? 18 : distance > 6 ? 28 : 42;
     const timer = window.setTimeout(step, delay);
     return () => window.clearTimeout(timer);
-  }, [display, onCriticalReady, phase, reducedMotion, step]);
+  }, [display, criticalProgress, onCriticalReady, phase, reducedMotion, step]);
 
   if (phase === 'loaderCompletion') {
     return <LoaderCompletion onComplete={onComplete} reducedMotion={reducedMotion} />;
