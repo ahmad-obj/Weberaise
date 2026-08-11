@@ -33,24 +33,26 @@ void main() {
   vec4 seed = texture(uPrevious, vUv);
   vec2 oldVelocity = decodeVelocity(seed.gb);
 
-  // Deliberately tiny settling motion: viscous material should relax, not swim.
+  // Dense gel-like settling: enough life to avoid a frozen mask, but far below
+  // the amplitude that makes an old trail drift into smoke or fog.
   vec2 settling = vec2(
-    sin(vUv.y * 16.0 + uTime * 0.55),
-    cos(vUv.x * 13.0 - uTime * 0.42)
-  ) * 0.0018 * seed.r;
+    sin(vUv.y * 14.0 + uTime * 0.24),
+    cos(vUv.x * 12.0 - uTime * 0.19)
+  ) * 0.00055 * seed.r;
 
-  vec2 velocity = oldVelocity * pow(0.12, uDelta) + settling;
+  vec2 velocity = oldVelocity * pow(0.055, uDelta) + settling;
   vec2 advectedUv = clamp(
-    vUv - velocity * uAdvection * min(uDelta * 60.0, 2.0),
+    vUv - velocity * uAdvection * min(uDelta * 60.0, 1.35),
     0.001,
     0.999
   );
   vec4 previous = texture(uPrevious, advectedUv);
 
-  // Time-correct persistence. The perceptual tail extends several half-lives.
+  // Time-correct persistence. A spatially graded splat plus a high composite
+  // threshold makes old marks erode inward instead of fading as translucent mist.
   float retention = pow(0.5, uDelta / max(0.05, uHalfLife));
   float mask = previous.r * retention;
-  velocity = decodeVelocity(previous.gb) * pow(0.18, uDelta) + settling;
+  velocity = decodeVelocity(previous.gb) * pow(0.075, uDelta) + settling;
 
   for (int i = 0; i < MAX_SPLATS; i++) {
     if (i >= uSplatCount) break;
@@ -58,12 +60,15 @@ void main() {
     delta.x *= uAspect;
     float radius = max(0.001, uSplatRadius[i]);
     float distanceToSplat = length(delta);
-    float influence = 1.0 - smoothstep(radius * 0.28, radius, distanceToSplat);
-    influence = pow(max(0.0, influence), 1.15) * uSplatStrength[i];
+
+    // A larger solid core keeps the stroke ending as a proper rounded blob.
+    // The graded outer band supplies antialiasing and clean contraction later.
+    float influence = 1.0 - smoothstep(radius * 0.48, radius, distanceToSplat);
+    influence = pow(max(0.0, influence), 1.05) * uSplatStrength[i];
     mask = max(mask, influence);
 
-    vec2 injectedVelocity = clamp(uSplatVelocity[i] * 0.18, vec2(-1.0), vec2(1.0));
-    velocity = mix(velocity, injectedVelocity, influence * 0.32);
+    vec2 injectedVelocity = clamp(uSplatVelocity[i] * 0.07, vec2(-1.0), vec2(1.0));
+    velocity = mix(velocity, injectedVelocity, influence * 0.12);
   }
 
   velocity = clamp(velocity, vec2(-1.0), vec2(1.0));
@@ -81,16 +86,20 @@ uniform float uNoiseAmount;
 uniform float uFillProgress;
 uniform float uFillEnabled;
 
-float hash(vec2 p) {
-  p = fract(p * vec2(123.34, 345.45));
-  p += dot(p, p + 34.345);
-  return fract(p.x * p.y);
-}
-
 void main() {
   float history = texture(uHistory, vUv).r;
-  float noise = (hash(floor(vUv * 260.0) + floor(uTime * 4.0)) - 0.5) * uNoiseAmount;
-  float reveal = smoothstep(0.105, 0.36, history + noise * (1.0 - history));
+
+  // Low-frequency contour warp only. No temporal hash grain: the boundary should
+  // feel organic and liquid, never dusty, smoky or noisy.
+  float contourWarp = (
+    sin(vUv.x * 17.0 + uTime * 0.22) +
+    sin(vUv.y * 13.0 - uTime * 0.17) +
+    sin((vUv.x + vUv.y) * 10.5 + uTime * 0.12)
+  ) * (uNoiseAmount / 3.0);
+
+  // The narrow high threshold hides low-density history completely. As history
+  // decays, the visible contour contracts inward and ends cleanly as a blob.
+  float reveal = smoothstep(0.40, 0.47, history + contourWarp);
 
   // The canvas uses CSS difference blending over the native DOM front layer.
   // White perfectly inverts white/black WELCOME/TO; inside the brand pixels,
