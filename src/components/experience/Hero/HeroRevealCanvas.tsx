@@ -166,9 +166,9 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
     if (!root || !engine || phase !== 'heroInteractive') return;
 
     engine.setMode('reveal');
-    const radius = root.clientWidth < 720 ? 0.11 : 0.085;
+    const radius = root.clientWidth < 720 ? 0.10 : 0.078;
     const tracker = createPointerTracker({
-      maxSpacing: 0.024,
+      maxSpacing: 0.022,
       radius,
       maxVelocity: 1.85,
       strength: 1,
@@ -203,7 +203,7 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
           const id = window.setTimeout(() => engine.emit([emission.sample]), emission.delayMs);
           afterglideTimers.push(id);
         }
-      }, 55);
+      }, 48);
     };
 
     const move = (event: PointerEvent) => {
