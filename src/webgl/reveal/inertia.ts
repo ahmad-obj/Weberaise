@@ -23,46 +23,45 @@ function clamp01(value: number) {
 
 export function createInertialAfterglide(options: InertialAfterglideOptions): InertialEmission[] {
   const speed = Math.hypot(options.vx, options.vy);
-  const minSpeed = options.minSpeed ?? 0.16;
+  const minSpeed = options.minSpeed ?? 0.14;
   if (speed < minSpeed) return [];
 
-  const duration = Math.min(0.38, Math.max(0.24, options.duration ?? 0.34));
-  const steps = Math.min(7, Math.max(4, Math.round(options.steps ?? 5)));
+  const duration = Math.min(0.34, Math.max(0.22, options.duration ?? 0.30));
+  const steps = Math.min(4, Math.max(2, Math.round(options.steps ?? 3)));
   const strength = options.strength ?? 1;
   const nx = options.vx / speed;
   const ny = options.vy / speed;
   const px = -ny;
   const py = nx;
 
-  // Inertia is deliberately a small forward lobe, not a second cursor blob.
-  // Fast input gets a little more carry, but never more than ~3.8% of viewport space.
-  const carry = Math.min(0.038, 0.013 + speed * 0.013);
+  // The main liquid mass never translates after the pointer stops. Only a few
+  // small satellite patches carry forward from the most recent motion vector.
+  const carry = Math.min(0.05, 0.019 + speed * 0.018);
   const seed = Math.sin((options.x * 91.7 + options.y * 57.3) * Math.PI);
   const emissions: InertialEmission[] = [];
 
   for (let index = 0; index < steps; index += 1) {
     const t = (index + 1) / steps;
-    const eased = 1 - Math.pow(1 - t, 2.4);
-    const decay = Math.pow(1 - t, 1.5);
-
-    // Small deterministic lateral wobble keeps the advancing edge irregular
-    // without creating random smoke, spray or a symmetric growing sphere.
-    const lateral = Math.sin(t * Math.PI * 2.15 + seed * 1.9) * carry * 0.14 * decay;
-    const forward = carry * eased;
+    const eased = 1 - Math.pow(1 - t, 2.1);
+    const forward = carry * (0.34 + eased * 0.66);
+    const lateral = Math.sin(t * Math.PI * 2.7 + seed * 2.1) * carry * (0.15 - t * 0.045);
     const x = clamp01(options.x + nx * forward + px * lateral);
     const y = clamp01(options.y + ny * forward + py * lateral);
-    const radiusScale = 0.66 - t * 0.36;
-    const strengthScale = 0.56 - t * 0.40;
+
+    // Keep each satellite visibly above the implicit-surface threshold while
+    // remaining much smaller than the cursor's primary reveal radius.
+    const radiusScale = 0.38 - t * 0.12;
+    const strengthScale = 0.74 - t * 0.20;
 
     emissions.push({
       delayMs: Math.round(duration * 1000 * (index / Math.max(1, steps - 1))),
       sample: {
         x,
         y,
-        radius: options.radius * Math.max(0.26, radiusScale),
-        strength: strength * Math.max(0.12, strengthScale),
-        vx: options.vx * decay * 0.24,
-        vy: options.vy * decay * 0.24,
+        radius: options.radius * radiusScale,
+        strength: strength * strengthScale,
+        vx: options.vx * (1 - t) * 0.16,
+        vy: options.vy * (1 - t) * 0.16,
         time: t * duration,
       },
     });
