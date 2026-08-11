@@ -19,9 +19,11 @@ export function LoaderCompletion({ onComplete, reducedMotion }: LoaderCompletion
 
   return (
     <div ref={rootRef} className="loader-completion" aria-hidden="true">
-      <div className="loader-completion__upper-mask">
-        <span data-loader-zero className="loader-completion__zero">0</span>
-        <span data-loader-tagline className="loader-completion__tagline">RAISE THE STANDARD</span>
+      <div className="loader-completion__zero-mask">
+        <span data-loader-zero className="loader-zero-glyph loader-completion__zero">0</span>
+      </div>
+      <div className="loader-completion__tagline-mask">
+        <span data-loader-tagline className="loader-completion__tagline">Need a website for business?</span>
       </div>
       <div data-loader-line className="loader-completion__line" />
     </div>
