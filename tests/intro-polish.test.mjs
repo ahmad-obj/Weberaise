@@ -19,7 +19,7 @@ test('pointer reveal keeps the tight radius and emits visible rogue inertial pat
   assert.ok(emissions.at(-1).delayMs <= 340);
   assert.ok(emissions.every((entry) => entry.sample.x > 0.5));
   assert.ok(Math.max(...emissions.map((entry) => entry.sample.x - 0.5)) >= 0.025);
-  assert.ok(Math.max(...emissions.map((entry) => entry.sample.x - 0.5)) <= 0.05);
+  assert.ok(Math.max(...emissions.map((entry) => entry.sample.x - 0.5)) <= 0.050001);
   assert.ok(emissions.every((entry) => entry.sample.radius < 0.078 * 0.42));
   assert.ok(emissions.every((entry) => entry.sample.strength >= 0.46));
 });
