@@ -4,22 +4,26 @@ export type TimelineController = { kill(): void };
 
 export function runLoaderCompletionTimeline(
   root: HTMLElement,
+  zero: HTMLElement,
   options: { reducedMotion: boolean; onComplete: () => void },
 ): TimelineController {
-  const zero = root.querySelector<HTMLElement>('[data-loader-zero]');
   const tagline = root.querySelector<HTMLElement>('[data-loader-tagline]');
   const line = root.querySelector<HTMLElement>('[data-loader-line]');
-  if (!zero || !tagline || !line) return { kill() {} };
+  if (!tagline || !line) return { kill() {} };
 
   const verticalScale = Math.max(1, (window.innerHeight + 24) / Math.max(1, line.offsetWidth));
+
+  // CSS keeps the tagline non-painting before hydration. From this point onward,
+  // GSAP exclusively owns its transform so no stale translate can keep it clipped.
+  gsap.set(tagline, { y: 0, yPercent: 130, autoAlpha: 1, visibility: 'visible' });
 
   if (options.reducedMotion) {
     const timeline = gsap.timeline({ onComplete: options.onComplete });
     timeline
-      .set(line, { scaleX: 0 })
+      .set(line, { transformOrigin: '50% 50%', scaleX: 0, rotation: 0 })
       .to(line, { scaleX: 1, duration: 0.18 })
       .set(zero, { autoAlpha: 0 })
-      .set(tagline, { autoAlpha: 1, yPercent: 0 })
+      .to(tagline, { yPercent: 0, duration: 0.16 })
       .to({}, { duration: 0.35 })
       .set(tagline, { autoAlpha: 0 })
       .to(line, { top: '50%', scaleX: 0.16, duration: 0.16 })
@@ -32,8 +36,7 @@ export function runLoaderCompletionTimeline(
   const timeline = gsap.timeline({ defaults: { ease: 'power3.inOut' }, onComplete: options.onComplete });
   timeline
     .set(line, { transformOrigin: '50% 50%', scaleX: 0, rotation: 0 })
-    .set(zero, { y: 0 })
-    .set(tagline, { yPercent: 130 })
+    .set(zero, { y: 0, autoAlpha: 1 })
     .to(line, { scaleX: 1, duration: 0.72 })
     .to(zero, { y: zeroDrop, duration: 0.68 }, '<0.06')
     .to(tagline, { yPercent: 0, duration: 0.68 }, '<0.04')
