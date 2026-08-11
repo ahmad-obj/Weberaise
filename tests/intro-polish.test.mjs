@@ -6,23 +6,25 @@ import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
-test('pointer reveal uses the tighter approved radius and keeps inertia subtle', async () => {
+test('pointer reveal keeps the tight radius and emits visible rogue inertial patches', async () => {
   const canvas = read('src/components/experience/Hero/HeroRevealCanvas.tsx');
   assert.match(canvas, /root\.clientWidth < 720 \? 0\.10 : 0\.078/);
+  assert.match(canvas, /inertiaVelocity/);
 
   const { createInertialAfterglide } = await import('../src/webgl/reveal/inertia.ts');
   assert.equal(createInertialAfterglide({ x: 0.5, y: 0.5, vx: 0.05, vy: 0, radius: 0.078 }).length, 0);
 
   const emissions = createInertialAfterglide({ x: 0.5, y: 0.5, vx: 1.8, vy: 0, radius: 0.078 });
-  assert.ok(emissions.length >= 4 && emissions.length <= 7);
-  assert.ok(emissions.at(-1).delayMs <= 380);
-  assert.ok(emissions.every((entry) => entry.sample.x >= 0.5));
-  assert.ok(Math.max(...emissions.map((entry) => entry.sample.x - 0.5)) <= 0.04);
-  assert.ok(emissions[0].sample.radius > emissions.at(-1).sample.radius);
-  assert.ok(emissions[0].sample.strength > emissions.at(-1).sample.strength);
+  assert.ok(emissions.length >= 2 && emissions.length <= 4);
+  assert.ok(emissions.at(-1).delayMs <= 340);
+  assert.ok(emissions.every((entry) => entry.sample.x > 0.5));
+  assert.ok(Math.max(...emissions.map((entry) => entry.sample.x - 0.5)) >= 0.025);
+  assert.ok(Math.max(...emissions.map((entry) => entry.sample.x - 0.5)) <= 0.05);
+  assert.ok(emissions.every((entry) => entry.sample.radius < 0.078 * 0.42));
+  assert.ok(emissions.every((entry) => entry.sample.strength >= 0.46));
 });
 
-test('countdown cadence and transition duration become progressively more deliberate near zero', async () => {
+test('countdown cadence and transition duration become progressively slower without animation restarts', async () => {
   const timing = await import('../src/experience/loading/countdownTiming.ts');
   assert.equal(timing.FINAL_ZERO_HOLD_MS, 700);
   assert.equal(typeof timing.countdownTransitionMs, 'function');
@@ -36,33 +38,41 @@ test('countdown cadence and transition duration become progressively more delibe
   for (const value of [100, 60, 30, 10, 5, 1]) {
     const transition = timing.countdownTransitionMs(value, false);
     const delay = timing.countdownDelay(value, 0, false);
-    assert.ok(transition >= 70);
-    assert.ok(transition <= Math.max(90, delay * 1.35));
+    assert.ok(transition >= 24);
+    assert.ok(transition < delay, `${value} transition must finish before the next digit cadence`);
   }
 });
 
-test('loader zero handoff is registered and tagline line covers the approved copy', () => {
+test('loader zero handoff is registered, tagline is pre-hidden, and line recenters before vertical expansion', () => {
   const countdown = read('src/components/experience/Loader/LoaderCountdown.tsx');
   const completion = read('src/components/experience/Loader/LoaderCompletion.tsx');
   const css = read('src/app/globals.css');
+  const timeline = read('src/experience/motion/loaderTimeline.ts');
 
   assert.match(countdown, /loader-zero-glyph/);
   assert.match(completion, /loader-zero-glyph/);
   assert.match(completion, />Need a website for business\?<\/span>/);
   assert.match(css, /\.loader-completion__zero\s*\{[^}]*left:\s*50%[^}]*top:\s*50vh[^}]*translate\(-50%,\s*-50%\)/s);
+  assert.match(css, /--loader-line-offset:\s*clamp\(48px,\s*5vw,\s*72px\)/);
+  assert.match(css, /\.loader-completion__tagline\s*\{[^}]*transform:\s*translateY\(130%\)/s);
   assert.match(css, /\.loader-completion__line\s*\{[^}]*width:\s*min\(92vw,\s*1100px\)/s);
+  assert.match(timeline, /top:\s*'50%'/);
+  assert.match(timeline, /window\.innerHeight \+ 24/);
 });
 
-test('hero is nudged slightly higher and EXPLORE self-inverts over the reveal', () => {
+test('EXPLORE is a real black front label underneath the reveal compositor', () => {
   const css = read('src/app/globals.css');
-  assert.match(css, /\.hero-composition\s*\{[^}]*translateY\(clamp\(-44px,\s*-4\.2vh,\s*-28px\)\)/s);
-  assert.match(css, /\.hero-explore\s*\{[^}]*color:\s*#fff[^}]*mix-blend-mode:\s*difference/s);
+  assert.match(css, /\.hero-reveal-canvas\s*\{[^}]*z-index:\s*5/s);
+  assert.match(css, /\.hero-explore\s*\{[^}]*color:\s*#000[^}]*mix-blend-mode:\s*normal/s);
+  assert.match(css, /\[data-hero-explore\]\s*\{[^}]*z-index:\s*4/s);
 });
 
-test('digit animation duration is driven by the current countdown cadence', () => {
+test('digit changes use a stationary soft crossfade instead of vertical jump motion', () => {
   const countdown = read('src/components/experience/Loader/LoaderCountdown.tsx');
   const css = read('src/app/globals.css');
   assert.match(countdown, /--loader-digit-transition/);
   assert.match(css, /animation:\s*loader-number-in\s*var\(--loader-digit-transition\)/);
   assert.match(css, /animation:\s*loader-number-out\s*var\(--loader-digit-transition\)/);
+  assert.match(css, /filter:\s*blur\(/);
+  assert.doesNotMatch(css, /calc\(-50% \+ 5px\)|calc\(-50% - 5px\)/);
 });
