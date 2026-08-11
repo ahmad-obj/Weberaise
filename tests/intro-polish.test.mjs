@@ -43,18 +43,32 @@ test('countdown cadence and transition duration become progressively slower with
   }
 });
 
-test('loader zero handoff is registered, tagline is pre-hidden, and line recenters before vertical expansion', () => {
-  const countdown = read('src/components/experience/Loader/LoaderCountdown.tsx');
+test('loader keeps one physical zero across the phase handoff and GSAP exclusively owns tagline movement', () => {
+  const loader = read('src/components/experience/Loader/Loader.tsx');
   const completion = read('src/components/experience/Loader/LoaderCompletion.tsx');
   const css = read('src/app/globals.css');
   const timeline = read('src/experience/motion/loaderTimeline.ts');
 
-  assert.match(countdown, /loader-zero-glyph/);
-  assert.match(completion, /loader-zero-glyph/);
+  assert.match(loader, /zeroRef/);
+  assert.match(loader, /data-loader-zero/);
+  assert.match(loader, /loader-persistent-zero-mask/);
+  assert.match(loader, /<LoaderCompletion[^>]*zeroRef=\{zeroRef\}/s);
+  assert.doesNotMatch(completion, /data-loader-zero/);
+  assert.match(completion, /zeroRef/);
+  assert.match(completion, /useLayoutEffect/);
+
   assert.match(completion, />Need a website for business\?<\/span>/);
-  assert.match(css, /\.loader-completion__zero\s*\{[^}]*left:\s*50%[^}]*top:\s*50vh[^}]*translate\(-50%,\s*-50%\)/s);
+  assert.match(css, /\.loader-persistent-zero\s*\{[^}]*left:\s*50%[^}]*top:\s*50vh[^}]*translate\(-50%,\s*-50%\)/s);
+  assert.match(css, /\.loader-completion__tagline\s*\{[^}]*visibility:\s*hidden/s);
+  assert.doesNotMatch(css, /\.loader-completion__tagline\s*\{[^}]*transform:\s*translateY\(130%\)/s);
+  assert.match(timeline, /gsap\.set\(tagline,\s*\{[^}]*yPercent:\s*130[^}]*visibility:\s*'visible'/s);
+  assert.match(timeline, /runLoaderCompletionTimeline\(\s*root:\s*HTMLElement,\s*zero:\s*HTMLElement/s);
+});
+
+test('loader line recenters before vertical expansion', () => {
+  const css = read('src/app/globals.css');
+  const timeline = read('src/experience/motion/loaderTimeline.ts');
   assert.match(css, /--loader-line-offset:\s*clamp\(48px,\s*5vw,\s*72px\)/);
-  assert.match(css, /\.loader-completion__tagline\s*\{[^}]*transform:\s*translateY\(130%\)/s);
   assert.match(css, /\.loader-completion__line\s*\{[^}]*width:\s*min\(92vw,\s*1100px\)/s);
   assert.match(timeline, /top:\s*'50%'/);
   assert.match(timeline, /window\.innerHeight \+ 24/);
