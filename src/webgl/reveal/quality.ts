@@ -20,7 +20,7 @@ export type RevealQuality = {
 
 export function chooseRevealQuality(input: RevealQualityInput): RevealQuality {
   if (!input.webgl2) {
-    return { mode: 'fallback', maskShortAxis: 0, dprCap: 1, halfLife: 1.45, advection: 0, noiseAmount: 0 };
+    return { mode: 'fallback', maskShortAxis: 0, dprCap: 1, halfLife: 2.5, advection: 0, noiseAmount: 0 };
   }
 
   const shortAxis = Math.min(input.width, input.height);
@@ -30,20 +30,20 @@ export function chooseRevealQuality(input: RevealQualityInput): RevealQuality {
   if (lite) {
     return {
       mode: 'lite',
-      maskShortAxis: Math.min(240, Math.max(176, Math.round(shortAxis * 0.44))),
+      maskShortAxis: Math.min(300, Math.max(208, Math.round(shortAxis * 0.48))),
       dprCap: 1.2,
-      halfLife: 1.4,
-      advection: input.reducedMotion ? 0 : 0.007,
-      noiseAmount: input.reducedMotion ? 0 : 0.012,
+      halfLife: 2.5,
+      advection: input.reducedMotion ? 0 : 0.0015,
+      noiseAmount: input.reducedMotion ? 0 : 0.003,
     };
   }
 
   return {
     mode: 'full',
-    maskShortAxis: Math.min(384, Math.max(288, Math.round(shortAxis * 0.42))),
+    maskShortAxis: Math.min(512, Math.max(336, Math.round(shortAxis * 0.52))),
     dprCap: 1.5,
-    halfLife: 1.45,
-    advection: 0.012,
-    noiseAmount: 0.018,
+    halfLife: 2.75,
+    advection: 0.003,
+    noiseAmount: 0.006,
   };
 }
