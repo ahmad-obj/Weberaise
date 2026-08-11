@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createProgressController } from '@/experience/loading/progressController';
 import { createCriticalAssetRegistry, preloadImage } from '@/experience/loading/criticalAssetRegistry';
-import { countdownDelay, FINAL_ZERO_HOLD_MS } from '@/experience/loading/countdownTiming';
+import { countdownDelay, countdownTransitionMs, FINAL_ZERO_HOLD_MS } from '@/experience/loading/countdownTiming';
 import { LoaderCountdown } from './LoaderCountdown';
 import { LoaderCompletion } from './LoaderCompletion';
 
@@ -12,6 +12,10 @@ type LoaderProps = {
   onCriticalReady: () => void;
   onComplete: () => void;
   reducedMotion: boolean;
+};
+
+type ZeroStyle = CSSProperties & {
+  '--loader-digit-transition': string;
 };
 
 function fontReady(): Promise<void> {
@@ -24,6 +28,7 @@ export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: Lo
   const [criticalProgress, setCriticalProgress] = useState(0);
   const criticalDispatched = useRef(false);
   const zeroHoldTimer = useRef<number | null>(null);
+  const zeroRef = useRef<HTMLSpanElement>(null);
 
   const registry = useMemo(
     () => createCriticalAssetRegistry([
@@ -79,14 +84,35 @@ export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: Lo
     };
   }, [criticalProgress, display, onCriticalReady, phase, reducedMotion]);
 
-  if (phase === 'loaderCompletion') {
-    return <LoaderCompletion onComplete={onComplete} reducedMotion={reducedMotion} />;
-  }
+  const showPersistentZero = display === 0 || phase === 'loaderCompletion';
+  const zeroStyle: ZeroStyle = {
+    '--loader-digit-transition': `${countdownTransitionMs(0, reducedMotion)}ms`,
+  };
 
   return (
     <section className="loader" aria-label="Loading Weberaise">
       <p className="sr-only" role="status">Preparing the Weberaise experience.</p>
-      <LoaderCountdown value={display} reducedMotion={reducedMotion} />
+
+      {showPersistentZero && (
+        <div className="loader-persistent-zero-mask" aria-hidden="true">
+          <span
+            ref={zeroRef}
+            data-loader-zero
+            className="loader-zero-glyph loader-persistent-zero"
+            style={zeroStyle}
+          >
+            0
+          </span>
+        </div>
+      )}
+
+      {phase === 'loading' && display > 0 && (
+        <LoaderCountdown value={display} reducedMotion={reducedMotion} />
+      )}
+
+      {phase === 'loaderCompletion' && (
+        <LoaderCompletion zeroRef={zeroRef} onComplete={onComplete} reducedMotion={reducedMotion} />
+      )}
     </section>
   );
 }
