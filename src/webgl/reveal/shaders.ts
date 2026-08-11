@@ -1,5 +1,3 @@
-export const MAX_SPLATS = 24;
-
 export const FULLSCREEN_VERTEX = `#version 300 es
 precision highp float;
 layout(location = 0) in vec2 aPosition;
@@ -9,101 +7,89 @@ void main() {
   gl_Position = vec4(aPosition, 0.0, 1.0);
 }`;
 
-export const HISTORY_FRAGMENT = `#version 300 es
+export const FIELD_VERTEX = `#version 300 es
 precision highp float;
-#define MAX_SPLATS 24
-in vec2 vUv;
-out vec4 outColor;
-uniform sampler2D uPrevious;
-uniform float uDelta;
-uniform float uTime;
-uniform float uHalfLife;
-uniform float uAdvection;
+layout(location = 0) in vec2 aCorner;
+layout(location = 1) in vec2 aCenter;
+layout(location = 2) in float aRadius;
+layout(location = 3) in vec2 aVelocity;
+layout(location = 4) in float aStrength;
 uniform float uAspect;
-uniform int uSplatCount;
-uniform vec2 uSplatPos[MAX_SPLATS];
-uniform vec2 uSplatVelocity[MAX_SPLATS];
-uniform float uSplatRadius[MAX_SPLATS];
-uniform float uSplatStrength[MAX_SPLATS];
-
-vec2 decodeVelocity(vec2 value) { return value * 2.0 - 1.0; }
-vec2 encodeVelocity(vec2 value) { return value * 0.5 + 0.5; }
+out vec2 vLocal;
+out float vStrength;
 
 void main() {
-  vec4 seed = texture(uPrevious, vUv);
-  vec2 oldVelocity = decodeVelocity(seed.gb);
+  vec2 metricVelocity = vec2(aVelocity.x * uAspect, aVelocity.y);
+  float speed = length(metricVelocity);
+  vec2 direction = speed > 0.001 ? normalize(metricVelocity) : vec2(1.0, 0.0);
+  vec2 perpendicular = vec2(-direction.y, direction.x);
 
-  // Dense gel-like settling: enough life to avoid a frozen mask, but far below
-  // the amplitude that makes an old trail drift into smoke or fog.
-  vec2 settling = vec2(
-    sin(vUv.y * 14.0 + uTime * 0.24),
-    cos(vUv.x * 12.0 - uTime * 0.19)
-  ) * 0.00055 * seed.r;
+  // The moving head gets only a restrained directional pull. The field itself
+  // remains rounded and cohesive rather than becoming a streak/smoke brush.
+  float stretch = 1.0 + min(speed * 0.028, 0.12);
+  float squash = inversesqrt(stretch);
+  vec2 metricOffset =
+    direction * (aCorner.x * stretch) +
+    perpendicular * (aCorner.y * squash);
 
-  vec2 velocity = oldVelocity * pow(0.055, uDelta) + settling;
-  vec2 advectedUv = clamp(
-    vUv - velocity * uAdvection * min(uDelta * 60.0, 1.35),
-    0.001,
-    0.999
-  );
-  vec4 previous = texture(uPrevious, advectedUv);
+  // Support is intentionally larger than the visible radius. Additive tails of
+  // neighboring primitives create smooth metaball necks before thresholding.
+  float support = 1.55;
+  vec2 uvOffset = vec2(metricOffset.x / max(0.001, uAspect), metricOffset.y)
+    * aRadius * support;
+  vec2 uv = aCenter + uvOffset;
 
-  // Time-correct persistence. A spatially graded splat plus a high composite
-  // threshold makes old marks erode inward instead of fading as translucent mist.
-  float retention = pow(0.5, uDelta / max(0.05, uHalfLife));
-  float mask = previous.r * retention;
-  velocity = decodeVelocity(previous.gb) * pow(0.075, uDelta) + settling;
+  vLocal = aCorner;
+  vStrength = aStrength;
+  gl_Position = vec4(uv * 2.0 - 1.0, 0.0, 1.0);
+}`;
 
-  for (int i = 0; i < MAX_SPLATS; i++) {
-    if (i >= uSplatCount) break;
-    vec2 delta = vUv - uSplatPos[i];
-    delta.x *= uAspect;
-    float radius = max(0.001, uSplatRadius[i]);
-    float distanceToSplat = length(delta);
+export const FIELD_FRAGMENT = `#version 300 es
+precision highp float;
+in vec2 vLocal;
+in float vStrength;
+out vec4 outColor;
 
-    // A larger solid core keeps the stroke ending as a proper rounded blob.
-    // The graded outer band supplies antialiasing and clean contraction later.
-    float influence = 1.0 - smoothstep(radius * 0.48, radius, distanceToSplat);
-    influence = pow(max(0.0, influence), 1.05) * uSplatStrength[i];
-    mask = max(mask, influence);
+void main() {
+  float distanceToCenter = length(vLocal);
+  if (distanceToCenter >= 1.0) discard;
 
-    vec2 injectedVelocity = clamp(uSplatVelocity[i] * 0.07, vec2(-1.0), vec2(1.0));
-    velocity = mix(velocity, injectedVelocity, influence * 0.12);
-  }
-
-  velocity = clamp(velocity, vec2(-1.0), vec2(1.0));
-  outColor = vec4(clamp(mask, 0.0, 1.0), encodeVelocity(velocity), 1.0);
+  // A compact implicit contribution. We render many of these additively and
+  // extract one hard level set in the composite pass. This gives real union,
+  // necking and pinch-off without any translucent density-history residue.
+  float contribution = pow(max(0.0, 1.0 - distanceToCenter), 1.16) * vStrength;
+  outColor = vec4(contribution, 0.0, 0.0, contribution);
 }`;
 
 export const COMPOSITE_FRAGMENT = `#version 300 es
 precision highp float;
 in vec2 vUv;
 out vec4 outColor;
-uniform sampler2D uHistory;
+uniform sampler2D uField;
 uniform sampler2D uBrand;
 uniform float uTime;
-uniform float uNoiseAmount;
+uniform float uSurfaceThreshold;
+uniform float uContourWarp;
 uniform float uFillProgress;
 uniform float uFillEnabled;
 
 void main() {
-  float history = texture(uHistory, vUv).r;
+  float field = texture(uField, vUv).r;
 
-  // Low-frequency contour warp only. No temporal hash grain: the boundary should
-  // feel organic and liquid, never dusty, smoky or noisy.
-  float contourWarp = (
-    sin(vUv.x * 17.0 + uTime * 0.22) +
-    sin(vUv.y * 13.0 - uTime * 0.17) +
-    sin((vUv.x + vUv.y) * 10.5 + uTime * 0.12)
-  ) * (uNoiseAmount / 3.0);
+  // Surface motion is expressed as a tiny threshold displacement, so only the
+  // contour moves. There is no temporal grain and no low-alpha cloud behind it.
+  float contourWave = (
+    sin(vUv.x * 13.0 + uTime * 0.28) +
+    sin(vUv.y * 11.0 - uTime * 0.21) +
+    sin((vUv.x + vUv.y) * 8.0 + uTime * 0.16)
+  ) / 3.0;
+  float threshold = uSurfaceThreshold + contourWave * uContourWarp;
+  float antialiasWidth = clamp(fwidth(field) * 1.15, 0.004, 0.016);
+  float reveal = smoothstep(threshold - antialiasWidth, threshold + antialiasWidth, field);
 
-  // The narrow high threshold hides low-density history completely. As history
-  // decays, the visible contour contracts inward and ends cleanly as a blob.
-  float reveal = smoothstep(0.40, 0.47, history + contourWarp);
-
-  // The canvas uses CSS difference blending over the native DOM front layer.
-  // White perfectly inverts white/black WELCOME/TO; inside the brand pixels,
-  // the complementary source color reconstructs the approved brand asset.
+  // The canvas difference-blends over the DOM front layer. White inverts the
+  // registered WELCOME/TO layer, while the complementary brand source rebuilds
+  // the approved WEBERAISE lockup inside the same solid liquid surface.
   vec4 brand = texture(uBrand, vUv);
   vec3 differenceSource = mix(vec3(1.0), vec3(1.0) - brand.rgb, brand.a);
 
@@ -113,8 +99,6 @@ void main() {
     + sin(vUv.x * 17.0 - uTime * 0.32) * 0.006 * edgeDamping;
   float fill = (1.0 - smoothstep(crest - 0.012, crest + 0.012, vUv.y)) * uFillEnabled;
 
-  // Bottom-fill mode is normal-blended black. Reveal mode is a premultiplied
-  // difference source. We never mix the two visual languages in one frame.
   float revealAlpha = reveal * (1.0 - uFillEnabled);
   float alpha = max(revealAlpha, fill);
   vec3 premultipliedRgb = differenceSource * revealAlpha;
