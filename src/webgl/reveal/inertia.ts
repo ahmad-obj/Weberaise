@@ -37,8 +37,8 @@ export function createInertialAfterglide(options: InertialAfterglideOptions): In
   const seed = Math.sin((options.x * 91.7 + options.y * 57.3) * Math.PI);
   const emissions: InertialEmission[] = [];
 
-  for (let index = 1; index <= steps; index += 1) {
-    const t = index / steps;
+  for (let index = 0; index < steps; index += 1) {
+    const t = (index + 1) / steps;
     const eased = 1 - Math.pow(1 - t, 2.25);
     const decay = Math.pow(1 - t, 1.35);
     const lateral = Math.sin(t * Math.PI * 2.35 + seed * 1.7) * carry * 0.12 * decay;
@@ -49,7 +49,7 @@ export function createInertialAfterglide(options: InertialAfterglideOptions): In
     const strengthScale = 0.66 - t * 0.48;
 
     emissions.push({
-      delayMs: Math.round(duration * 1000 * t),
+      delayMs: Math.round(duration * 1000 * (index / Math.max(1, steps - 1))),
       sample: {
         x,
         y,
