@@ -86,7 +86,7 @@ export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: Lo
   return (
     <section className="loader" aria-label="Loading Weberaise">
       <p className="sr-only" role="status">Preparing the Weberaise experience.</p>
-      <LoaderCountdown value={display} />
+      <LoaderCountdown value={display} reducedMotion={reducedMotion} />
     </section>
   );
 }
