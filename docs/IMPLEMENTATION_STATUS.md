@@ -7,102 +7,116 @@
 ## Implemented
 
 ### Experience flow
-- explicit one-route experience reducer;
-- scroll locked throughout loader/hero;
-- `EXPLORE` is the only transition into normal scroll state;
-- First Impression is mounted/prepared before handoff.
+- one-route experience reducer;
+- loader/hero scroll lock;
+- `EXPLORE` is the only transition into normal scrolling;
+- First Impression is prepared before the handoff.
 
 ### Loader
-- real weighted critical-resource registry;
-- every displayed integer can be traversed from 100→0;
-- `0` is gated by true readiness;
-- progress updates are React-observable so the countdown cannot remain asleep at `100` after assets complete;
-- **all countdown integers are now fixed at viewport center**;
-- no required blank frame between number handoffs;
-- masked zero/tagline line choreography;
-- line contracts partially, rotates, expands vertically, and hands off to twin-line opening.
+- truthful weighted critical-resource registry;
+- every integer 100→0 is traversable;
+- `0` is gated by actual critical readiness;
+- registry progress is React-observable, fixing the earlier stuck-at-100 bug;
+- all countdown numbers are fixed at viewport center;
+- existing `0` → line → tagline → vertical/twin-line choreography preserved.
 
-### Hero opening/layout
-- twin lines move outward with black curtains so only traversed regions expose the hero;
-- no global opacity shortcut;
-- front/reveal `WELCOME / TO` share one typography component;
-- centered large Inter Tight direction is encoded in production CSS/font setup;
-- approved horizontal WEBERAISE asset used in the hidden brand slot;
-- shared typography/brand composition is shifted slightly upward as one registered unit;
-- light hero receives an extremely faint radial edge vignette (~2.6% maximum black influence at the far perimeter).
+### Hero layout
+- front/reveal typography share one registered composition;
+- centered Inter Tight heavy typography;
+- approved horizontal WEBERAISE lockup;
+- shared typography/brand composition shifted slightly upward;
+- light hero has an extremely faint radial edge vignette (~2–3% black at the far perimeter only).
 
-### Interactive reveal
-- WebGL2 low-resolution ping-pong history engine;
-- continuous pointer interpolation;
-- bounded velocity injection;
-- thick rounded high-viscosity trail;
-- explicit full/lightweight/no-WebGL quality profiles;
-- pointer loop avoids React state;
-- tiny custom cursor on fine pointers;
-- once-only autonomous reveal uses same sample pipeline;
-- first brand raster upload explicitly waits for image decode;
-- **2026-08-11 refinement:** high-frequency temporal hash grain removed;
-- **2026-08-11 refinement:** composite boundary tightened to a narrow high threshold (`0.40→0.47`) so low-density history is invisible instead of fog-like;
-- **2026-08-11 refinement:** advection/settling and velocity injection reduced substantially;
-- **2026-08-11 refinement:** splat solid core increased so stroke endings remain proper rounded blobs;
-- **2026-08-11 refinement:** full-quality persistence increased to `2.75s` half-life so the clean threshold still yields roughly 3–4s visible lifetime;
-- **2026-08-11 refinement:** full-quality history short axis raised up to 512px for cleaner contours.
+### Interactive reveal — current architecture
+The earlier ping-pong feedback-density implementation has been replaced.
+
+Current production model:
+- WebGL2 low-resolution **implicit liquid field**;
+- active pointer/autonomous samples stored as bounded time-stamped liquid primitives;
+- primitives are rendered as instanced rounded field contributions;
+- additive field union produces smooth metaball-like merging/necks;
+- visible surface is extracted through a narrow level-set threshold;
+- primitive opacity does not fade as the main healing mechanism;
+- primitives stay near full radius during the hold stage, then geometrically shrink;
+- aging therefore moves the contour inward rather than turning the trail into fog;
+- thin connections may naturally neck/pinch apart into rounded remnants;
+- terminal stroke remains a proper rounded blob;
+- subtle low-frequency threshold displacement affects only the contour;
+- no temporal hash grain, history dissipation, broad advection or smoke-like low-alpha field;
+- full/lite/fallback quality profiles remain explicit;
+- autonomous intro uses the same engine;
+- bottom-fill Explore mode remains separate inside the same compositor.
+
+Current full profile:
+- field short axis: adaptive up to `512px`;
+- display DPR cap: `1.5`;
+- lifetime: `3.6s`;
+- hold fraction: `0.60`;
+- max active primitives: `420`;
+- surface threshold: `0.40`;
+- contour warp: `0.010`.
 
 ### Nothin reference inspection
-Public sources were inspected before the refinement:
-- developer Thomas Carré publicly describes Nothin as built with Webflow, GSAP, WebGL and custom shaders;
-- independent stack analysis identifies Three.js and Lenis as well;
-- this supports treating the reference reveal as a custom shader-driven mask/compositor rather than CSS blur/fade.
+Public evidence confirms Nothin uses WebGL/custom shaders; GSAP's showcase material also identifies Three.js/WebGL/Webflow.
 
-The Weberaise implementation reproduces the approved observable qualities without wholesale copying proprietary deployed source.
+The repo now contains a dependency-free runtime probe:
 
-### Explore handoff
-- shared reveal engine switches to bottom-fill mode;
-- bottom black crest rises without route navigation;
-- scrolling remains locked until full coverage;
-- black output becomes the actual First Impression foundation.
+```bash
+npm run probe:nothin
+```
 
-### Content integrity
-- downstream semantic section structure preserved;
-- fake metrics/testimonials/projects were not invented;
-- unresolved proof, audit, imagery and contact workflows stay explicit TODOs.
+It launches local Chrome/Chromium through CDP and records publicly delivered WebGL characteristics under `.diagnostics/`, including program/shader metadata, uniform names, framebuffer/texture allocations and draw-call structure. Captured shader text is analysis-only and must not be transplanted into Weberaise.
 
-## Verification evidence
+Reference:
+- `docs/reference/NOTHIN_RUNTIME_PROBE.md`
 
-### Earlier sandbox verification
-Before the latest refinement pass, the dependency-free/prototype verification produced:
+### Offline prototype
+`prototype/reveal-engine.js` now mirrors the age-aware implicit-field model rather than the old density-feedback implementation.
+
+## Verification evidence for the newest reveal core
+
+### Pure lifetime model — red/green TDD
+A standalone behavior test was first run without the implementation and failed with `ERR_MODULE_NOT_FOUND`. After implementing the lifetime helpers, the same test produced:
 
 ```text
-22 tests
-22 pass
+2 tests
+2 pass
 0 fail
 ```
 
-and the Chromium WebGL prototype capture reported zero console/page errors.
+### Dependency-free TypeScript compile
+The newest `RevealEngine.ts`, `shaders.ts`, `quality.ts`, `liquidLifetime.ts`, and reveal types were compiled together with TypeScript 5.8.3 using strict mode, ES2022, bundler resolution and DOM libs.
 
-Those results apply to the pre-refinement tree and must not be treated as fresh verification of the newest shader/CSS changes.
+Result: exit code `0`.
 
-### User-machine runtime evidence
-The user successfully installed dependencies and started the actual Next.js application after upgrading to Next.js 16.3.0:
+### Actual GLSL compile/link
+The newest field and composite shaders were compiled and linked in Chromium WebGL2 under Xvfb/SwiftShader.
+
+Result:
 
 ```text
-Next.js 16.3.0 (Turbopack)
-Ready
-GET / 200
+webgl2: true
+field vertex: compile PASS
+field fragment: compile PASS
+field program: link PASS
+composite vertex: compile PASS
+composite fragment: compile PASS
+composite program: link PASS
 ```
 
-The first local verification attempt then exposed two toolchain issues:
-- Node 24.18.0 on the user's Kali build has built-in TypeScript stripping disabled;
-- two explicit `.ts` production import suffixes failed TypeScript/Next type checking.
+### Synthetic visual inspection
+The actual implicit-field shaders were rendered through Chromium at several age snapshots. The result shows:
+- solid filled liquid interior;
+- rounded terminal blob;
+- contour contraction instead of transparency fade;
+- progressive necking/pinch behavior as old primitives shrink;
+- no fog/smoke halo.
 
-Branch fixes already applied:
-- tests now use `tsx` rather than Node built-in stripping;
-- production imports returned to normal extensionless TypeScript imports.
+This validates the intended mechanism, but it is **not** a substitute for side-by-side comparison against the live Nothin site.
 
-The user has not yet supplied a fresh `npm test`, `npm run typecheck`, and `npm run build` result after those fixes and after the newest visual refinement pass. Therefore those checks remain pending.
+## Verification still required on the user's network-enabled machine
 
-## Current local verification request
-After pulling the latest `feature/signature-intro`, run:
+After pulling the latest branch:
 
 ```bash
 npm install
@@ -112,22 +126,39 @@ npm run build
 npm run dev
 ```
 
-Then visually inspect:
-- countdown stays centered;
-- edge vignette is barely perceptible;
-- hero composition is slightly higher without breaking front/reveal registration;
-- pointer trail has a clean coherent border;
-- old marks contract/erode without smoke/fog;
-- stroke endpoint remains a rounded blob;
-- autonomous reveal and Explore handoff still behave correctly.
+Then run the Nothin diagnostic in a normal headed browser environment:
+
+```bash
+npm run probe:nothin
+```
+
+Inspect:
+
+```text
+.diagnostics/nothin-webgl.json
+.diagnostics/nothin-shaders.txt
+```
+
+Use those results for the next evidence-based tuning pass, especially:
+- field/render-target resolution;
+- pass count;
+- texture formats;
+- uniforms suggesting blur/threshold/SDF/metaball/feedback behavior;
+- actual surface breakup/dissolve behavior.
+
+## Visual acceptance checklist
+- no smoke/fog tail;
+- no broad translucent residue;
+- proper rounded terminal blob;
+- solid trail during hold stage;
+- oldest region retracts geometrically;
+- bridges may pinch naturally;
+- detached remnants stay rounded;
+- fast pointer path remains continuous;
+- front/back typography registration remains exact;
+- autonomous reveal still exposes the intended brand area;
+- Explore transition still hands directly into black First Impression.
 
 ## Next design phase
 
-After this refinement is accepted, return to **First Impression**:
-- final copy;
-- exact black-state entrance choreography;
-- composition and typography;
-- whether/when it transitions toward a lighter state;
-- handoff into Selected Work.
-
-Navigation remains intentionally undecided.
+Once this reveal is accepted, continue with **First Impression** art direction/copy/entrance, then Selected Work. Navigation remains intentionally undecided.
