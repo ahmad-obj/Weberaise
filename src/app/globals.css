@@ -56,6 +56,7 @@ button, input { font: inherit; }
 }
 
 .loader, .loader-completion { position: fixed; inset: 0; background: var(--wr-black); color: var(--wr-white); overflow: hidden; }
+.loader { --loader-line-offset: clamp(48px, 5vw, 72px); }
 .loader-countdown { position: absolute; inset: 0; --loader-digit-transition: 48ms; }
 .loader-countdown__number {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -79,10 +80,10 @@ button, input { font: inherit; }
 }
 
 .loader-completion {
-  --loader-line-offset: clamp(48px, 5vw, 72px);
   display: block;
+  z-index: 1;
 }
-.loader-completion__zero-mask,
+.loader-persistent-zero-mask,
 .loader-completion__tagline-mask {
   position: absolute;
   left: 50%;
@@ -92,14 +93,18 @@ button, input { font: inherit; }
   transform: translateX(-50%);
   overflow: hidden;
   text-align: center;
+  pointer-events: none;
 }
-.loader-completion__zero {
+.loader-persistent-zero-mask { z-index: 2; }
+.loader-completion__tagline-mask { z-index: 1; }
+.loader-persistent-zero {
   position: absolute;
   left: 50%;
   top: 50vh;
   display: block;
   transform: translate(-50%, -50%);
-  will-change: transform;
+  animation: loader-number-in var(--loader-digit-transition) cubic-bezier(.22,.61,.36,1) both;
+  will-change: transform, opacity;
 }
 .loader-completion__tagline {
   position: absolute;
@@ -107,7 +112,7 @@ button, input { font: inherit; }
   right: 0;
   bottom: 0;
   display: block;
-  transform: translateY(130%);
+  visibility: hidden;
   will-change: transform;
   font: 750 clamp(22px, 3vw, 52px)/1 var(--font-hero), Arial, sans-serif;
   letter-spacing: -.035em;
