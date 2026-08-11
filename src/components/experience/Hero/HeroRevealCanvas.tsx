@@ -177,6 +177,7 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
     let idleTimer = 0;
     const afterglideTimers: number[] = [];
     let lastSample: RevealSample | null = null;
+    const inertiaVelocity = { x: 0, y: 0 };
 
     const cancelAfterglide = () => {
       if (idleTimer) window.clearTimeout(idleTimer);
@@ -216,14 +217,32 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       };
       const samples: RevealSample[] = tracker.push(point);
       engine.emit(samples);
-      lastSample = samples.at(-1) ?? lastSample;
-      if (lastSample) scheduleAfterglide(lastSample);
+
+      const newest = samples.at(-1);
+      if (!newest) return;
+
+      // Preserve a short recent-motion memory. Browsers may emit a final near-zero
+      // velocity event when the pointer stops; without this, the intended inertia
+      // disappears exactly when it should become visible.
+      const speed = Math.hypot(newest.vx, newest.vy);
+      const response = speed >= 0.14 ? 0.46 : 0.18;
+      inertiaVelocity.x = inertiaVelocity.x * (1 - response) + newest.vx * response;
+      inertiaVelocity.y = inertiaVelocity.y * (1 - response) + newest.vy * response;
+
+      lastSample = {
+        ...newest,
+        vx: inertiaVelocity.x,
+        vy: inertiaVelocity.y,
+      };
+      scheduleAfterglide(lastSample);
     };
 
     const leave = () => {
       cancelAfterglide();
       tracker.reset();
       lastSample = null;
+      inertiaVelocity.x = 0;
+      inertiaVelocity.y = 0;
     };
 
     root.addEventListener('pointermove', move, { passive: true });
