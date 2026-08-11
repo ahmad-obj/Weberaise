@@ -13,6 +13,11 @@ export function runLoaderCompletionTimeline(
 
   const verticalScale = Math.max(1, (window.innerHeight + 24) / Math.max(1, line.offsetWidth));
 
+  // The persistent zero arrives here with its countdown CSS animation filled.
+  // Disable that animation before GSAP takes ownership of transform/opacity;
+  // otherwise the animation can keep the zero pinned at center indefinitely.
+  gsap.set(zero, { animation: 'none', y: 0, autoAlpha: 1 });
+
   // CSS keeps the tagline non-painting before hydration. From this point onward,
   // GSAP exclusively owns its transform so no stale translate can keep it clipped.
   gsap.set(tagline, { y: 0, yPercent: 130, autoAlpha: 1, visibility: 'visible' });
@@ -36,9 +41,9 @@ export function runLoaderCompletionTimeline(
   const timeline = gsap.timeline({ defaults: { ease: 'power3.inOut' }, onComplete: options.onComplete });
   timeline
     .set(line, { transformOrigin: '50% 50%', scaleX: 0, rotation: 0 })
-    .set(zero, { y: 0, autoAlpha: 1 })
     .to(line, { scaleX: 1, duration: 0.72 })
     .to(zero, { y: zeroDrop, duration: 0.68 }, '<0.06')
+    .set(zero, { autoAlpha: 0 }, '>-0.04')
     .to(tagline, { yPercent: 0, duration: 0.68 }, '<0.04')
     .to({}, { duration: 2.25 })
     .to(tagline, { yPercent: 135, duration: 0.66 })
