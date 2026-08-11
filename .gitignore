@@ -4,5 +4,6 @@ out/
 coverage/
 .DS_Store
 prototype/screenshots/
+.diagnostics/
 
 /screenshots/
