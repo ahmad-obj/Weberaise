@@ -18,13 +18,21 @@
 - `0` is gated by actual critical readiness;
 - registry progress is React-observable, fixing the earlier stuck-at-100 bug;
 - all countdown numbers are fixed at viewport center;
-- existing `0` → line → tagline → vertical/twin-line choreography preserved.
+- digit replacement now uses cadence-aware transition duration rather than one fixed animation duration;
+- replacement motion is a soft crossfade with only ~5px vertical travel and very small scale change;
+- 10→0 progressively slows, with 5→0 deliberately paced;
+- the real countdown `0` holds for `700ms` before the completion phase begins;
+- countdown `0` and completion `0` share `.loader-zero-glyph` font metrics and the same viewport-center registration;
+- tagline is exactly `Need a website for business?`;
+- completion line now uses `min(92vw, 1100px)` so it comfortably covers the tagline;
+- existing `0` → line → tagline → vertical/twin-line choreography is preserved.
 
 ### Hero layout
 - front/reveal typography share one registered composition;
 - centered Inter Tight heavy typography;
 - approved horizontal WEBERAISE lockup;
-- shared typography/brand composition shifted slightly upward;
+- shared typography/brand composition is now raised to approximately `-4.2vh` on desktop, with a gentler mobile offset;
+- `EXPLORE` stays bottom-anchored and uses `mix-blend-mode: difference`, so it is black on the white hero and white wherever the black reveal crosses behind it;
 - light hero has an extremely faint radial edge vignette (~2–3% black at the far perimeter only).
 
 ### Interactive reveal — current architecture
@@ -47,6 +55,18 @@ Current production model:
 - autonomous intro uses the same engine;
 - bottom-fill Explore mode remains separate inside the same compositor.
 
+### Pointer footprint + inertia polish
+- normal pointer radius is reduced to `0.078` desktop / `0.10` mobile;
+- interpolation spacing is tightened so the smaller radius still produces a continuous stroke;
+- pointer stop now triggers a short velocity-based afterglide after a ~48ms idle threshold;
+- afterglide is bounded to about 3.8% viewport-space maximum carry;
+- it advances only a smaller/weaker portion of the liquid surface, rather than moving the entire blob as a sphere;
+- deterministic lateral wobble makes the advancing edge slightly irregular without spray/smoke;
+- afterglide radius and strength decrease across ~340ms;
+- slow movement below the speed threshold produces no afterglide;
+- any new pointer input immediately cancels pending inertial emissions;
+- reduced-motion mode disables afterglide.
+
 Current full profile:
 - field short axis: adaptive up to `512px`;
 - display DPR cap: `1.5`;
@@ -59,7 +79,7 @@ Current full profile:
 ### Nothin reference inspection
 Public evidence confirms Nothin uses WebGL/custom shaders; GSAP's showcase material also identifies Three.js/WebGL/Webflow.
 
-The repo now contains a dependency-free runtime probe:
+The repo contains a dependency-free runtime probe:
 
 ```bash
 npm run probe:nothin
@@ -71,52 +91,36 @@ Reference:
 - `docs/reference/NOTHIN_RUNTIME_PROBE.md`
 
 ### Offline prototype
-`prototype/reveal-engine.js` now mirrors the age-aware implicit-field model rather than the old density-feedback implementation.
+`prototype/reveal-engine.js` mirrors the age-aware implicit-field model rather than the old density-feedback implementation.
 
-## Verification evidence for the newest reveal core
+## Verification evidence
 
-### Pure lifetime model — red/green TDD
-A standalone behavior test was first run without the implementation and failed with `ERR_MODULE_NOT_FOUND`. After implementing the lifetime helpers, the same test produced:
+### New loader/inertia polish — red/green TDD
+A focused pre-change reproduction was run against the previous values. All five new acceptance checks failed for the expected reasons: old pointer radius, missing cadence-driven transition helper, narrower line, lower hero offset, and fixed digit animation duration.
+
+After the patch, the same focused checks produced:
 
 ```text
-2 tests
-2 pass
+5 tests
+5 pass
 0 fail
 ```
 
-### Dependency-free TypeScript compile
-The newest `RevealEngine.ts`, `shaders.ts`, `quality.ts`, `liquidLifetime.ts`, and reveal types were compiled together with TypeScript 5.8.3 using strict mode, ES2022, bundler resolution and DOM libs.
+### New pure TypeScript helpers
+`countdownTiming.ts`, `inertia.ts`, and reveal sample types were compiled with TypeScript 5.8.3 in strict mode using ES2022 + bundler resolution.
 
 Result: exit code `0`.
 
-### Actual GLSL compile/link
-The newest field and composite shaders were compiled and linked in Chromium WebGL2 under Xvfb/SwiftShader.
-
-Result:
-
-```text
-webgl2: true
-field vertex: compile PASS
-field fragment: compile PASS
-field program: link PASS
-composite vertex: compile PASS
-composite fragment: compile PASS
-composite program: link PASS
-```
-
-### Synthetic visual inspection
-The actual implicit-field shaders were rendered through Chromium at several age snapshots. The result shows:
-- solid filled liquid interior;
-- rounded terminal blob;
-- contour contraction instead of transparency fade;
-- progressive necking/pinch behavior as old primitives shrink;
-- no fog/smoke halo.
-
-This validates the intended mechanism, but it is **not** a substitute for side-by-side comparison against the live Nothin site.
+### Earlier reveal-core verification
+The age-aware implicit liquid core previously verified:
+- pure lifetime behavior: 2/2 pass;
+- dependency-free TypeScript compile: pass;
+- field/composite GLSL compile + link in Chromium WebGL2: pass;
+- synthetic render: solid interior, rounded endpoint, geometric contraction, no fog halo.
 
 ## Verification still required on the user's network-enabled machine
 
-After pulling the latest branch:
+The sandbox cannot clone/install the GitHub checkout because outbound DNS is unavailable. After pulling the latest branch, run:
 
 ```bash
 npm install
@@ -126,39 +130,39 @@ npm run build
 npm run dev
 ```
 
-Then run the Nothin diagnostic in a normal headed browser environment:
+Then visually check:
+- smaller reveal footprint still remains continuous;
+- stopping after a fast motion produces only a small forward irregular lobe;
+- slow stops produce essentially no inertia;
+- digit changes feel smooth rather than abrupt;
+- 10→0 progressively slows and `0` visibly rests before the line begins;
+- the countdown zero does not jump when it becomes the completion zero;
+- `Need a website for business?` is fully covered by the horizontal line width;
+- shared hero composition is slightly higher;
+- EXPLORE turns white wherever the black reveal crosses it.
+
+Optional Nothin diagnostic:
 
 ```bash
 npm run probe:nothin
 ```
 
-Inspect:
-
-```text
-.diagnostics/nothin-webgl.json
-.diagnostics/nothin-shaders.txt
-```
-
-Use those results for the next evidence-based tuning pass, especially:
-- field/render-target resolution;
-- pass count;
-- texture formats;
-- uniforms suggesting blur/threshold/SDF/metaball/feedback behavior;
-- actual surface breakup/dissolve behavior.
-
 ## Visual acceptance checklist
 - no smoke/fog tail;
 - no broad translucent residue;
 - proper rounded terminal blob;
+- smaller normal reveal radius;
+- small velocity-based inertial overrun only after meaningful motion;
 - solid trail during hold stage;
 - oldest region retracts geometrically;
 - bridges may pinch naturally;
 - detached remnants stay rounded;
 - fast pointer path remains continuous;
 - front/back typography registration remains exact;
+- countdown/completion zero registration remains exact;
 - autonomous reveal still exposes the intended brand area;
 - Explore transition still hands directly into black First Impression.
 
 ## Next design phase
 
-Once this reveal is accepted, continue with **First Impression** art direction/copy/entrance, then Selected Work. Navigation remains intentionally undecided.
+Once this intro refinement is accepted, continue with **First Impression** art direction/copy/entrance, then Selected Work. Navigation remains intentionally undecided.
