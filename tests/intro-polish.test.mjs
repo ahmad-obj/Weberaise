@@ -65,6 +65,18 @@ test('loader keeps one physical zero across the phase handoff and GSAP exclusive
   assert.match(timeline, /runLoaderCompletionTimeline\(\s*root:\s*HTMLElement,\s*zero:\s*HTMLElement/s);
 });
 
+test('persistent zero relinquishes transform ownership and is hidden after its downward exit', () => {
+  const css = read('src/app/globals.css');
+  const timeline = read('src/experience/motion/loaderTimeline.ts');
+  const loaderIn = css.match(/@keyframes loader-number-in\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
+  const loaderOut = css.match(/@keyframes loader-number-out\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
+
+  assert.doesNotMatch(loaderIn, /transform:/);
+  assert.doesNotMatch(loaderOut, /transform:/);
+  assert.match(timeline, /\.to\(zero,\s*\{\s*y:\s*zeroDrop,\s*duration:\s*0\.68\s*\}/s);
+  assert.match(timeline, /\.set\(zero,\s*\{\s*autoAlpha:\s*0\s*\}/s);
+});
+
 test('loader line recenters before vertical expansion', () => {
   const css = read('src/app/globals.css');
   const timeline = read('src/experience/motion/loaderTimeline.ts');
