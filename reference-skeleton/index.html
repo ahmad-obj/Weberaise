@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WebeRaise — Homepage Skeleton</title>
+  <meta name="description" content="WebeRaise homepage design skeleton. Placeholder content only." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Geist:wght@400;500;600&family=Instrument+Sans:wdth,wght@75..100,400..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header layout-pad">
+      <a class="brand" href="#top">WEBERAISE</a>
+      <nav class="desktop-nav" aria-label="Primary">
+        <a href="#work">Work</a>
+        <a href="#services">Services</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <a class="header-cta" href="#contact">Start a project ↗</a>
+    </header>
+
+    <main>
+      <!-- TODO HERO:
+        - Replace .shader-placeholder with actual GLSL/WebGL fluid mask.
+        - Build alternate refracted/blue material state for WEBERAISE text.
+        - Add pointer inertia/displacement.
+        - Add hero -> Section 01 perspective recession + shader wipe.
+        - Test fallback when WebGL unavailable.
+      -->
+      <section id="top" class="hero section layout-pad">
+        <div class="hero-copy">
+          <p class="eyebrow">WEB DESIGN / DIGITAL PRESENCE</p>
+          <h1>Raise the standard of how your business shows up online.</h1>
+          <p class="hero-support">WebeRaise builds premium websites and digital presence for businesses that want to look credible, communicate clearly, and turn attention into enquiries.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#contact">Start a project ↗</a>
+            <a class="text-link" href="#work">View work ↓</a>
+          </div>
+        </div>
+
+        <div class="shader-placeholder" aria-hidden="true">
+          <span>TODO / FLUID SHADER</span>
+        </div>
+
+        <div class="hero-word" aria-label="WebeRaise">WEBERAISE</div>
+
+        <div class="hero-meta hero-meta-left">
+          <span>WEB DESIGN / DEVELOPMENT</span>
+          <span>BRAND PRESENCE / DIGITAL SYSTEMS</span>
+        </div>
+        <div class="hero-meta hero-meta-right">
+          <span>PAKISTAN ↔ WORLDWIDE</span>
+          <span>2026</span>
+        </div>
+      </section>
+
+      <!-- TODO SECTION 01:
+        - Finalize copy only after homepage content pass.
+        - Build clipped line reveal.
+        - Keep visual intensity intentionally low.
+      -->
+      <section class="statement section layout-pad" id="first-impression">
+        <div class="section-label">01 / FIRST IMPRESSION</div>
+        <div class="statement-wrap">
+          <h2>Your work can be excellent.<br>Your website can still make it look ordinary.</h2>
+          <p class="statement-close">We close that gap.</p>
+        </div>
+      </section>
+
+      <!-- TODO WORK:
+        - Replace all placeholders with real projects/case studies.
+        - Decide sticky card deck vs stacked editorial stages.
+        - Add image panning / mask reveals / project metadata transitions.
+        - Create project detail page system.
+      -->
+      <section class="work section layout-pad" id="work">
+        <div class="section-head">
+          <div class="section-label">02 / SELECTED WORK</div>
+          <p>Placeholder projects for layout and pacing only.</p>
+        </div>
+
+        <article class="project project-large">
+          <div class="project-meta">
+            <span>01</span>
+            <span>PROJECT ONE</span>
+            <span>WEB DESIGN / DEVELOPMENT</span>
+          </div>
+          <div class="project-art">TODO / PROJECT ARTWORK</div>
+        </article>
+
+        <article class="project project-offset">
+          <div class="project-meta">
+            <span>02</span>
+            <span>PROJECT TWO</span>
+            <span>BRAND / DIGITAL PRESENCE</span>
+          </div>
+          <div class="project-art">TODO / PROJECT ARTWORK</div>
+        </article>
+
+        <article class="project project-wide">
+          <div class="project-meta">
+            <span>03</span>
+            <span>PROJECT THREE</span>
+            <span>WEBSITE / SYSTEM</span>
+          </div>
+          <div class="project-art">TODO / PROJECT ARTWORK</div>
+        </article>
+      </section>
+
+      <!-- TODO SERVICES:
+        - Refine service naming and final offer hierarchy.
+        - Decide what is visible on homepage vs services page.
+        - Add minimal hover state, no generic SaaS cards.
+      -->
+      <section class="services section layout-pad" id="services">
+        <div class="section-head services-head">
+          <div class="section-label">03 / WHAT WE DO</div>
+          <h2>One digital presence.<br>Built as a system.</h2>
+        </div>
+        <div class="service-list">
+          <div class="service-row"><span>01</span><h3>Presence</h3><p>How your business looks and communicates online.</p></div>
+          <div class="service-row"><span>02</span><h3>Structure</h3><p>How visitors understand and navigate your offer.</p></div>
+          <div class="service-row"><span>03</span><h3>Build</h3><p>Fast, responsive, carefully engineered websites.</p></div>
+          <div class="service-row"><span>04</span><h3>Motion</h3><p>Interaction that adds clarity and character.</p></div>
+          <div class="service-row"><span>05</span><h3>Growth</h3><p>Clear paths from attention to trust to enquiry.</p></div>
+        </div>
+      </section>
+
+      <!-- TODO AUDIT:
+        - Turn this into a real lead form.
+        - Decide automated audit vs manual audit intake.
+        - Add validation, CRM/storage, spam protection, privacy copy.
+        - Add local shader/field response on input focus.
+      -->
+      <section class="audit section layout-pad" id="audit">
+        <div class="section-label">04 / WEBSITE AUDIT</div>
+        <h2>What is your website saying about your business?</h2>
+        <form class="audit-form" action="#" onsubmit="return false;">
+          <label class="sr-only" for="site-url">Website URL</label>
+          <input id="site-url" type="url" placeholder="yourbusiness.com" />
+          <button type="submit">Get a free audit ↗</button>
+        </form>
+        <p class="audit-note">TODO / Connect real audit workflow.</p>
+      </section>
+
+      <!-- TODO PHILOSOPHY:
+        - Refine voice/copy.
+        - Potentially add one custom material/visual punctuation element.
+      -->
+      <section class="philosophy section layout-pad" id="about">
+        <div class="section-label">05 / WHY WEBERAISE</div>
+        <div class="philosophy-copy">
+          <h2>We don’t build websites to fill space online.</h2>
+          <p>We build them to make businesses easier to understand, easier to trust, and easier to contact.</p>
+        </div>
+        <div class="principles">
+          <div><span>01</span><h3>Clarity</h3><p>Visitors should understand you quickly.</p></div>
+          <div><span>02</span><h3>Credibility</h3><p>Your website should reflect the quality of the business behind it.</p></div>
+          <div><span>03</span><h3>Conversion</h3><p>Every page should lead somewhere useful.</p></div>
+        </div>
+      </section>
+
+      <!-- TODO PROCESS:
+        - Build scroll-linked progress line.
+        - Add raise/clarity motion motif per active step.
+        - Refine actual delivery process based on agency operations.
+      -->
+      <section class="process section layout-pad" id="process">
+        <div class="section-head process-head">
+          <div class="section-label">06 / HOW WE WORK</div>
+          <h2>A clear path from first look to launch.</h2>
+        </div>
+        <div class="process-grid">
+          <div class="process-step"><span>01</span><h3>Inspect</h3><p>Review the current website, brand presence, and customer path.</p></div>
+          <div class="process-step"><span>02</span><h3>Define</h3><p>Set structure, priorities, pages, message, and visual direction.</p></div>
+          <div class="process-step"><span>03</span><h3>Design</h3><p>Build the visual system and key responsive screens.</p></div>
+          <div class="process-step"><span>04</span><h3>Build</h3><p>Develop, optimize, integrate, and test.</p></div>
+          <div class="process-step"><span>05</span><h3>Launch</h3><p>Deploy, connect analytics, verify, and hand over.</p></div>
+        </div>
+      </section>
+
+      <!-- TODO PROOF:
+        - Replace with real metrics/testimonials only.
+        - Never invent client counts, quotes, or performance results.
+        - Decide proof hierarchy once first portfolio/case studies are ready.
+      -->
+      <section class="proof section layout-pad" id="proof">
+        <div class="section-label">07 / PROOF</div>
+        <div class="proof-grid">
+          <div class="proof-block"><span>PERFORMANCE</span><strong>TODO</strong><p>Replace with measured result.</p></div>
+          <div class="proof-block"><span>RESPONSIVE</span><strong>TODO</strong><p>Replace with real deliverable proof.</p></div>
+          <div class="proof-block"><span>OUTCOME</span><strong>TODO</strong><p>Replace with client/case-study result.</p></div>
+        </div>
+      </section>
+
+      <!-- TODO ENGAGEMENT:
+        - Finalize service packages.
+        - Set Pakistan/international pricing strategy.
+        - Define maintenance recurring offer.
+        - Decide whether pricing appears publicly.
+      -->
+      <section class="engagement section layout-pad" id="engagement">
+        <div class="section-head">
+          <div class="section-label">08 / ENGAGEMENT</div>
+          <h2>Start where your business needs it.</h2>
+        </div>
+        <div class="engagement-list">
+          <div><span>01</span><h3>Launch</h3><p>For businesses getting online properly for the first time.</p><a href="#contact">Explore ↗</a></div>
+          <div><span>02</span><h3>Upgrade</h3><p>For websites that no longer represent the business well.</p><a href="#contact">Explore ↗</a></div>
+          <div><span>03</span><h3>Presence</h3><p>Website, brand foundation, and digital setup.</p><a href="#contact">Explore ↗</a></div>
+          <div><span>04</span><h3>Care</h3><p>Ongoing maintenance, updates, and improvements.</p><a href="#contact">Explore ↗</a></div>
+        </div>
+      </section>
+
+      <!-- TODO FINAL CTA:
+        - Reintroduce hero shader/material state.
+        - Design final reveal choreography.
+        - Connect real form/calendar/contact route.
+      -->
+      <section class="final-cta section layout-pad" id="contact">
+        <div class="section-label">09 / LET’S WORK</div>
+        <h2>LET’S RAISE<br>YOUR PRESENCE.</h2>
+        <div class="final-actions">
+          <a class="btn btn-primary btn-large" href="mailto:hello@example.com">Start a project ↗</a>
+          <a class="text-link" href="#audit">Get a free audit</a>
+        </div>
+        <div class="final-effect-placeholder">TODO / RETURN OF SIGNATURE SHADER</div>
+      </section>
+    </main>
+
+    <!-- TODO FOOTER:
+      - Replace placeholder email/socials.
+      - Add legal/privacy/terms if forms or analytics are used.
+      - Add final brand mark once logo exists.
+    -->
+    <footer class="footer layout-pad">
+      <a class="brand footer-brand" href="#top">WEBERAISE</a>
+      <div class="footer-col">
+        <span>PAKISTAN ↔ WORLDWIDE</span>
+        <span>hello@example.com</span>
+      </div>
+      <div class="footer-col footer-links">
+        <a href="#">Instagram</a>
+        <a href="#">LinkedIn</a>
+        <a href="#">Facebook</a>
+      </div>
+      <div class="footer-bottom">© 2026 WEBERAISE / TODO LEGAL</div>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

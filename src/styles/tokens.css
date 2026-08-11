@@ -1,0 +1,16 @@
+:root {
+  --wr-black: #000000;
+  --wr-white: #ffffff;
+  --wr-background: #070a0f;
+  --wr-surface: #0d111a;
+  --wr-card: #121826;
+  --wr-text: #f5f7fa;
+  --wr-muted: #a7b0c0;
+  --wr-blue: #3b82f6;
+  --wr-glow: #60a5fa;
+  --wr-border: #202938;
+  --wr-page-pad: clamp(18px, 3vw, 52px);
+  --wr-section-pad: clamp(84px, 10vw, 160px);
+  --wr-max: 1600px;
+  --wr-ease-premium: cubic-bezier(0.76, 0, 0.24, 1);
+}

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WEBERAISE Signature Intro Prototype</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body class="locked">
+  <div class="loader" data-loader>
+    <div class="loader-count" data-loader-count aria-hidden="true"></div>
+    <p class="sr-only" role="status">Preparing the Weberaise experience.</p>
+    <div class="loader-completion" data-loader-completion hidden>
+      <div class="loader-mask">
+        <span class="loader-zero" data-loader-zero>0</span>
+        <span class="loader-tagline" data-loader-tagline>Raise the standard.</span>
+      </div>
+      <div class="loader-line" data-loader-line></div>
+    </div>
+  </div>
+
+  <section class="hero" data-hero-root aria-label="Welcome to Weberaise" hidden>
+    <div class="hero-layer hero-front" data-hero-front>
+      <div class="hero-composition">
+        <div class="hero-type" data-hero-type>
+          <span>WELCOME</span>
+          <span>TO</span>
+        </div>
+        <div class="brand-slot" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div class="hero-layer hero-reveal" data-hero-reveal aria-hidden="true">
+      <div class="hero-composition">
+        <div class="hero-type">
+          <span>WELCOME</span>
+          <span>TO</span>
+        </div>
+        <div class="brand-slot">
+          <img class="brand-lockup" src="../public/brand/weberaise-horizontal-on-dark.svg" width="1800" height="430" alt="" />
+        </div>
+      </div>
+    </div>
+
+    <canvas class="reveal-canvas" data-reveal-canvas aria-hidden="true"></canvas>
+    <div class="hero-cursor" data-hero-cursor aria-hidden="true"></div>
+
+    <button class="explore" data-explore type="button">
+      <span>EXPLORE</span>
+      <span class="explore-rule" aria-hidden="true"></span>
+    </button>
+
+    <div class="hero-exit-fallback" data-hero-exit-fill aria-hidden="true"></div>
+
+    <div class="hero-opening" data-hero-opening aria-hidden="true" hidden>
+      <div class="opening-curtain opening-curtain-left" data-curtain-left></div>
+      <div class="opening-curtain opening-curtain-right" data-curtain-right></div>
+      <div class="opening-line" data-opening-line-left></div>
+      <div class="opening-line" data-opening-line-right></div>
+    </div>
+  </section>
+
+  <main class="main" data-main hidden>
+    <section class="first-impression" data-first-impression>
+      <p class="eyebrow">01 — FIRST IMPRESSION</p>
+      <div class="first-copy">
+        <h1>Make the first few seconds count.</h1>
+        <p>Raise how your business shows up online.</p>
+      </div>
+      <p class="prototype-note">Prototype handoff only — downstream art direction remains intentionally unfinished.</p>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
