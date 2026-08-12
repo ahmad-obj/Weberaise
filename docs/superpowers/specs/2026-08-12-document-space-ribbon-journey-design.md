@@ -20,6 +20,7 @@ The experience must feel like the viewer is travelling along a path through the 
 The document itself moves normally.
 
 - Questions are real HTML content in normal document flow.
+- The reassurance beat is also normal-flow content, not a viewport-pinned overlay.
 - The ribbon exists in document space and scrolls with the page.
 - The ribbon head is the only element whose visible position is indirectly controlled to remain near the viewport center.
 - The ribbon head may move freely horizontally.
@@ -301,7 +302,9 @@ The journey eventually approaches:
 
 `DONT WORRY. WE GOT YOU`
 
-The ribbon should terminate or settle nearby with the same typography-clearance discipline used for questions.
+The reassurance is a real normal-flow journey stop. It must not be absolutely pinned to the viewport.
+
+The ribbon should terminate or settle nearby with the same typography-clearance discipline used for questions. Its particle animation activates when the ribbon head enters the reassurance approach region; it should not appear as an unrelated viewport overlay.
 
 The particle text behavior remains:
 
@@ -399,11 +402,11 @@ Responsibilities:
 
 Geometry, controller logic, and typography animation must stay separable.
 
-## Screenshot-Based Visual Verification — Required Gate
+## Screenshot-Based Visual Verification — Required Completion Gate
 
 Source-code correctness is not sufficient for this feature.
 
-After implementation, capture and review screenshots at representative scroll positions.
+After implementation, actual screenshots must be captured at representative scroll positions and inspected visually before completion is claimed. A passing unit/source test suite does not waive this gate.
 
 Minimum viewport sizes:
 
@@ -421,6 +424,8 @@ Minimum journey checkpoints:
 6. Q3 approach/visit.
 7. Between Q3 and reassurance.
 8. Ribbon arriving beside `DONT WORRY. WE GOT YOU`.
+
+The screenshot workflow must produce viewable image artifacts. The implementing agent must inspect those images rather than merely confirming that capture commands ran.
 
 ### Visual Rejection Criteria
 
@@ -440,6 +445,7 @@ Reject the implementation if screenshots or browser inspection show any of the f
 - scrolling is hijacked or slowed;
 - reverse scroll hides already-revealed questions;
 - reassurance feels disconnected from trail endpoint;
+- reassurance behaves like a viewport-pinned overlay;
 - mobile path becomes cramped or visually incoherent.
 
 ### Visual Acceptance Statement
@@ -451,7 +457,7 @@ The experience is successful only when scrolling feels like following a route th
 Automated source/unit contracts should cover:
 
 - no sticky journey-stage architecture;
-- questions exist in normal-flow wrappers;
+- questions and reassurance exist in normal-flow wrappers;
 - path geometry is generated independently from controller logic;
 - path lookup uses sampled `getPointAtLength()` data;
 - reverse scroll retracts stroke;
@@ -480,26 +486,28 @@ This redesign does not change:
 
 1. Journey stage is not sticky or viewport-pinned.
 2. Questions occupy real document-flow positions.
-3. Questions naturally scroll into and out of the viewport.
-4. Ribbon exists in document space and scrolls with the journey.
-5. Future path is invisible.
-6. Travelled path remains visible.
-7. Ribbon head normally stays within approximately `45–58vh` after acquisition.
-8. Head may travel anywhere horizontally.
-9. Scroll down extends ribbon.
-10. Reverse scroll retracts ribbon.
-11. Reverse scroll does not hide previously revealed questions.
-12. Short ribbon opening draws automatically after EXPLORE/main.
-13. Transition from opening to journey tracking is visually continuous.
-14. Q1/Q2/Q3 reveal slightly before closest ribbon approach.
-15. Questions have entrance animation only.
-16. Ribbon maintains deliberate text clearance.
-17. Path uses mostly vertical motion with smooth broad horizontal sweeps.
-18. Question visits subtly linger without scroll-jacking.
-19. Reassurance uses only `#F5F7FA` particles.
-20. Reassurance remains interactive particle Canvas and never solidifies.
-21. Responsive path is rebuilt from actual measured stop geometry.
-22. Reduced-motion and accessibility behavior are preserved.
-23. Required screenshot checkpoints are captured and reviewed.
-24. Visual rejection criteria are all cleared before completion is claimed.
-25. Loader, hero, Explore compositor, Aurora statement, and GROW ring remain outside this redesign scope.
+3. Reassurance occupies a real document-flow position.
+4. Questions naturally scroll into and out of the viewport.
+5. Ribbon exists in document space and scrolls with the journey.
+6. Future path is invisible.
+7. Travelled path remains visible.
+8. Ribbon head normally stays within approximately `45–58vh` after acquisition.
+9. Head may travel anywhere horizontally.
+10. Scroll down extends ribbon.
+11. Reverse scroll retracts ribbon.
+12. Reverse scroll does not hide previously revealed questions.
+13. Short ribbon opening draws automatically after EXPLORE/main.
+14. Transition from opening to journey tracking is visually continuous.
+15. Q1/Q2/Q3 reveal slightly before closest ribbon approach.
+16. Questions have entrance animation only.
+17. Ribbon maintains deliberate text clearance.
+18. Path uses mostly vertical motion with smooth broad horizontal sweeps.
+19. Question visits subtly linger without scroll-jacking.
+20. Reassurance activates from ribbon approach, not generic pinned-state timing.
+21. Reassurance uses only `#F5F7FA` particles.
+22. Reassurance remains interactive particle Canvas and never solidifies.
+23. Responsive path is rebuilt from actual measured stop geometry.
+24. Reduced-motion and accessibility behavior are preserved.
+25. Required screenshot checkpoints produce actual image artifacts and are visually reviewed.
+26. Visual rejection criteria are all cleared before completion is claimed.
+27. Loader, hero, Explore compositor, Aurora statement, and GROW ring remain outside this redesign scope.
