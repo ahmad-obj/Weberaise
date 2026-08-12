@@ -78,10 +78,10 @@
 }
 
 .reassuranceSection {
-  min-height: 86svh;
+  min-height: 72svh;
   display: grid;
   place-items: center;
-  padding: clamp(72px, 12svh, 150px) var(--wr-page-pad) clamp(58px, 9svh, 120px);
+  padding: clamp(64px, 9svh, 112px) var(--wr-page-pad) clamp(48px, 7svh, 88px);
   background: var(--wr-black);
 }
 
@@ -286,8 +286,8 @@
   }
 
   .reassuranceSection {
-    min-height: 78svh;
-    padding-top: clamp(56px, 9svh, 96px);
+    min-height: 64svh;
+    padding-top: clamp(48px, 7svh, 72px);
   }
 
   .particleTextFrame {
