@@ -1,9 +1,26 @@
 import type { JourneyRouteConfig, JourneyStopId } from './journeyRoute';
+import {
+  appendArtworkWrap,
+  appendFlow,
+  appendGentleBend,
+  appendGlyphLoop,
+  appendLooseOvalLoop,
+  smoothRibbonPath,
+  type RibbonPoint,
+  type RibbonRect,
+} from './ribbonPrimitives';
 
 export type BuiltJourneyStop = {
   localY: number;
   revealLocalY: number;
   bandBias: number;
+};
+
+export type RibbonClipRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 };
 
 export type BuiltJourneyPath = {
@@ -12,123 +29,201 @@ export type BuiltJourneyPath = {
   height: number;
   openingLocalY: number;
   stops: Record<JourneyStopId, BuiltJourneyStop>;
-};
-
-type Point = { x: number; y: number };
-
-type MeasuredStop = {
-  id: JourneyStopId;
-  left: number;
-  right: number;
-  centerY: number;
-  top: number;
-  bottom: number;
+  frontClipRects: readonly RibbonClipRect[];
 };
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function cubicPath(points: readonly Point[]) {
-  if (points.length === 0) return '';
-  if (points.length === 1) return `M ${points[0]!.x} ${points[0]!.y}`;
-
-  const commands = [`M ${points[0]!.x.toFixed(2)} ${points[0]!.y.toFixed(2)}`];
-
-  for (let index = 1; index < points.length; index += 1) {
-    const previous = points[index - 1]!;
-    const current = points[index]!;
-    const deltaY = Math.max(0, current.y - previous.y);
-    const control = Math.max(18, deltaY * 0.42);
-    const c1y = Math.min(current.y, previous.y + control);
-    const c2y = Math.max(previous.y, current.y - control);
-
-    commands.push(
-      `C ${previous.x.toFixed(2)} ${c1y.toFixed(2)} ${current.x.toFixed(2)} ${c2y.toFixed(2)} ${current.x.toFixed(2)} ${current.y.toFixed(2)}`,
-    );
-  }
-
-  return commands.join(' ');
+function localRect(rootRect: DOMRect, rect: DOMRect): RibbonRect {
+  return {
+    left: rect.left - rootRect.left,
+    top: rect.top - rootRect.top,
+    right: rect.right - rootRect.left,
+    bottom: rect.bottom - rootRect.top,
+    width: rect.width,
+    height: rect.height,
+  };
 }
 
-function measureStops(root: HTMLElement, config: JourneyRouteConfig): MeasuredStop[] {
-  const rootRect = root.getBoundingClientRect();
+function measure(root: HTMLElement, rootRect: DOMRect, selector: string): RibbonRect {
+  const element = root.querySelector<HTMLElement>(selector);
+  if (!element) throw new Error(`Missing journey geometry target: ${selector}`);
+  return localRect(rootRect, element.getBoundingClientRect());
+}
 
-  return config.visits.map(({ id }) => {
-    const element = root.querySelector<HTMLElement>(`[data-journey-stop="${id}"]`);
-    if (!element) {
-      throw new Error(`Missing journey stop: ${id}`);
-    }
+function expand(rect: RibbonRect, x: number, y = x): RibbonClipRect {
+  return {
+    x: rect.left - x,
+    y: rect.top - y,
+    width: rect.width + x * 2,
+    height: rect.height + y * 2,
+  };
+}
 
-    const rect = element.getBoundingClientRect();
-    const top = rect.top - rootRect.top;
-    const bottom = rect.bottom - rootRect.top;
-
-    return {
-      id,
-      left: rect.left - rootRect.left,
-      right: rect.right - rootRect.left,
-      top,
-      bottom,
-      centerY: top + rect.height * 0.5,
-    };
-  });
+function centerY(rect: RibbonRect) {
+  return rect.top + rect.height * 0.5;
 }
 
 export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig): BuiltJourneyPath {
   const rootRect = root.getBoundingClientRect();
   const width = Math.max(1, rootRect.width);
   const height = Math.max(1, root.scrollHeight || rootRect.height);
-  const measured = measureStops(root, config);
-  const points: Point[] = [];
-  const stops = {} as Record<JourneyStopId, BuiltJourneyStop>;
 
-  const openingLocalY = Math.min(110, Math.max(64, height * 0.025));
-  points.push({ x: 0, y: 12 });
-  points.push({ x: Math.min(width * 0.14, 180), y: openingLocalY });
+  // Read every DOM target before composing/writing any route geometry.
+  const q1 = measure(root, rootRect, '[data-journey-stop="q1"]');
+  const q2 = measure(root, rootRect, '[data-journey-stop="q2"]');
+  const q3 = measure(root, rootRect, '[data-journey-stop="q3"]');
+  const reassurance = measure(root, rootRect, '[data-journey-stop="reassurance"]');
+  const artQ1 = measure(root, rootRect, '[data-ribbon-artwork="q1"]');
+  measure(root, rootRect, '[data-ribbon-artwork="q2"]');
+  measure(root, rootRect, '[data-ribbon-artwork="q3"]');
+  const o1 = measure(root, rootRect, '[data-ribbon-glyph="look-o-1"]');
+  const o2 = measure(root, rootRect, '[data-ribbon-glyph="look-o-2"]');
 
-  let lastY = openingLocalY;
+  const points: RibbonPoint[] = [{ x: 0, y: 18 }];
+  const frontClipRects: RibbonClipRect[] = [];
 
-  for (const visit of config.visits) {
-    const stop = measured.find((entry) => entry.id === visit.id);
-    if (!stop) continue;
+  // Automatic opening: longer lead, loose imperfect oval, then a clean forward run.
+  const leadX = clamp(config.opening.lead, config.edgeInset + 60, width * 0.42);
+  const openingCenter = {
+    x: clamp(
+      leadX + config.opening.loopRadiusX * 1.18,
+      config.edgeInset + config.opening.loopRadiusX,
+      width - config.edgeInset - config.opening.loopRadiusX,
+    ),
+    y: Math.max(92, config.opening.loopRadiusY * 1.72),
+  };
+  appendFlow(points, { x: leadX, y: openingCenter.y - config.opening.loopRadiusY * 0.18 }, 24);
+  appendLooseOvalLoop(
+    points,
+    openingCenter,
+    config.opening.loopRadiusX,
+    config.opening.loopRadiusY,
+    0.17,
+  );
+  const openingExit = points.at(-1)!;
+  appendFlow(
+    points,
+    {
+      x: clamp(width * 0.34, config.edgeInset, width - config.edgeInset),
+      y: openingExit.y + config.opening.exitRun,
+    },
+    32,
+  );
+  const openingLocalY = points.at(-1)!.y;
 
-    const passX = visit.side === 'left'
-      ? clamp(stop.left - visit.clearance, config.edgeInset, width - config.edgeInset)
-      : clamp(stop.right + visit.clearance, config.edgeInset, width - config.edgeInset);
+  // Q1: enter over the upper artwork, wrap around it, disappear behind its body,
+  // then re-emerge around the lower edge — all on the same centerline.
+  const wrapRect: RibbonRect = config.q1.wrapScale === 1
+    ? artQ1
+    : {
+        left: artQ1.left + artQ1.width * (1 - config.q1.wrapScale) * 0.5,
+        right: artQ1.right - artQ1.width * (1 - config.q1.wrapScale) * 0.5,
+        top: artQ1.top + artQ1.height * (1 - config.q1.wrapScale) * 0.5,
+        bottom: artQ1.bottom - artQ1.height * (1 - config.q1.wrapScale) * 0.5,
+        width: artQ1.width * config.q1.wrapScale,
+        height: artQ1.height * config.q1.wrapScale,
+      };
+  appendArtworkWrap(points, wrapRect, 'right', config.q1.clearance);
+  frontClipRects.push({
+    x: artQ1.left - 34,
+    y: artQ1.top - 48,
+    width: artQ1.width * 0.58,
+    height: artQ1.height * 0.34,
+  });
+  frontClipRects.push({
+    x: artQ1.left + artQ1.width * 0.06,
+    y: artQ1.bottom - artQ1.height * 0.2,
+    width: artQ1.width + config.q1.clearance,
+    height: artQ1.height * 0.34 + config.q1.clearance,
+  });
 
-    const oppositeX = visit.side === 'left'
-      ? clamp(width * 0.72, config.edgeInset, width - config.edgeInset)
-      : clamp(width * 0.28, config.edgeInset, width - config.edgeInset);
+  // Q2: intentionally quiet — one broad centerward bend.
+  appendGentleBend(
+    points,
+    'right',
+    {
+      x: width * (0.5 + config.q2.bendBias),
+      y: centerY(q2),
+    },
+    Math.min(config.q2.bendWidth, width * 0.52),
+  );
 
-    const corridorGuard = Math.min(visit.clearance, 80);
-    const safeEntryY = Math.max(lastY + 144, stop.top - corridorGuard);
-    const sweepY = Math.max(lastY + 90, Math.min(safeEntryY - 54, stop.top - visit.approachLead));
-    const passY = Math.max(safeEntryY + 54, stop.centerY);
-    const departY = Math.max(
-      passY + 58,
-      Math.min(stop.bottom + corridorGuard, height - 70),
-    );
+  // Q3: deliberately ride over LOOK and trace both actual O glyphs.
+  appendFlow(
+    points,
+    {
+      x: o1.left - Math.max(22, o1.width * 0.7),
+      y: o1.top - Math.max(72, o1.height * 0.95),
+    },
+    -34,
+  );
+  appendGlyphLoop(points, o1, config.q3.glyphScaleX, config.q3.glyphScaleY);
+  appendGlyphLoop(points, o2, config.q3.glyphScaleX, config.q3.glyphScaleY);
+  const lookBounds: RibbonRect = {
+    left: Math.min(o1.left, o2.left),
+    top: Math.min(o1.top, o2.top),
+    right: Math.max(o1.right, o2.right),
+    bottom: Math.max(o1.bottom, o2.bottom),
+    width: Math.max(o1.right, o2.right) - Math.min(o1.left, o2.left),
+    height: Math.max(o1.bottom, o2.bottom) - Math.min(o1.top, o2.top),
+  };
+  frontClipRects.push(expand(lookBounds, 20, 26));
 
-    points.push({ x: oppositeX, y: sweepY });
-    points.push({ x: passX, y: safeEntryY });
-    points.push({ x: passX, y: passY });
-    points.push({ x: passX, y: departY });
+  // Phase 1 preserves the existing reassurance treatment and simply reconnects
+  // the art-directed route into its original safe-side visit.
+  const reassurancePassX = config.reassurance.side === 'left'
+    ? clamp(reassurance.left - config.reassurance.clearance, config.edgeInset, width - config.edgeInset)
+    : clamp(reassurance.right + config.reassurance.clearance, config.edgeInset, width - config.edgeInset);
+  appendFlow(
+    points,
+    {
+      x: reassurancePassX,
+      y: Math.max(points.at(-1)!.y + 140, reassurance.top - config.reassurance.approachLead),
+    },
+    reassurancePassX < width * 0.5 ? -54 : 54,
+  );
+  appendFlow(points, { x: reassurancePassX, y: centerY(reassurance) }, 0);
+  appendFlow(
+    points,
+    {
+      x: reassurancePassX,
+      y: Math.min(height - 50, reassurance.bottom + config.reassurance.clearance),
+    },
+    0,
+  );
 
-    stops[visit.id] = {
-      localY: passY,
-      revealLocalY: Math.max(0, passY - Math.max(86, visit.approachLead * 0.58)),
-      bandBias: visit.bandBias,
-    };
-
-    lastY = departY;
-  }
+  const stops: Record<JourneyStopId, BuiltJourneyStop> = {
+    q1: {
+      localY: centerY(artQ1),
+      revealLocalY: Math.max(openingLocalY, q1.top - 132),
+      bandBias: 0.006,
+    },
+    q2: {
+      localY: centerY(q2),
+      revealLocalY: Math.max(0, q2.top - 142),
+      bandBias: -0.004,
+    },
+    q3: {
+      localY: centerY(lookBounds),
+      revealLocalY: Math.max(0, q3.top - 136),
+      bandBias: 0.004,
+    },
+    reassurance: {
+      localY: centerY(reassurance),
+      revealLocalY: Math.max(0, reassurance.top - config.reassurance.approachLead * 0.62),
+      bandBias: config.reassurance.bandBias,
+    },
+  };
 
   return {
-    d: cubicPath(points),
+    d: smoothRibbonPath(points, 0.84),
     width,
     height,
     openingLocalY,
     stops,
+    frontClipRects,
   };
 }
