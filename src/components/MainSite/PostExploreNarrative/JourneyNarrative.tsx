@@ -17,15 +17,7 @@ type JourneyGeometry = BuiltJourneyPath & { sampleSpacing: number };
 function LookQuestion({ text }: { text: string }) {
   const match = text.match(/^(.*?)(look)(.*)$/i);
   if (!match) return <>{text}</>;
-  return (
-    <>
-      {match[1]}
-      <span className={styles.lookWord} data-look-word>
-        l<span data-ribbon-glyph="look-o-1">o</span><span data-ribbon-glyph="look-o-2">o</span>k
-      </span>
-      {match[3]}
-    </>
-  );
+  return <>{match[1]}<span className={styles.lookWord} data-look-word>l<span data-ribbon-glyph="look-o-1">o</span><span data-ribbon-glyph="look-o-2">o</span>k</span>{match[3]}</>;
 }
 
 export function JourneyNarrative({ questions, reassurance }: { questions: readonly string[]; reassurance: string }) {
@@ -33,6 +25,7 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
   const backSvgRef = useRef<SVGSVGElement>(null);
   const backPathRef = useRef<SVGPathElement>(null);
   const frontPathRef = useRef<SVGPathElement>(null);
+  const taperRevealPathRef = useRef<SVGPathElement>(null);
   const [geometry, setGeometry] = useState<JourneyGeometry | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [reassuranceActive, setReassuranceActive] = useState(false);
@@ -66,8 +59,7 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
       }, 120);
     };
     const startJourney = () => {
-      if (started) return;
-      if (shell && shell.dataset.experienceState !== 'main') return;
+      if (started || (shell && shell.dataset.experienceState !== 'main')) return;
       started = true;
       rebuild();
       resizeObserver = new ResizeObserver((entries) => {
@@ -105,7 +97,8 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
     const svg = backSvgRef.current;
     const measurementPath = backPathRef.current;
     const frontPath = frontPathRef.current;
-    if (!root || !svg || !measurementPath || !frontPath || !geometry?.d) return undefined;
+    const taperRevealPath = taperRevealPathRef.current;
+    if (!root || !svg || !measurementPath || !frontPath || !taperRevealPath || !geometry?.d) return undefined;
     let cleanupController: () => void = () => undefined;
     const frame = window.requestAnimationFrame(() => {
       cleanupController = createRibbonController({
@@ -116,18 +109,16 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
         openingLocalY: geometry.openingLocalY,
         sampleSpacing: geometry.sampleSpacing,
         stops: geometry.stops,
+        taper: { revealPath: taperRevealPath, startLocalY: geometry.taper.startLocalY },
         reducedMotion,
         onReveal: (id: JourneyStopId) => {
           const anchor = root.querySelector<HTMLElement>(`[data-journey-stop="${id}"]`);
           if (!anchor || anchor.dataset.revealed === 'true') return;
-
-          if (id === 'reassurance') {
-            setReassuranceActive(true);
-          } else {
+          if (id === 'reassurance') setReassuranceActive(true);
+          else {
             const target = anchor.querySelector<HTMLElement>('[data-journey-question]');
             if (target) revealJourneyStop(target, reducedMotion);
           }
-
           anchor.dataset.revealed = 'true';
         },
       });
@@ -139,35 +130,17 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
   const height = geometry?.height ?? 1;
   const pathD = geometry?.d ?? '';
   const frontClipRects = geometry?.frontClipRects ?? [];
+  const taper = geometry?.taper ?? { startLocalY: height, centerlineD: '', polygonPoints: [] };
 
   return (
     <section ref={rootRef} className={styles.journey} data-journey>
-      <RibbonBackLayer d={pathD} width={width} height={height} svgRef={backSvgRef} backPathRef={backPathRef} />
+      <RibbonBackLayer d={pathD} width={width} height={height} svgRef={backSvgRef} backPathRef={backPathRef} taperRevealPathRef={taperRevealPathRef} taper={taper} />
       <div className={styles.journeyContent}>
         <div className={styles.journeyLead} aria-hidden="true" />
-        <JourneyStop id="q1" align="left">
-          <div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft}`}>
-            <h2 className={styles.journeyQuestion} data-journey-question>{questions[0]}</h2>
-            <JourneyArtwork id="q1" label="Website concept artwork placeholder" />
-          </div>
-        </JourneyStop>
-        <JourneyStop id="q2" align="right">
-          <div className={`${styles.journeyBeat} ${styles.journeyBeatTextRight}`}>
-            <JourneyArtwork id="q2" label="Website redesign artwork placeholder" />
-            <h2 className={styles.journeyQuestion} data-journey-question data-ribbon-question="q2">{questions[1]}</h2>
-          </div>
-        </JourneyStop>
-        <JourneyStop id="q3" align="left">
-          <div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft}`}>
-            <h2 className={styles.journeyQuestion} data-journey-question><LookQuestion text={questions[2] ?? ''} /></h2>
-            <JourneyArtwork id="q3" label="Online presence artwork placeholder" />
-          </div>
-        </JourneyStop>
-        <JourneyStop id="reassurance" align="center">
-          <h2 className={styles.reassuranceHeading} data-reassurance-text>
-            <ShutterText text={reassurance} active={reassuranceActive} />
-          </h2>
-        </JourneyStop>
+        <JourneyStop id="q1" align="left"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft}`}><h2 className={styles.journeyQuestion} data-journey-question>{questions[0]}</h2><JourneyArtwork id="q1" label="Website concept artwork placeholder" /></div></JourneyStop>
+        <JourneyStop id="q2" align="right"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextRight}`}><JourneyArtwork id="q2" label="Website redesign artwork placeholder" /><h2 className={styles.journeyQuestion} data-journey-question data-ribbon-question="q2">{questions[1]}</h2></div></JourneyStop>
+        <JourneyStop id="q3" align="left"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft}`}><h2 className={styles.journeyQuestion} data-journey-question><LookQuestion text={questions[2] ?? ''} /></h2><JourneyArtwork id="q3" label="Online presence artwork placeholder" /></div></JourneyStop>
+        <JourneyStop id="reassurance" align="center"><h2 className={styles.reassuranceHeading} data-reassurance-text><ShutterText text={reassurance} active={reassuranceActive} /></h2></JourneyStop>
       </div>
       <RibbonFrontLayer d={pathD} width={width} height={height} frontPathRef={frontPathRef} frontClipRects={frontClipRects} />
     </section>
