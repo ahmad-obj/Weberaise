@@ -7,29 +7,38 @@
 }
 
 .journey {
+  --ribbon-width: 5.2px;
   position: relative;
   min-height: 430svh;
   background: var(--wr-black);
   overflow: clip;
+  isolation: isolate;
 }
 
 .ribbonSvg {
   position: absolute;
   inset: 0;
-  z-index: 1;
   width: 100%;
   height: 100%;
   overflow: visible;
   pointer-events: none;
 }
 
+.ribbonSvgBack {
+  z-index: 1;
+}
+
+.ribbonSvgFront {
+  z-index: 3;
+}
+
 .ribbonPath {
   fill: none;
-  stroke: #3b82f6;
-  stroke-width: 4;
+  stroke-width: var(--ribbon-width);
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 5px rgb(59 130 246 / 0.16));
   will-change: stroke-dashoffset;
 }
 
@@ -65,18 +74,32 @@
 
 .journeyStopAnchor {
   position: relative;
-  width: min(58vw, 940px);
+  width: min(100%, 1480px);
 }
 
 .journeyStopAnchorWide {
   width: min(98vw, 1700px);
 }
 
+.journeyBeat {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.82fr);
+  align-items: center;
+  gap: clamp(48px, 8vw, 132px);
+  width: 100%;
+}
+
+.journeyBeatTextRight {
+  grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1fr);
+}
+
 .journeyQuestion {
+  position: relative;
+  z-index: 2;
   margin: 0;
   color: var(--wr-text);
   font-family: var(--font-hero), Arial, sans-serif;
-  font-size: clamp(46px, 6.1vw, 104px);
+  font-size: clamp(44px, 5.45vw, 94px);
   font-weight: 790;
   line-height: 0.92;
   letter-spacing: -0.055em;
@@ -87,7 +110,7 @@
   will-change: transform, opacity;
 }
 
-.journeyStopRight .journeyQuestion {
+.journeyBeatTextRight .journeyQuestion {
   text-align: right;
 }
 
@@ -96,9 +119,78 @@
   visibility: visible;
 }
 
+.lookWord {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.lookWord [data-ribbon-glyph] {
+  display: inline-block;
+}
+
+.journeyArtwork {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  margin: 0;
+  border: 1px solid rgb(96 165 250 / 0.18);
+  border-radius: clamp(22px, 2.2vw, 34px);
+  overflow: hidden;
+  background: #0a0f18;
+  box-shadow:
+    0 24px 70px rgb(0 0 0 / 0.34),
+    inset 0 1px 0 rgb(255 255 255 / 0.035);
+}
+
+.journeyArtworkSurface {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 72% 24%, rgb(96 165 250 / 0.16), transparent 31%),
+    radial-gradient(circle at 28% 74%, rgb(37 99 235 / 0.16), transparent 34%),
+    linear-gradient(145deg, #0d111a, #090d14 58%, #0b1220);
+}
+
+.journeyArtworkOrb {
+  position: absolute;
+  width: 46%;
+  aspect-ratio: 1;
+  left: 27%;
+  top: 25%;
+  border: 1px solid rgb(96 165 250 / 0.28);
+  border-radius: 42% 58% 52% 48% / 57% 44% 56% 43%;
+  background: linear-gradient(145deg, rgb(59 130 246 / 0.23), rgb(18 24 38 / 0.24));
+  transform: rotate(-13deg);
+  box-shadow: inset 18px -20px 44px rgb(0 0 0 / 0.2);
+}
+
+.journeyArtworkGrid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  background-image:
+    linear-gradient(rgb(167 176 192 / 0.28) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(167 176 192 / 0.28) 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: linear-gradient(to bottom right, transparent, black 25%, black 70%, transparent);
+}
+
+.journeyArtworkBadge {
+  position: absolute;
+  left: 22px;
+  bottom: 18px;
+  color: rgb(245 247 250 / 0.48);
+  font-family: var(--font-body), Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
 .reassuranceSection {
   position: relative;
-  z-index: 3;
+  z-index: 2;
   width: 100%;
   height: clamp(320px, 38vw, 580px);
   opacity: 0;
@@ -171,14 +263,7 @@
   display: inline-block;
   padding-bottom: 0.08em;
   color: #60a5fa;
-  background-image: linear-gradient(
-    135deg,
-    #f5f7fa,
-    #60a5fa,
-    #3b82f6,
-    #2563eb,
-    #f5f7fa
-  );
+  background-image: linear-gradient(135deg, #f5f7fa, #60a5fa, #3b82f6, #2563eb, #f5f7fa);
   background-size: 200% auto;
   background-position: 0% 50%;
   background-clip: text;
@@ -216,8 +301,7 @@
   font-family: var(--font-body), Arial, sans-serif;
   line-height: 1;
   letter-spacing: 0;
-  transform: translate(-50%, -50%) rotate(var(--char-angle))
-    translateY(calc(var(--ring-size) * -0.44));
+  transform: translate(-50%, -50%) rotate(var(--char-angle)) translateY(calc(var(--ring-size) * -0.44));
   transform-origin: 50% 50%;
   white-space: pre;
 }
@@ -236,35 +320,33 @@
 }
 
 @keyframes wrAurora {
-  from {
-    background-position: 0% 50%;
-  }
-  to {
-    background-position: 200% 50%;
-  }
+  from { background-position: 0% 50%; }
+  to { background-position: 200% 50%; }
 }
 
 @keyframes wrServiceRing {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 900px) {
-  .journeyStopAnchor {
-    width: min(66vw, 720px);
+  .journeyBeat {
+    grid-template-columns: minmax(0, 1fr) minmax(270px, 0.82fr);
+    gap: clamp(36px, 6vw, 72px);
+  }
+
+  .journeyBeatTextRight {
+    grid-template-columns: minmax(270px, 0.82fr) minmax(0, 1fr);
   }
 
   .journeyQuestion {
-    font-size: clamp(40px, 7.4vw, 78px);
+    font-size: clamp(38px, 6.8vw, 72px);
   }
 }
 
 @media (max-width: 720px) {
   .journey {
+    --ribbon-width: 3.9px;
     min-height: 455svh;
   }
 
@@ -277,22 +359,39 @@
     padding: clamp(46px, 7svh, 74px) var(--wr-page-pad);
   }
 
-  .journeyStopAnchor {
-    width: min(78vw, 520px);
-  }
-
+  .journeyStopAnchor,
   .journeyStopAnchorWide {
     width: 100%;
   }
 
+  .journeyBeat,
+  .journeyBeatTextRight {
+    grid-template-columns: 1fr;
+    gap: clamp(28px, 7svh, 58px);
+  }
+
   .journeyQuestion {
+    max-width: 86vw;
     font-size: clamp(32px, 9.2vw, 54px);
     line-height: 0.95;
     letter-spacing: -0.048em;
   }
 
-  .ribbonPath {
-    stroke-width: 3;
+  .journeyBeatTextRight .journeyQuestion {
+    justify-self: end;
+    text-align: right;
+  }
+
+  .journeyArtwork {
+    width: min(88vw, 520px);
+  }
+
+  .journeyBeatTextLeft .journeyArtwork {
+    justify-self: end;
+  }
+
+  .journeyBeatTextRight .journeyArtwork {
+    justify-self: start;
   }
 
   .reassuranceSection {
@@ -344,6 +443,10 @@
 
   .particleCanvas {
     pointer-events: none;
+  }
+
+  .ribbonPath {
+    filter: none;
   }
 
   .auroraText {
