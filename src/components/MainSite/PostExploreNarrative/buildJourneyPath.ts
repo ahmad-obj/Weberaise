@@ -10,19 +10,8 @@ import {
   type RibbonRect,
 } from './ribbonPrimitives';
 
-export type BuiltJourneyStop = {
-  localY: number;
-  revealLocalY: number;
-  bandBias: number;
-};
-
-export type RibbonClipRect = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
+export type BuiltJourneyStop = { localY: number; revealLocalY: number; bandBias: number };
+export type RibbonClipRect = { x: number; y: number; width: number; height: number };
 export type BuiltJourneyPath = {
   d: string;
   width: number;
@@ -54,12 +43,7 @@ function measure(root: HTMLElement, rootRect: DOMRect, selector: string): Ribbon
 }
 
 function expand(rect: RibbonRect, x: number, y = x): RibbonClipRect {
-  return {
-    x: rect.left - x,
-    y: rect.top - y,
-    width: rect.width + x * 2,
-    height: rect.height + y * 2,
-  };
+  return { x: rect.left - x, y: rect.top - y, width: rect.width + x * 2, height: rect.height + y * 2 };
 }
 
 function centerY(rect: RibbonRect) {
@@ -71,21 +55,20 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   const width = Math.max(1, rootRect.width);
   const height = Math.max(1, root.scrollHeight || rootRect.height);
 
-  // Read every DOM target before composing/writing any route geometry.
   const q1 = measure(root, rootRect, '[data-journey-stop="q1"]');
   const q2 = measure(root, rootRect, '[data-journey-stop="q2"]');
   const q3 = measure(root, rootRect, '[data-journey-stop="q3"]');
   const reassurance = measure(root, rootRect, '[data-journey-stop="reassurance"]');
   const artQ1 = measure(root, rootRect, '[data-ribbon-artwork="q1"]');
-  measure(root, rootRect, '[data-ribbon-artwork="q2"]');
+  const artQ2 = measure(root, rootRect, '[data-ribbon-artwork="q2"]');
   measure(root, rootRect, '[data-ribbon-artwork="q3"]');
+  const q2Text = measure(root, rootRect, '[data-ribbon-question="q2"]');
   const o1 = measure(root, rootRect, '[data-ribbon-glyph="look-o-1"]');
   const o2 = measure(root, rootRect, '[data-ribbon-glyph="look-o-2"]');
 
   const points: RibbonPoint[] = [{ x: 0, y: 18 }];
   const frontClipRects: RibbonClipRect[] = [];
 
-  // Automatic opening: longer lead, loose imperfect oval, then a clean forward run.
   const leadX = clamp(config.opening.lead, config.edgeInset + 60, width * 0.42);
   const openingCenter = {
     x: clamp(
@@ -96,26 +79,15 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
     y: Math.max(92, config.opening.loopRadiusY * 1.72),
   };
   appendFlow(points, { x: leadX, y: openingCenter.y - config.opening.loopRadiusY * 0.18 }, 24);
-  appendLooseOvalLoop(
-    points,
-    openingCenter,
-    config.opening.loopRadiusX,
-    config.opening.loopRadiusY,
-    0.17,
-  );
+  appendLooseOvalLoop(points, openingCenter, config.opening.loopRadiusX, config.opening.loopRadiusY, 0.17);
   const openingExit = points.at(-1)!;
   appendFlow(
     points,
-    {
-      x: clamp(width * 0.34, config.edgeInset, width - config.edgeInset),
-      y: openingExit.y + config.opening.exitRun,
-    },
+    { x: clamp(width * 0.34, config.edgeInset, width - config.edgeInset), y: openingExit.y + config.opening.exitRun },
     32,
   );
   const openingLocalY = points.at(-1)!.y;
 
-  // Q1: enter over the upper artwork, wrap around it, disappear behind its body,
-  // then re-emerge around the lower edge — all on the same centerline.
   const wrapRect: RibbonRect = config.q1.wrapScale === 1
     ? artQ1
     : {
@@ -140,24 +112,19 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
     height: artQ1.height * 0.34 + config.q1.clearance,
   });
 
-  // Q2: intentionally quiet — one broad centerward bend.
-  appendGentleBend(
-    points,
-    'right',
-    {
-      x: width * (0.5 + config.q2.bendBias),
-      y: centerY(q2),
-    },
-    Math.min(config.q2.bendWidth, width * 0.52),
-  );
+  const horizontalGap = q2Text.left - artQ2.right;
+  const hasHorizontalGap = horizontalGap > 36;
+  const q2CenterX = hasHorizontalGap
+    ? artQ2.right + horizontalGap * 0.5
+    : width * (0.5 + config.q2.bendBias);
+  const q2BendWidth = hasHorizontalGap
+    ? Math.min(config.q2.bendWidth, Math.max(84, horizontalGap * 1.25))
+    : Math.min(config.q2.bendWidth, width * 0.46);
+  appendGentleBend(points, 'right', { x: q2CenterX, y: centerY(q2) }, q2BendWidth);
 
-  // Q3: deliberately ride over LOOK and trace both actual O glyphs.
   appendFlow(
     points,
-    {
-      x: o1.left - Math.max(22, o1.width * 0.7),
-      y: o1.top - Math.max(72, o1.height * 0.95),
-    },
+    { x: o1.left - Math.max(22, o1.width * 0.7), y: o1.top - Math.max(72, o1.height * 0.95) },
     -34,
   );
   appendGlyphLoop(points, o1, config.q3.glyphScaleX, config.q3.glyphScaleY);
@@ -172,8 +139,6 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   };
   frontClipRects.push(expand(lookBounds, 20, 26));
 
-  // Phase 1 preserves the existing reassurance treatment and simply reconnects
-  // the art-directed route into its original safe-side visit.
   const reassurancePassX = config.reassurance.side === 'left'
     ? clamp(reassurance.left - config.reassurance.clearance, config.edgeInset, width - config.edgeInset)
     : clamp(reassurance.right + config.reassurance.clearance, config.edgeInset, width - config.edgeInset);
@@ -188,29 +153,14 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   appendFlow(points, { x: reassurancePassX, y: centerY(reassurance) }, 0);
   appendFlow(
     points,
-    {
-      x: reassurancePassX,
-      y: Math.min(height - 50, reassurance.bottom + config.reassurance.clearance),
-    },
+    { x: reassurancePassX, y: Math.min(height - 50, reassurance.bottom + config.reassurance.clearance) },
     0,
   );
 
   const stops: Record<JourneyStopId, BuiltJourneyStop> = {
-    q1: {
-      localY: centerY(artQ1),
-      revealLocalY: Math.max(openingLocalY, q1.top - 132),
-      bandBias: 0.006,
-    },
-    q2: {
-      localY: centerY(q2),
-      revealLocalY: Math.max(0, q2.top - 142),
-      bandBias: -0.004,
-    },
-    q3: {
-      localY: centerY(lookBounds),
-      revealLocalY: Math.max(0, q3.top - 136),
-      bandBias: 0.004,
-    },
+    q1: { localY: centerY(artQ1), revealLocalY: Math.max(openingLocalY, q1.top - 132), bandBias: 0.006 },
+    q2: { localY: centerY(q2), revealLocalY: Math.max(0, q2.top - 142), bandBias: -0.004 },
+    q3: { localY: centerY(lookBounds), revealLocalY: Math.max(0, q3.top - 136), bandBias: 0.004 },
     reassurance: {
       localY: centerY(reassurance),
       revealLocalY: Math.max(0, reassurance.top - config.reassurance.approachLead * 0.62),
