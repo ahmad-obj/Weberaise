@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { SiteNavigation } from '@/components/navigation/SiteNavigation';
 import { runHeroOpenTimeline } from '@/experience/motion/heroOpenTimeline';
 import { runExploreTimeline } from '@/experience/motion/exploreTimeline';
 import type { RevealEngine } from '@/webgl/reveal/RevealEngine';
@@ -52,6 +53,11 @@ export function Hero({
     >
       <HeroFrontLayer />
       <HeroRevealLayer />
+
+      {(phase === 'heroInteractive' || phase === 'heroExiting') && (
+        <SiteNavigation mode="hero" />
+      )}
+
       <HeroRevealCanvas
         phase={phase}
         reducedMotion={reducedMotion}

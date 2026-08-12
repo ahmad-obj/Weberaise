@@ -35,3 +35,19 @@ test('navigation root is visually barless and pills remain independent', () => {
   assert.match(css, /border-radius:\s*1[4-8]px/);
   assert.doesNotMatch(css, /\.centerCluster\s*\{[^}]*background:/s);
 });
+
+test('hero navigation is rendered before the reveal canvas and survives EXPLORE exit', () => {
+  const hero = read('src/components/experience/Hero/Hero.tsx');
+
+  assert.match(hero, /SiteNavigation/);
+  assert.ok(
+    hero.indexOf('<SiteNavigation') < hero.indexOf('<HeroRevealCanvas'),
+    'hero nav must render below the difference compositor',
+  );
+  assert.match(hero, /heroInteractive/);
+  assert.match(hero, /heroExiting/);
+
+  const component = read(`${navDir}/SiteNavigation.tsx`);
+  assert.match(component, /mode !== 'hero'/);
+  assert.match(component, /gsap\.fromTo/);
+});

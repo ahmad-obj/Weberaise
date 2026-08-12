@@ -1,11 +1,46 @@
 'use client';
 
+import { useLayoutEffect, useRef } from 'react';
+import gsap from 'gsap';
 import { CENTER_NAV_ITEMS, type NavigationMode } from './navigationModel';
 import styles from './Navigation.module.css';
 
 export function SiteNavigation({ mode }: { mode: NavigationMode }) {
+  const rootRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    if (mode !== 'hero' || !rootRef.current) return undefined;
+
+    const root = rootRef.current;
+    const zones = root.querySelectorAll<HTMLElement>('[data-nav-zone]');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const context = gsap.context(() => {
+      if (reducedMotion) {
+        gsap.set(zones, { opacity: 1, clearProps: 'transform' });
+        return;
+      }
+
+      gsap.fromTo(
+        zones,
+        { opacity: 0, y: -10, scale: 0.98 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.36,
+          stagger: 0.055,
+          ease: 'power3.out',
+          clearProps: 'transform',
+        },
+      );
+    }, root);
+
+    return () => context.revert();
+  }, [mode]);
+
   return (
     <nav
+      ref={rootRef}
       className={styles.navRoot}
       data-site-navigation
       data-navigation-mode={mode}
