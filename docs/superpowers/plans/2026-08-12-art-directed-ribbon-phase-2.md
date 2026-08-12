@@ -2,78 +2,68 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the particle reassurance with the user-supplied ShutterText behavior, synchronize it with a continuous reassurance oval, add a true variable-width tapered ribbon ending, remove obsolete particle code, and complete full visual/technical acceptance of the entire journey.
+**Goal:** Replace particle reassurance with the user-supplied ShutterText behavior, extend the accepted Phase-1 centerline through a loose reassurance oval, add a true narrowing final taper, remove obsolete particle code, and complete full visual/technical acceptance.
 
-**Architecture:** Phase 2 starts only from an accepted Phase-1 centerline. Add Framer Motion solely for the controlled ShutterText component, keep journey reveal state as the trigger source, extend the same route through reassurance and taper, and shape the taper through SVG masking/fill geometry derived from the same canonical centerline rather than a detached decorative endpoint.
+**Architecture:** Phase 2 starts only from accepted Phase 1. Add Framer Motion solely for a controlled ShutterText component. Keep reassurance trigger state in the journey controller flow, extend the same canonical centerline through reassurance, and render the final narrowing geometry inside the existing **back ribbon SVG layer** so no third ribbon route is introduced.
 
-**Tech Stack:** Existing Next.js/React/TypeScript/GSAP/CSS Modules/SVG stack plus `framer-motion` as the only new dependency.
+**Tech Stack:** Existing Next.js 16.3.0 / React 19.2.8 / TypeScript 7.0.2 / GSAP 3.15.0 / CSS Modules / SVG stack plus `framer-motion` as the only new dependency.
 
 ## Global Constraints
 
-- Phase 1 must already be visually accepted; do not use Phase 2 to conceal unresolved route problems.
+- Phase 1 must already be technically and visually accepted.
 - Work on `feature/signature-intro`; do not merge PR #1.
-- Preserve one continuous canonical ribbon centerline from opening through final endpoint.
-- Preserve native scrolling and `45vh–58vh` head-band behavior.
-- `DONT WORRY. WE GOT YOU` keeps exactly that copy.
-- Remove the particle reassurance from this beat entirely.
-- Reproduce the user-provided ShutterText visual behavior: blurred main glyph resolve + three clipped slices with alternating directions and character stagger.
+- Preserve one canonical continuous ribbon centerline from opening to endpoint.
+- Preserve native scroll and `45vh–58vh` head-band behavior.
+- Keep exact reassurance copy: `DONT WORRY. WE GOT YOU`.
+- Remove particle reassurance entirely from this beat.
+- Reproduce the supplied ShutterText visual behavior: blurred main glyph resolve + top/middle/bottom clipped slice sweeps + `0.04s` character stagger.
 - Do not add Tailwind or initialize shadcn.
 - Add `framer-motion` only.
-- Production reassurance is semantic non-interactive text; do not keep source demo `role="button"`, click, hover, or viewport replay behavior.
-- Shutter effect triggers once from ribbon/journey approach state and never replays on reverse scroll.
-- Reduced-motion users must receive readable final text without relying on slice animation.
-- Reassurance ribbon loop is loose/imperfect and part of the same route.
-- Final ribbon endpoint must taper by narrowing width, not merely opacity-fade.
-- No blunt cap, disconnected polygon, or visible seam between full-width ribbon and taper.
-- Do not redesign loader, hero, EXPLORE, Aurora statement, GROW ring, or final artwork assets.
-- TDD is mandatory.
-- Final browser/screenshot review is mandatory before completion is claimed.
+- Production reassurance is semantic, non-interactive text: no button role, click, hover, focus trigger, or viewport replay.
+- ShutterText triggers once from ribbon approach and never replays on reverse scroll.
+- Reduced-motion users see readable final text without slice travel.
+- Reassurance oval remains part of the same route and must be loose/imperfect.
+- Final endpoint narrows physically; opacity-only fade is not acceptable.
+- Taper cannot create a detached polygon/ribbon or visible seam.
+- Do not redesign loader, hero, EXPLORE, Aurora, GROW ring, or final artwork assets.
+- TDD and final browser/screenshot review are mandatory.
 
 ---
 
-## File Structure for Phase 2
+## Phase-2 File Map
 
 **Create**
-- `src/components/ui/shutter-text.tsx` — controlled source-faithful ShutterText adapted to Weberaise CSS Modules/current architecture.
-- `src/components/ui/shutter-text.module.css` — styling equivalent to the supplied Tailwind utility classes.
-- `tests/shutter-text.test.mjs` — source/component contracts.
-- `tests/ribbon-reassurance-end.test.mjs` — route oval/taper contracts.
+- `src/components/ui/shutter-text.tsx`
+- `src/components/ui/shutter-text.module.css`
+- `tests/shutter-text.test.mjs`
+- `tests/ribbon-reassurance-end.test.mjs`
 
 **Modify**
-- `package.json` — add `framer-motion`.
-- `package-lock.json` — generated by npm when dependency installation is available.
-- `src/components/MainSite/PostExploreNarrative/JourneyNarrative.tsx` — controlled reassurance reveal state and ShutterText rendering.
-- `src/components/MainSite/PostExploreNarrative/journeyRoute.ts` — reassurance-loop and taper parameters.
-- `src/components/MainSite/PostExploreNarrative/buildJourneyPath.ts` — measured reassurance oval and final taper geometry.
-- `src/components/MainSite/PostExploreNarrative/ribbonPrimitives.ts` — reassurance loop and taper-envelope helpers.
-- `src/components/MainSite/PostExploreNarrative/RibbonTrail.tsx` — taper shaping/reveal while preserving one centerline.
-- `src/components/MainSite/PostExploreNarrative/ribbonController.ts` — synchronize taper reveal with canonical visible length.
-- `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css` — reassurance composition and ribbon-end layout.
-- `tests/post-explore-narrative.test.mjs`
-- `tests/ribbon-art-direction.test.mjs`
-- `tests/ribbon-primitives.test.mjs`
-- `tests/ribbon-route-geometry.test.mjs`
-- `tests/ribbon-trail-integration.test.mjs`
+- `package.json`
+- `package-lock.json` when generated by successful npm install
+- `JourneyNarrative.tsx`
+- `journeyRoute.ts`
+- `buildJourneyPath.ts`
+- `ribbonPrimitives.ts`
+- `RibbonTrail.tsx`
+- `ribbonController.ts`
+- `PostExploreNarrative.module.css`
+- existing post-explore/ribbon tests
 
-**Remove after replacement is verified**
-- `src/components/MainSite/PostExploreNarrative/ParticleReassurance.tsx`
-- `src/components/MainSite/PostExploreNarrative/particleModel.ts`
+**Delete only after replacement is green**
+- `ParticleReassurance.tsx`
+- `particleModel.ts`
 
 ---
 
-### Task 1: Lock ShutterText and Reassurance-End Contracts in RED Tests
+### Task 1: Define Shutter/Reassurance-End Contracts in RED
 
 **Files:**
 - Create: `tests/shutter-text.test.mjs`
 - Create: `tests/ribbon-reassurance-end.test.mjs`
 - Modify: `tests/post-explore-narrative.test.mjs`
 
-**Interfaces:**
-- Produces required component API and end-route geometry contracts before production changes.
-
-- [ ] **Step 1: Write ShutterText source contracts**
-
-Require:
+- [ ] **Step 1: Add source-faithful ShutterText contracts**
 
 ```js
 import test from 'node:test';
@@ -84,10 +74,11 @@ import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
-test('controlled ShutterText preserves the supplied three-slice behavior', () => {
+test('controlled ShutterText preserves supplied slice behavior', () => {
   const path = resolve(root, 'src/components/ui/shutter-text.tsx');
   assert.equal(existsSync(path), true);
   const source = read('src/components/ui/shutter-text.tsx');
+  assert.match(source, /AnimatePresence/);
   assert.match(source, /from ['"]framer-motion['"]/);
   assert.match(source, /blur\(10px\)/);
   assert.match(source, /0 0, 100% 0, 100% 35%, 0 35%/);
@@ -101,34 +92,33 @@ test('controlled ShutterText preserves the supplied three-slice behavior', () =>
 });
 ```
 
-- [ ] **Step 2: Write dependency and cleanup contracts**
+- [ ] **Step 2: Add dependency/cleanup contracts**
 
-```js
-test('phase two uses framer-motion without adding Tailwind or shadcn', () => {
-  const pkg = read('package.json');
-  assert.match(pkg, /"framer-motion"/);
-  assert.doesNotMatch(pkg, /tailwindcss|@tailwind|shadcn/);
-});
+Require `framer-motion` in package.json and no Tailwind/shadcn additions. Require particle files absent only after final replacement task.
 
-test('particle reassurance is removed after ShutterText replacement', () => {
-  assert.equal(existsSync(resolve(root, 'src/components/MainSite/PostExploreNarrative/ParticleReassurance.tsx')), false);
-  assert.equal(existsSync(resolve(root, 'src/components/MainSite/PostExploreNarrative/particleModel.ts')), false);
-});
+- [ ] **Step 3: Add route-end contracts**
+
+Require pure reassurance loop composition plus:
+
+```ts
+export type RibbonTaperGeometry = {
+  startLocalY: number;
+  centerlineD: string;
+  polygonPoints: readonly RibbonPoint[];
+};
 ```
 
-- [ ] **Step 3: Write reassurance-loop/taper source contracts**
+Require taper rendering in the back SVG layer and progress tied to canonical visible length.
 
-Require `reassuranceLoop`, `taperStartLocalY`, `taperCenterlineD`/equivalent taper geometry, and a taper mask/reveal path in `RibbonTrail`.
-
-- [ ] **Step 4: Run focused tests and verify RED**
+- [ ] **Step 4: Run RED**
 
 ```bash
 node --import=tsx --test tests/shutter-text.test.mjs tests/ribbon-reassurance-end.test.mjs
 ```
 
-Expected: FAIL because ShutterText, dependency, loop/taper geometry, and cleanup do not exist yet.
+Expected: FAIL.
 
-- [ ] **Step 5: Commit RED tests**
+- [ ] **Step 5: Commit RED contracts**
 
 ```bash
 git add tests/shutter-text.test.mjs tests/ribbon-reassurance-end.test.mjs tests/post-explore-narrative.test.mjs
@@ -137,35 +127,31 @@ git commit -m "test: define shutter reassurance contracts"
 
 ---
 
-### Task 2: Install Framer Motion Without Expanding the Styling Stack
+### Task 2: Add Framer Motion Only
 
 **Files:**
 - Modify: `package.json`
-- Create/Modify: `package-lock.json` if npm installation succeeds.
-- Test: `tests/shutter-text.test.mjs`
+- Create/Modify: `package-lock.json` if installation succeeds
 
-**Interfaces:**
-- Produces importable `framer-motion` dependency only.
-
-- [ ] **Step 1: Install dependency through npm**
+- [ ] **Step 1: Install**
 
 ```bash
 npm install framer-motion
 ```
 
-Do not install Tailwind, shadcn, lucide-react, or any other package for this feature.
+Do not install Tailwind, shadcn, lucide-react, or unrelated packages.
 
-- [ ] **Step 2: Verify package metadata**
+- [ ] **Step 2: Verify metadata**
 
 ```bash
 node -e "const p=require('./package.json'); if(!p.dependencies?.['framer-motion']) process.exit(1); console.log(p.dependencies['framer-motion'])"
 ```
 
-Expected: version printed, exit 0.
+- [ ] **Step 3: If install fails due network, stop this task with the exact error**
 
-If network access prevents installation, stop this task and report the exact error. Do not invent a version or hand-write a lockfile.
+Do not invent a version or hand-write a lockfile.
 
-- [ ] **Step 3: Commit dependency metadata**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add package.json package-lock.json
@@ -174,95 +160,76 @@ git commit -m "build: add framer motion for shutter text"
 
 ---
 
-### Task 3: Implement Controlled Source-Faithful ShutterText
+### Task 3: Implement Controlled ShutterText
 
 **Files:**
 - Create: `src/components/ui/shutter-text.tsx`
 - Create: `src/components/ui/shutter-text.module.css`
 - Test: `tests/shutter-text.test.mjs`
 
-**Interfaces:**
-- Produces:
+**API:**
 
 ```ts
 export type ShutterTextProps = {
   text: string;
   active: boolean;
   className?: string;
-  onAnimationComplete?: () => void;
 };
-
-export default function ShutterText(props: ShutterTextProps): JSX.Element;
 ```
 
-- [ ] **Step 1: Re-run focused test and confirm RED**
+- [ ] **Step 1: Confirm RED**
 
 ```bash
 node --import=tsx --test tests/shutter-text.test.mjs
 ```
 
-- [ ] **Step 2: Implement the main character behavior exactly**
-
-Each character uses:
+- [ ] **Step 2: Implement main glyph resolve exactly**
 
 ```tsx
 <motion.span
   initial={{ opacity: 0, filter: 'blur(10px)' }}
   animate={{ opacity: 1, filter: 'blur(0px)' }}
-  transition={{ delay: index * 0.04 + 0.3, duration: 0.8 }}
+  transition={{ delay: i * 0.04 + 0.3, duration: 0.8 }}
 >
   {char === ' ' ? '\u00A0' : char}
 </motion.span>
 ```
 
-- [ ] **Step 3: Implement the three supplied slice layers exactly in motion**
+- [ ] **Step 3: Implement supplied three slice layers**
 
-Top: left → right, clip `0–35%`, delay `i*0.04`, duration `0.7`.
+Top: left→right, clip 0–35%, delay `i*0.04`, duration `0.7`.
 
-Middle: right → left, clip `35–65%`, delay `i*0.04 + 0.1`, duration `0.7`.
+Middle: right→left, clip 35–65%, delay `i*0.04 + 0.1`, duration `0.7`.
 
-Bottom: left → right, clip `65–100%`, delay `i*0.04 + 0.2`, duration `0.7`.
+Bottom: left→right, clip 65–100%, delay `i*0.04 + 0.2`, duration `0.7`.
 
-Use Weberaise colors instead of emerald:
+Colors adapt to Weberaise:
+- main: `#F5F7FA`;
 - bright slices: `#3B82F6` / `#60A5FA`;
-- middle slice: restrained `#DCEBFF` or existing near-white token;
-- main text inherits `#F5F7FA`.
+- middle: restrained blue-white, not emerald.
 
-- [ ] **Step 4: Make the production component non-interactive and semantic**
+- [ ] **Step 4: Preserve source animation structure without demo interaction**
 
-Use a neutral `<span>` wrapper. Animated duplicate/slice layers are `aria-hidden="true"`; wrapper exposes the phrase with `aria-label={text}`.
+Use `AnimatePresence` + `motion`. Wrapper is neutral `<span>`, not a button. Animated duplicates/slices are decorative/aria-hidden; wrapper exposes `aria-label={text}`.
 
-Do not add `role="button"`, `tabIndex`, click, hover, or `useInView` logic.
+- [ ] **Step 5: Controlled active state**
 
-- [ ] **Step 5: Handle inactive and reduced-motion states**
+Before `active`, visual glyphs remain hidden while semantic phrase remains accessible. First transition to `active=true` runs once and leaves final glyphs visible.
 
-Before `active`, visual glyphs remain hidden while semantic text remains available to assistive technology. When `active` becomes true once, animation runs once and final main characters remain visible.
+- [ ] **Step 6: Reduced motion**
 
-Use `useReducedMotion()` from Framer Motion; when reduced motion is requested and `active=true`, render final text without slice travel.
+Use Framer Motion `useReducedMotion()`. If reduced and active, show final sharp text directly with no slice translation.
 
-- [ ] **Step 6: Translate Tailwind utility styling into CSS Module classes**
+- [ ] **Step 7: Translate supplied Tailwind utilities into CSS Module rules**
 
-Equivalent requirements:
-- inline flex/wrap centered;
-- each character `position: relative`, `display:inline-block`, `overflow:hidden`;
-- tiny responsive horizontal character padding;
-- heavy font weight;
-- tight tracking/leading;
-- absolute slice layers fill the character box.
+Character wrapper: relative, inline-block, overflow hidden, tiny horizontal padding. Overall wrapper: inline-flex/flex-wrap/center. Heavy weight, tight leading/tracking. Slice layers absolute inset 0.
 
-- [ ] **Step 7: Run test and verify GREEN**
+- [ ] **Step 8: Verify**
 
 ```bash
 node --import=tsx --test tests/shutter-text.test.mjs
-```
-
-- [ ] **Step 8: Run typecheck for the new component**
-
-```bash
 npm run typecheck
 ```
-
-Expected: exit 0. If unrelated baseline errors exist, record them explicitly.
 
 - [ ] **Step 9: Commit**
 
@@ -273,36 +240,25 @@ git commit -m "feat: add controlled shutter text"
 
 ---
 
-### Task 4: Integrate ShutterText with One-Way Ribbon Reveal State
+### Task 4: Trigger ShutterText Once from Ribbon Arrival
 
 **Files:**
-- Modify: `src/components/MainSite/PostExploreNarrative/JourneyNarrative.tsx`
-- Modify: `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css`
+- Modify: `JourneyNarrative.tsx`
+- Modify: `PostExploreNarrative.module.css`
 - Modify: `tests/post-explore-narrative.test.mjs`
 - Modify: `tests/ribbon-trail-integration.test.mjs`
 
-**Interfaces:**
-- Consumes: `ShutterText({ text, active })`, existing `onReveal(id)` callback.
-- Produces: one-way React boolean `reassuranceActive` set only when `id === 'reassurance'`.
+- [ ] **Step 1: Add failing integration contract**
 
-- [ ] **Step 1: Add failing integration test**
+Require `ShutterText`, `reassuranceActive`, `id === 'reassurance'`, and absence of `ParticleReassurance` import/render.
 
-Require:
-
-```js
-assert.match(source, /ShutterText/);
-assert.match(source, /reassuranceActive/);
-assert.match(source, /id === 'reassurance'/);
-assert.doesNotMatch(source, /ParticleReassurance/);
-```
-
-- [ ] **Step 2: Run and verify RED**
+- [ ] **Step 2: Run RED**
 
 ```bash
 node --import=tsx --test tests/post-explore-narrative.test.mjs tests/ribbon-trail-integration.test.mjs
 ```
 
-- [ ] **Step 3: Add one-way state**
+- [ ] **Step 3: Add one-way React state**
 
 ```tsx
 const [reassuranceActive, setReassuranceActive] = useState(false);
@@ -311,14 +267,12 @@ const [reassuranceActive, setReassuranceActive] = useState(false);
 Inside `onReveal`:
 
 ```ts
-if (id === 'reassurance') {
-  setReassuranceActive(true);
-}
+if (id === 'reassurance') setReassuranceActive(true);
 ```
 
-Never set it back to false during scroll.
+Never reset it on reverse scroll.
 
-- [ ] **Step 4: Replace particle component with semantic reassurance heading**
+- [ ] **Step 4: Replace particle rendering with semantic heading**
 
 ```tsx
 <JourneyStop id="reassurance" align="center">
@@ -328,11 +282,11 @@ Never set it back to false during scroll.
 </JourneyStop>
 ```
 
-- [ ] **Step 5: Style the reassurance composition**
+- [ ] **Step 5: Add large centered reassurance layout with outer room for the loop**
 
-Use large premium typography compatible with the previous visual scale. Keep enough outer space for the ribbon oval and measured DOM bounds.
+No fixed/pinned stage.
 
-- [ ] **Step 6: Verify focused tests GREEN**
+- [ ] **Step 6: Verify GREEN**
 
 ```bash
 node --import=tsx --test tests/post-explore-narrative.test.mjs tests/ribbon-trail-integration.test.mjs tests/shutter-text.test.mjs
@@ -347,75 +301,60 @@ git commit -m "feat: trigger reassurance shutter from ribbon"
 
 ---
 
-### Task 5: Extend the Same Centerline Through the Reassurance Oval
+### Task 5: Extend the Same Route Through Reassurance and Taper Geometry
 
 **Files:**
-- Modify: `src/components/MainSite/PostExploreNarrative/ribbonPrimitives.ts`
-- Modify: `src/components/MainSite/PostExploreNarrative/journeyRoute.ts`
-- Modify: `src/components/MainSite/PostExploreNarrative/buildJourneyPath.ts`
-- Modify: `tests/ribbon-primitives.test.mjs`
-- Modify: `tests/ribbon-route-geometry.test.mjs`
-- Test: `tests/ribbon-reassurance-end.test.mjs`
+- Modify: `ribbonPrimitives.ts`
+- Modify: `journeyRoute.ts`
+- Modify: `buildJourneyPath.ts`
+- Modify: geometry tests
 
-**Interfaces:**
-- Produces:
+- [ ] **Step 1: Add failing pure geometry tests**
 
-```ts
-export type RibbonTaperGeometry = {
-  startLocalY: number;
-  centerlineD: string;
-  polygonPoints: readonly RibbonPoint[];
-};
+Test one imperfect reassurance loop around a synthetic rect, forward exit, short downward continuation, and taper polygon width reducing to zero.
 
-export type BuiltJourneyPath = {
-  // Phase-1 fields...
-  taper: RibbonTaperGeometry;
-};
-```
-
-- [ ] **Step 1: Add failing primitive/geometry tests**
-
-Require an imperfect reassurance loop around a synthetic measured rect and a short downward exit. Assert loop radii differ and route continues after returning near its entry.
-
-- [ ] **Step 2: Run tests and verify RED**
+- [ ] **Step 2: Run RED**
 
 ```bash
 node --import=tsx --test tests/ribbon-primitives.test.mjs tests/ribbon-route-geometry.test.mjs tests/ribbon-reassurance-end.test.mjs
 ```
 
-- [ ] **Step 3: Add a reassurance-loop primitive**
+- [ ] **Step 3: Add reassurance loop primitive**
 
-Implement a helper that appends guide points around a measured rectangle with asymmetric margins/radii. It must append to the existing point chain and never return an independent SVG path.
+Append guide points around a measured rectangle with intentionally unequal horizontal/vertical radii and slight asymmetry. It appends to the existing point chain; it does not return an independent `d`.
 
-- [ ] **Step 4: Measure actual reassurance block**
+- [ ] **Step 4: Measure `[data-reassurance-text]`**
 
-Use `[data-reassurance-text]` rectangle in root-local coordinates.
+Convert rect to root-local coordinates during the existing read pass.
 
-- [ ] **Step 5: Compose the reassurance route**
+- [ ] **Step 5: Compose oval + short exit**
 
-From the Q3 exit, flow into one loose oval that frames the whole reassurance block, then exit the oval and descend only a short distance.
+From Q3 exit, enter one loose framing oval, exit smoothly, descend only a short distance, and mark `taper.startLocalY`.
 
-Keep the oval organic:
-- horizontal/vertical radii intentionally unequal;
-- one side slightly higher/lower than the other;
-- entry and exit tangents continue naturally.
+- [ ] **Step 6: Build taper centerline samples and polygon**
 
-- [ ] **Step 6: Add taper centerline samples after the oval**
-
-The final short descent remains part of the canonical guide-point chain. Record the local-Y/location where tapering begins.
-
-- [ ] **Step 7: Build a variable-width taper polygon from the final centerline samples**
-
-For N ordered taper samples, compute tangent/normal and width factor:
+For ordered final samples, compute tangent/normal. Width factor:
 
 ```ts
 const factor = 1 - index / (samples.length - 1);
 const halfWidth = fullRibbonWidth * 0.5 * factor;
 ```
 
-Build left-side points forward and right-side points backward into one polygon. Last sample width must be zero or near-zero.
+Left offsets forward + right offsets backward form one polygon. Last sample width is zero/near-zero.
 
-- [ ] **Step 8: Verify geometry tests GREEN**
+- [ ] **Step 7: Return**
+
+```ts
+taper: {
+  startLocalY,
+  centerlineD,
+  polygonPoints,
+}
+```
+
+The taper centerline is a subsection of the canonical route, not a new route.
+
+- [ ] **Step 8: Verify GREEN**
 
 ```bash
 node --import=tsx --test tests/ribbon-primitives.test.mjs tests/ribbon-route-geometry.test.mjs tests/ribbon-reassurance-end.test.mjs
@@ -424,51 +363,50 @@ node --import=tsx --test tests/ribbon-primitives.test.mjs tests/ribbon-route-geo
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/components/MainSite/PostExploreNarrative/ribbonPrimitives.ts src/components/MainSite/PostExploreNarrative/journeyRoute.ts src/components/MainSite/PostExploreNarrative/buildJourneyPath.ts tests/ribbon-primitives.test.mjs tests/ribbon-route-geometry.test.mjs tests/ribbon-reassurance-end.test.mjs
+git add src/components/MainSite/PostExploreNarrative/ribbonPrimitives.ts src/components/MainSite/PostExploreNarrative/journeyRoute.ts src/components/MainSite/PostExploreNarrative/buildJourneyPath.ts tests
 git commit -m "feat: add reassurance loop and taper geometry"
 ```
 
 ---
 
-### Task 6: Render a True Narrowing Taper Without Breaking Draw Progress
+### Task 6: Shape the Final Taper in the Existing Back SVG Layer
 
 **Files:**
-- Modify: `src/components/MainSite/PostExploreNarrative/RibbonTrail.tsx`
-- Modify: `src/components/MainSite/PostExploreNarrative/ribbonController.ts`
-- Modify: `src/components/MainSite/PostExploreNarrative/JourneyNarrative.tsx`
-- Modify: `tests/ribbon-reassurance-end.test.mjs`
-- Modify: `tests/ribbon-trail-integration.test.mjs`
+- Modify: `RibbonTrail.tsx`
+- Modify: `ribbonController.ts`
+- Modify: `JourneyNarrative.tsx`
+- Modify: taper/integration tests
 
-**Interfaces:**
-- Consumes: canonical centerline `d`, `taper.startLocalY`, `taper.centerlineD`, `taper.polygonPoints`.
-- Produces: taper reveal ref synchronized from the same resolved visible length.
-
-- [ ] **Step 1: Keep taper rendering test RED**
+- [ ] **Step 1: Add failing rendering contracts**
 
 Require:
-- taper polygon exists;
-- main full-width visual is clipped/stopped at taper start;
-- taper polygon uses the same blue gradient;
-- taper reveal is controlled from canonical path progress;
-- no opacity-only fade is used for ending.
+- taper polygon rendered in the back ribbon SVG;
+- constant-width back stroke hidden/clipped past taper start;
+- taper polygon uses same Weberaise gradient;
+- taper reveal mask path synchronized by controller;
+- no opacity-only end fade.
 
-- [ ] **Step 2: Render the normal stroke only through the taper start region**
+- [ ] **Step 2: Clip/mask full-width back stroke before taper section**
 
-Use an SVG clip/mask that includes the whole ribbon before `taper.startLocalY` but prevents the constant-width stroke from continuing visibly through the taper section.
+Normal back path remains visible through the whole journey until taper start. Past that point, constant-width stroke must not show.
 
-- [ ] **Step 3: Render the filled taper polygon with the same gradient**
+- [ ] **Step 3: Render filled taper polygon in the back SVG**
 
 ```tsx
-<polygon points={polygonString} fill={`url(#${gradientId})`} mask={`url(#${taperRevealMaskId})`} />
+<polygon
+  points={polygonString}
+  fill={`url(#${backGradientId})`}
+  mask={`url(#${taperRevealMaskId})`}
+/>
 ```
 
-- [ ] **Step 4: Build a taper reveal mask from the taper centerline**
+Do not add a third SVG or separate visual route.
 
-Inside the mask, use a white centerline path wide enough to reveal the full taper polygon progressively. Expose `taperRevealPathRef` so the controller can update its dash.
+- [ ] **Step 4: Reveal taper polygon progressively**
 
-- [ ] **Step 5: Extend controller options**
+Mask contains a white path using `taper.centerlineD`; expose `taperRevealPathRef`.
 
-Add optional:
+- [ ] **Step 5: Extend controller with optional taper info**
 
 ```ts
 taper?: {
@@ -477,20 +415,18 @@ taper?: {
 };
 ```
 
-After canonical `visibleLength` resolves, derive `taperStartLength` from the main path lookup using `rootDocumentTop + startLocalY`. Then:
+Resolve `taperStartLength` from the canonical lookup. On every forward/reverse update:
 
 ```ts
 const taperVisible = clamp(visibleLength - taperStartLength, 0, taperTotalLength);
 revealPath.style.strokeDashoffset = `${taperTotalLength - taperVisible}`;
 ```
 
-This keeps the endpoint reveal synchronized to the same journey progress.
+- [ ] **Step 6: Verify reverse scroll retracts taper**
 
-- [ ] **Step 6: Verify reverse scroll retracts taper too**
+No irreversible taper state.
 
-The same `visibleLength` computation handles forward/reverse motion. Do not maintain separate irreversible taper state.
-
-- [ ] **Step 7: Run focused tests GREEN**
+- [ ] **Step 7: Run GREEN**
 
 ```bash
 node --import=tsx --test tests/ribbon-reassurance-end.test.mjs tests/ribbon-trail-integration.test.mjs
@@ -499,58 +435,44 @@ node --import=tsx --test tests/ribbon-reassurance-end.test.mjs tests/ribbon-trai
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/components/MainSite/PostExploreNarrative/RibbonTrail.tsx src/components/MainSite/PostExploreNarrative/ribbonController.ts src/components/MainSite/PostExploreNarrative/JourneyNarrative.tsx tests/ribbon-reassurance-end.test.mjs tests/ribbon-trail-integration.test.mjs
+git add src/components/MainSite/PostExploreNarrative/RibbonTrail.tsx src/components/MainSite/PostExploreNarrative/ribbonController.ts src/components/MainSite/PostExploreNarrative/JourneyNarrative.tsx tests
 git commit -m "feat: taper ribbon into final endpoint"
 ```
 
 ---
 
-### Task 7: Remove the Obsolete Particle Reassurance Cleanly
+### Task 7: Remove Obsolete Particle Reassurance
 
 **Files:**
-- Delete: `src/components/MainSite/PostExploreNarrative/ParticleReassurance.tsx`
-- Delete: `src/components/MainSite/PostExploreNarrative/particleModel.ts`
-- Modify: `tests/post-explore-narrative.test.mjs`
-- Modify: `tests/shutter-text.test.mjs`
+- Delete: `ParticleReassurance.tsx`
+- Delete: `particleModel.ts`
+- Modify: particle-era tests
 
-**Interfaces:**
-- Consumes: completed ShutterText replacement.
-- Produces: no remaining particle-specific reassurance code or tests.
-
-- [ ] **Step 1: Search for all particle references before deleting**
+- [ ] **Step 1: Confirm all remaining references**
 
 ```bash
 grep -R "ParticleReassurance\|particleModel\|pointerRepel\|maxParticles" -n src tests
 ```
 
-Only reassurance-specific references should remain.
-
-- [ ] **Step 2: Delete the obsolete files**
+- [ ] **Step 2: Delete files only now that ShutterText is green**
 
 ```bash
 rm src/components/MainSite/PostExploreNarrative/ParticleReassurance.tsx
 rm src/components/MainSite/PostExploreNarrative/particleModel.ts
 ```
 
-- [ ] **Step 3: Remove obsolete particle assertions from tests**
+- [ ] **Step 3: Replace old particle assertions with ShutterText/no-particle contracts**
 
-Replace them with ShutterText/no-particle contracts. Do not weaken Aurora/GROW/reduced-motion coverage.
+Do not weaken Aurora/GROW/reduced-motion coverage.
 
-- [ ] **Step 4: Run focused test suite**
+- [ ] **Step 4: Verify**
 
 ```bash
 node --import=tsx --test tests/post-explore-narrative.test.mjs tests/shutter-text.test.mjs
+if grep -R "ParticleReassurance\|particleModel\|pointerRepel\|maxParticles" -n src tests; then exit 1; fi
 ```
 
-Expected: PASS.
-
-- [ ] **Step 5: Confirm no particle references remain**
-
-```bash
-if grep -R "ParticleReassurance\|particleModel\|pointerRepel\|maxParticles" -n src tests; then exit 1; else echo "particle reassurance removed"; fi
-```
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add -A src/components/MainSite/PostExploreNarrative tests
@@ -559,55 +481,40 @@ git commit -m "refactor: remove particle reassurance"
 
 ---
 
-### Task 8: Full Technical Verification Before Visual Acceptance
+### Task 8: Fresh Full Technical Verification
 
-**Files:**
-- No planned code edits unless verification exposes a defect.
-
-- [ ] **Step 1: Run full tests fresh**
+- [ ] **Step 1: Tests**
 
 ```bash
 npm test
 ```
 
-Expected: 0 failing tests.
-
-- [ ] **Step 2: Run full typecheck fresh**
+- [ ] **Step 2: Typecheck**
 
 ```bash
 npm run typecheck
 ```
 
-Expected: exit 0.
-
-- [ ] **Step 3: Run production build fresh**
+- [ ] **Step 3: Production build**
 
 ```bash
 npm run build
 ```
 
-Expected: exit 0.
+Only claim a command passed if it actually ran successfully in this environment.
 
-Do not claim any of these pass unless the exact command runs successfully in the current environment.
-
-- [ ] **Step 4: Verify changed-file scope**
+- [ ] **Step 4: Check scope/status**
 
 ```bash
-git diff --stat HEAD~1..HEAD
 git status --short
+git diff --stat HEAD~1..HEAD
 ```
 
-No unrelated loader/hero/Aurora/GROW changes should appear.
+No unrelated loader/hero/Aurora/GROW changes.
 
 ---
 
-### Task 9: Final Browser/Screenshot Acceptance — Entire Journey
-
-**Files:**
-- Modify only after a diagnosed visual defect and regression test where possible.
-
-**Interfaces:**
-- Produces final evidence for the entire approved spec.
+### Task 9: Final Browser/Screenshot Acceptance
 
 - [ ] **Step 1: Run actual app**
 
@@ -615,68 +522,45 @@ No unrelated loader/hero/Aurora/GROW changes should appear.
 npm run dev
 ```
 
-Prefer the real Next app. A mirror/harness may supplement debugging but cannot replace final real-app QA when dependencies are available.
+Prefer actual Next app. Harness can supplement debugging only.
 
-- [ ] **Step 2: Capture required desktop journey checkpoints**
+- [ ] **Step 2: Capture `1440×900` and `1280×720` checkpoints**
 
-At `1440×900` and `1280×720`:
-1. automatic opening mid-loop;
-2. opening completed / scroll acquisition;
-3. Q1 front upper overlap;
-4. Q1 behind-artwork region;
+1. opening mid-loop;
+2. opening/acquisition handoff;
+3. Q1 front overlap;
+4. Q1 behind region;
 5. Q1 re-emergence;
 6. Q2 calm bend;
-7. Q3 first O loop;
-8. Q3 second O loop;
-9. reassurance as ShutterText begins;
-10. mid-slice shutter state;
-11. fully resolved ShutterText inside reassurance oval;
-12. ribbon after oval starting taper;
-13. final almost-zero-width endpoint.
+7. Q3 first O;
+8. Q3 second O;
+9. ShutterText start;
+10. mid-slice state;
+11. final ShutterText inside oval;
+12. taper start;
+13. almost-zero-width endpoint.
 
-- [ ] **Step 3: Capture representative mobile equivalents at `390×844`**
+- [ ] **Step 3: Capture representative `390×844` mobile versions**
 
-All major special interactions must remain legible and unclipped.
+All special interactions must remain legible/unclipped.
 
-- [ ] **Step 4: Verify the exact ShutterText character behavior visually**
+- [ ] **Step 4: Verify exact Shutter behavior**
 
-Check:
-- main glyphs begin blurred/transparent;
-- top slice sweeps left→right;
-- middle slice sweeps right→left;
-- bottom slice sweeps left→right;
-- stagger reads character-by-character;
-- final main text is sharp and stable;
-- effect does not replay on reverse scroll;
-- colors read as Weberaise rather than source emerald/cyberpunk.
+Main glyphs blur→sharp, top left→right, middle right→left, bottom left→right, per-character stagger, stable final text, no reverse-scroll replay.
 
-- [ ] **Step 5: Verify the entire one-ribbon illusion**
+- [ ] **Step 5: Verify one-ribbon illusion**
 
-Reject if:
-- any segment breaks during front/back depth;
-- loops appear as independent effects;
-- Q1 clip masks visibly pop while reversing;
-- OO traces miss glyphs;
-- reassurance oval appears detached;
-- taper has a seam/blunt cap;
-- taper behaves like opacity fade rather than narrowing;
-- gradient becomes neon;
-- head-band behavior regresses;
-- normal page scroll feels hijacked.
+Reject any break, depth pop, detached oval, missed O, taper seam, blunt cap, opacity-only ending, neon gradient, head-band regression, or scroll hijack.
 
 - [ ] **Step 6: Verify reduced motion**
 
-Enable `prefers-reduced-motion: reduce` and confirm:
-- semantic questions/reassurance remain readable;
-- ShutterText resolves without slice travel;
-- ribbon remains understandable without extra flourish;
-- no content stays permanently invisible.
+Semantic questions/reassurance remain readable; ShutterText resolves without slice travel; no content depends on animation completion.
 
-- [ ] **Step 7: Use systematic-debugging for any visual failure**
+- [ ] **Step 7: Diagnose any failure before tuning**
 
-Identify root cause first. Do not randomly tune multiple primitive parameters at once. Add focused regression coverage where feasible.
+Use systematic-debugging. Add regression test where feasible.
 
-- [ ] **Step 8: Re-run full verification after the last visual fix**
+- [ ] **Step 8: Re-run full verification after final visual fix**
 
 ```bash
 npm test
@@ -693,14 +577,4 @@ git commit -m "fix: finalize art-directed ribbon experience"
 
 ## Phase-2 Completion Gate
 
-The overall redesign is complete only if all of the following are supported by fresh evidence:
-- Phase 1 remained accepted after Phase-2 changes;
-- ShutterText reproduces the supplied slice/blur/stagger behavior;
-- reassurance triggers exactly once from ribbon approach;
-- particle reassurance files are removed;
-- reassurance oval remains part of the same route;
-- final endpoint visibly narrows to zero with no seam/blunt cap;
-- reverse scrolling retracts the ribbon/taper without replaying text;
-- required desktop/mobile screenshots have been inspected;
-- full tests/typecheck/build pass if the environment can execute them;
-- PR #1 remains open and unmerged unless the user explicitly asks otherwise.
+Overall redesign is complete only with fresh evidence that Phase 1 still holds, ShutterText matches supplied behavior, reassurance triggers once, particle code is gone, reassurance oval/taper remain one route, final endpoint physically narrows to zero, reverse scrolling retracts without replay, required desktop/mobile screenshots were inspected, and PR #1 remains open/unmerged unless explicitly requested otherwise.
