@@ -21,7 +21,7 @@ export function TrailNarrative({
 
     const shell = root.closest<HTMLElement>('[data-experience-state]');
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let cleanupMotion = () => undefined;
+    let cleanupMotion: () => void = () => undefined;
     let started = false;
     let experienceObserver: MutationObserver | null = null;
 
