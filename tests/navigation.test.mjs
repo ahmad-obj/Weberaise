@@ -136,3 +136,15 @@ test('goo transform motion is not overwritten by main theme transitions', () => 
   assert.match(css, /\.gooCore\s*\{[\s\S]*transform 280ms/);
   assert.doesNotMatch(css, /\.pill,\s*\.centerHoverPlate,\s*\.gooCore/);
 });
+
+test('services exposes a stable future detach seam without implementing detachment', () => {
+  const component = read(`${navDir}/CenterNavCluster.tsx`);
+  const css = read(`${navDir}/Navigation.module.css`);
+
+  assert.match(component, /data-nav-detach-anchor/);
+  assert.match(component, /item\.key === 'services'/);
+  assert.doesNotMatch(component, /footer|detachServices|IntersectionObserver/i);
+  assert.doesNotMatch(css, /\.centerCluster\s*\{[^}]*overflow:\s*(hidden|clip)/s);
+  assert.doesNotMatch(css, /\.navItemSlot\s*\{[^}]*transform:/s);
+  assert.doesNotMatch(css, /\.navItemSlot\s*\{[^}]*contain:\s*paint/s);
+});
