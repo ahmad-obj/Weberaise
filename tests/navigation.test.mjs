@@ -25,7 +25,7 @@ test('floating navigation has three independent zones and canonical order', () =
   assert.match(component, /data-nav-zone="logo"/);
   assert.match(component, /data-nav-zone="center"/);
   assert.match(component, /data-nav-zone="talk"/);
-  assert.match(component, /LET(?:'|&apos;)S TALK/);
+  assert.match(read(`${navDir}/GooeyTalkButton.tsx`), /LET(?:'|&apos;)S TALK/);
 });
 
 test('navigation root is visually barless and pills remain independent', () => {
@@ -71,4 +71,19 @@ test('services stays detach-ready and the center cluster does not clip item slot
   assert.doesNotMatch(css, /\.centerCluster\s*\{[^}]*overflow:\s*(hidden|clip)/s);
   assert.doesNotMatch(css, /\.navItemSlot\s*\{[^}]*transform:/s);
   assert.doesNotMatch(css, /\.navItemSlot\s*\{[^}]*filter:/s);
+});
+
+test('lets talk uses a deterministic hover-triggered monochrome goo system', () => {
+  const button = read(`${navDir}/GooeyTalkButton.tsx`);
+  const particles = read(`${navDir}/gooeyParticles.ts`);
+  const css = read(`${navDir}/Navigation.module.css`);
+
+  assert.match(button, /LET(?:'|&apos;)S TALK/);
+  assert.match(button, /onPointerEnter/);
+  assert.match(button, /onFocus/);
+  assert.match(button, /data-goo-particle/);
+  assert.doesNotMatch(particles, /Math\.random/);
+  assert.match(css, /blur\(/);
+  assert.match(css, /contrast\(/);
+  assert.match(css, /background:\s*var\(--nav-pill-fg\)/);
 });

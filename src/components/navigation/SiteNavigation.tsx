@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { CenterNavCluster } from './CenterNavCluster';
+import { GooeyTalkButton } from './GooeyTalkButton';
 import { type NavigationMode } from './navigationModel';
 import styles from './Navigation.module.css';
 
@@ -58,9 +59,7 @@ export function SiteNavigation({ mode }: { mode: NavigationMode }) {
       </div>
 
       <div className={styles.talkZone} data-nav-zone="talk">
-        <a className={`${styles.pill} ${styles.talkPill}`} href="#contact">
-          LET&apos;S TALK
-        </a>
+        <GooeyTalkButton />
       </div>
     </nav>
   );

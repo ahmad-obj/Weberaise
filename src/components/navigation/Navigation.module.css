@@ -68,12 +68,7 @@
   mask: url('/brand/weberaise-mark.svg') center / contain no-repeat;
 }
 
-.centerPill {
-  min-width: 78px;
-  position: relative;
-  z-index: 1;
-}
-
+.centerPill { min-width: 78px; }
 .talkPill { min-width: 118px; }
 
 .pill:focus-visible {
@@ -90,6 +85,11 @@
   position: relative;
   z-index: 1;
   display: inline-flex;
+}
+
+.centerPill {
+  position: relative;
+  z-index: 1;
 }
 
 .centerHoverPlate {
@@ -111,4 +111,100 @@
   pointer-events: none;
   opacity: 0;
   will-change: transform, width, height, opacity;
+}
+
+.talkPill {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+}
+
+.talkBaseLabel,
+.talkHoverLabel {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  transition: opacity 140ms ease;
+}
+
+.gooField {
+  position: absolute;
+  inset: -14px;
+  z-index: 2;
+  pointer-events: none;
+  filter: blur(4px) contrast(18);
+  opacity: 0;
+  transition: opacity 80ms linear;
+}
+
+.gooCore {
+  position: absolute;
+  inset: 14px;
+  border-radius: var(--nav-pill-radius);
+  background: var(--nav-pill-fg);
+  transform: scale(0.72);
+  opacity: 0;
+  transition:
+    transform 280ms cubic-bezier(.2, .8, .2, 1),
+    opacity 120ms linear;
+}
+
+.gooParticle {
+  --goo-x: 0px;
+  --goo-y: 0px;
+  --goo-scale: 0.4;
+  --goo-delay: 0ms;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--nav-pill-fg);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.15);
+  animation: wrNavGooBurst 520ms cubic-bezier(.22, .8, .24, 1) var(--goo-delay) both;
+}
+
+.talkHoverLabel {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  color: var(--nav-pill-bg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.talkPill[data-active='true'] .gooField,
+.talkPill[data-active='true'] .gooCore,
+.talkPill[data-active='true'] .talkHoverLabel {
+  opacity: 1;
+}
+
+.talkPill[data-active='true'] .gooCore {
+  transform: scale(1);
+}
+
+.talkPill[data-active='true'] .talkBaseLabel {
+  opacity: 0;
+}
+
+@keyframes wrNavGooBurst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(0, 0) scale(0.15);
+  }
+  18% {
+    opacity: 1;
+  }
+  52% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate(var(--goo-x), var(--goo-y)) scale(var(--goo-scale));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(0, 0) scale(0.12);
+  }
 }
