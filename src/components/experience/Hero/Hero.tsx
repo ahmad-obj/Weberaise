@@ -48,7 +48,15 @@ export function Hero({
 
         if (!target) return;
 
-        const scrollToTarget = () => {
+        const scrollWhenUnlocked = (attempt = 0) => {
+          if (
+            document.documentElement.classList.contains('experience-scroll-locked') &&
+            attempt < 12
+          ) {
+            window.requestAnimationFrame(() => scrollWhenUnlocked(attempt + 1));
+            return;
+          }
+
           const element = document.querySelector<HTMLElement>(target);
           if (!element) return;
 
@@ -59,9 +67,7 @@ export function Hero({
           }
         };
 
-        window.requestAnimationFrame(() => {
-          window.requestAnimationFrame(scrollToTarget);
-        });
+        window.requestAnimationFrame(() => scrollWhenUnlocked());
       },
     });
     return () => controller.kill();
