@@ -103,7 +103,10 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
 
     const approachY = Math.max(lastY + 90, stop.centerY - visit.approachLead);
     const passY = Math.max(approachY + 54, stop.centerY);
-    const departY = Math.max(passY + 58, Math.min(stop.bottom + visit.approachLead * 0.44, height - 70));
+    const departY = Math.max(
+      passY + 58,
+      Math.min(stop.bottom + visit.approachLead * 0.44, height - 70),
+    );
 
     points.push({ x: oppositeX, y: approachY });
     points.push({ x: passX, y: passY });
@@ -116,13 +119,6 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
     };
 
     lastY = departY;
-  }
-
-  if (lastY < height - 32) {
-    points.push({
-      x: clamp(width * 0.52, config.edgeInset, width - config.edgeInset),
-      y: height - 32,
-    });
   }
 
   return {
