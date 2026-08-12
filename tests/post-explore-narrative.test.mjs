@@ -78,9 +78,10 @@ test('trail narrative uses fixed semantic question anchors and a decorative SVG'
 
   assert.match(component, /aria-hidden="true"/);
   assert.match(component, /data-trail-path/);
-  assert.match(component, /data-trail-question="0"/);
-  assert.match(component, /data-trail-question="1"/);
-  assert.match(component, /data-trail-question="2"/);
+  assert.match(component, /data-trail-question=\{index\}/);
+  assert.match(component, /trailQuestionOne/);
+  assert.match(component, /trailQuestionTwo/);
+  assert.match(component, /trailQuestionThree/);
   assert.doesNotMatch(component, /data-question-char|questionChar/);
 
   assert.match(css, /\.trailScroll\s*\{[^}]*height:\s*500svh/s);
