@@ -52,10 +52,7 @@ export function Hero({
           const element = document.querySelector<HTMLElement>(target);
           if (!element) return;
 
-          element.scrollIntoView({
-            behavior: reducedMotion ? 'auto' : 'smooth',
-            block: 'start',
-          });
+          element.scrollIntoView({ behavior: 'auto', block: 'start' });
 
           if (window.location.hash !== target) {
             window.history.replaceState(null, '', target);
