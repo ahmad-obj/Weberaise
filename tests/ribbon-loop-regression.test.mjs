@@ -228,3 +228,50 @@ test('mobile opening never reverses back through its own oval', () => {
   const openingPoints = cubicEndpoints(built.d).filter((point) => point.y < 400);
   assert.deepEqual(strictSegmentCrossings(openingPoints), []);
 });
+
+const desktopRect = (left, top, width, height) => ({ left, top, right: left + width, bottom: top + height, width, height });
+const desktopGeometry = {
+  q1: desktopRect(52, 650, 1336, 430), q2: desktopRect(52, 1500, 1336, 430), q3: desktopRect(52, 2350, 1336, 430),
+  artQ1: desktopRect(830, 700, 470, 350), artQ2: desktopRect(120, 1540, 470, 350), artQ3: desktopRect(830, 2390, 470, 350),
+  q2Text: desktopRect(719, 1669, 649, 73), o1: desktopRect(330, 2510, 62, 86), o2: desktopRect(393, 2510, 62, 86),
+  reassuranceText: desktopRect(58, 3330, 1324, 188),
+};
+const desktopRootRect = desktopRect(0, 0, 1440, 4300);
+const desktopLookup = new Map([
+  ['[data-journey-stop="q1"]', desktopGeometry.q1], ['[data-journey-stop="q2"]', desktopGeometry.q2], ['[data-journey-stop="q3"]', desktopGeometry.q3],
+  ['[data-ribbon-artwork="q1"]', desktopGeometry.artQ1], ['[data-ribbon-artwork="q2"]', desktopGeometry.artQ2], ['[data-ribbon-artwork="q3"]', desktopGeometry.artQ3],
+  ['[data-ribbon-question="q2"]', desktopGeometry.q2Text], ['[data-ribbon-glyph="look-o-1"]', desktopGeometry.o1], ['[data-ribbon-glyph="look-o-2"]', desktopGeometry.o2],
+  ['[data-reassurance-text]', desktopGeometry.reassuranceText],
+]);
+const desktopRoot = {
+  scrollHeight: 4300,
+  getBoundingClientRect: () => desktopRootRect,
+  querySelector: (selector) => {
+    const value = desktopLookup.get(selector);
+    return value ? { getBoundingClientRect: () => value } : null;
+  },
+};
+const desktopConfig = {
+  edgeInset: 28, sampleSpacing: 10, ribbonWidth: 5.2,
+  opening: { lead: 220, loopRadiusX: 88, loopRadiusY: 54, exitRun: 132 },
+  q1: { clearance: 78, wrapScale: 1 }, q2: { bendWidth: 460, bendBias: 0 }, q3: { glyphScaleX: 1.22, glyphScaleY: 1.1 },
+  reassurance: { paddingX: 82, paddingY: 54, skew: 0.115, approachLead: 190, bandBias: -0.006, exitRun: 72, taperLength: 168 },
+};
+
+test('built LOOK route uses the crossing-free paired OO trace', () => {
+  const built = buildJourneyPath(desktopRoot, desktopConfig);
+  const points = cubicEndpoints(built.d).filter((point) => (
+    point.y >= desktopGeometry.o1.top - 80
+    && point.y <= desktopGeometry.o1.bottom + 80
+    && point.x >= desktopGeometry.o1.left - 80
+    && point.x <= desktopGeometry.o2.right + 100
+  ));
+  assert.deepEqual(strictSegmentCrossings(points), []);
+});
+
+test('reassurance route stays inside the document so its exit and taper remain visible', () => {
+  const built = buildJourneyPath(desktopRoot, desktopConfig);
+  const points = cubicEndpoints(built.d).filter((point) => point.y >= desktopGeometry.reassuranceText.top - 120);
+  const maxX = Math.max(...points.map((point) => point.x));
+  assert.ok(maxX <= desktopRootRect.width - 2, `reassurance/taper escapes viewport at x=${maxX}`);
+});
