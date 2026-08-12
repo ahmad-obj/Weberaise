@@ -64,13 +64,13 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
 
   const leadX = clamp(config.opening.lead, config.edgeInset + 60, width * 0.42);
   const openingCenter = {
-    x: clamp(leadX + config.opening.loopRadiusX * 1.18, config.edgeInset + config.opening.loopRadiusX, width - config.edgeInset - config.opening.loopRadiusX),
+    x: clamp(leadX + config.opening.loopRadiusX * 1.14, config.edgeInset + config.opening.loopRadiusX, width - config.edgeInset - config.opening.loopRadiusX),
     y: Math.max(92, config.opening.loopRadiusY * 1.72),
   };
-  appendFlow(points, { x: leadX, y: openingCenter.y - config.opening.loopRadiusY * 0.18 }, 24);
-  appendLooseOvalLoop(points, openingCenter, config.opening.loopRadiusX, config.opening.loopRadiusY, 0.17);
+  appendFlow(points, { x: leadX, y: openingCenter.y - config.opening.loopRadiusY * 0.14 }, 18);
+  appendLooseOvalLoop(points, openingCenter, config.opening.loopRadiusX, config.opening.loopRadiusY, 0.06);
   const openingExit = points.at(-1)!;
-  appendFlow(points, { x: clamp(width * 0.34, config.edgeInset, width - config.edgeInset), y: openingExit.y + config.opening.exitRun }, 32);
+  appendFlow(points, { x: clamp(width * 0.34, config.edgeInset, width - config.edgeInset), y: openingExit.y + config.opening.exitRun }, 20);
   const openingLocalY = points.at(-1)!.y;
 
   const wrapRect: RibbonRect = config.q1.wrapScale === 1 ? artQ1 : {
@@ -90,10 +90,10 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   const horizontalGap = q2Text.left - artQ2.right;
   const hasHorizontalGap = horizontalGap > 36;
   const q2CenterX = hasHorizontalGap ? artQ2.right + horizontalGap * 0.5 : width * (0.5 + config.q2.bendBias);
-  const q2BendWidth = hasHorizontalGap ? Math.min(config.q2.bendWidth, Math.max(84, horizontalGap * 1.25)) : Math.min(config.q2.bendWidth, width * 0.46);
+  const q2BendWidth = hasHorizontalGap ? Math.min(config.q2.bendWidth, Math.max(92, horizontalGap * 1.12)) : Math.min(config.q2.bendWidth, width * 0.42);
   appendGentleBend(points, 'right', { x: q2CenterX, y: centerY(q2) }, q2BendWidth);
 
-  appendFlow(points, { x: o1.left - Math.max(22, o1.width * 0.7), y: o1.top - Math.max(72, o1.height * 0.95) }, -34);
+  appendFlow(points, { x: o1.left - Math.max(28, o1.width * 0.76), y: o1.top - Math.max(56, o1.height * 0.72) }, -20);
   appendGlyphLoop(points, o1, config.q3.glyphScaleX, config.q3.glyphScaleY);
   appendGlyphLoop(points, o2, config.q3.glyphScaleX, config.q3.glyphScaleY);
   const lookBounds: RibbonRect = {
@@ -105,7 +105,7 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   appendFlow(
     points,
     { x: reassuranceText.left - config.reassurance.paddingX * 0.55, y: Math.max(points.at(-1)!.y + 140, reassuranceText.top - config.reassurance.approachLead) },
-    -48,
+    -36,
   );
   appendReassuranceLoop(points, reassuranceText, config.reassurance.paddingX, config.reassurance.paddingY, config.reassurance.skew);
   const reassuranceExit = points.at(-1)!;
@@ -132,5 +132,5 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
     },
   };
 
-  return { d: smoothRibbonPath(points, 0.84), width, height, openingLocalY, stops, frontClipRects, taper };
+  return { d: smoothRibbonPath(points, 0.72), width, height, openingLocalY, stops, frontClipRects, taper };
 }
