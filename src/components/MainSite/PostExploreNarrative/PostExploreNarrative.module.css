@@ -179,10 +179,10 @@
   left: 50%;
   top: 50%;
   display: block;
-  color: var(--wr-text);
-  font-family: var(--font-body), Arial, sans-serif;
   font-size: 14px;
   font-weight: 800;
+  color: var(--wr-text);
+  font-family: var(--font-body), Arial, sans-serif;
   line-height: 1;
   letter-spacing: 0;
   transform: translate(-50%, -50%) rotate(var(--char-angle))
