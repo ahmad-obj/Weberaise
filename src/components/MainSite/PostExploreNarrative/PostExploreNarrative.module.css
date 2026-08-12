@@ -6,21 +6,14 @@
   isolation: isolate;
 }
 
-.trailScroll {
+.journey {
   position: relative;
-  height: 500svh;
+  min-height: 430svh;
   background: var(--wr-black);
+  overflow: clip;
 }
 
-.trailStage {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  overflow: hidden;
-  background: var(--wr-black);
-}
-
-.trailSvg {
+.ribbonSvg {
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -30,11 +23,7 @@
   pointer-events: none;
 }
 
-.trailSvgMobile {
-  display: none;
-}
-
-.trailPath {
+.ribbonPath {
   fill: none;
   stroke: #3b82f6;
   stroke-width: 4;
@@ -44,21 +33,46 @@
   will-change: stroke-dashoffset;
 }
 
-.trailQuestions {
-  position: absolute;
-  inset: 0;
+.journeyContent {
+  position: relative;
   z-index: 2;
-  pointer-events: none;
-  opacity: 1;
-  transform: translateY(0);
-  transition:
-    opacity 360ms cubic-bezier(0.22, 0.61, 0.36, 1),
-    transform 360ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-.trailQuestion {
-  position: absolute;
+.journeyLead {
+  height: 48svh;
+  pointer-events: none;
+}
+
+.journeyStop {
+  position: relative;
+  display: flex;
+  min-height: 94svh;
+  align-items: center;
+  padding: clamp(56px, 8svh, 104px) var(--wr-page-pad);
+}
+
+.journeyStopLeft {
+  justify-content: flex-start;
+}
+
+.journeyStopRight {
+  justify-content: flex-end;
+}
+
+.journeyStopCenter {
+  justify-content: center;
+}
+
+.journeyStopAnchor {
+  position: relative;
   width: min(58vw, 940px);
+}
+
+.journeyStopAnchorWide {
+  width: min(98vw, 1700px);
+}
+
+.journeyQuestion {
   margin: 0;
   color: var(--wr-text);
   font-family: var(--font-hero), Arial, sans-serif;
@@ -66,59 +80,38 @@
   font-weight: 790;
   line-height: 0.92;
   letter-spacing: -0.055em;
+  text-wrap: balance;
   opacity: 0;
+  visibility: hidden;
   transform: translateY(24px);
-  transition:
-    opacity 520ms cubic-bezier(0.22, 0.61, 0.36, 1),
-    transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform, opacity;
 }
 
-.trailQuestion[data-visited='true'] {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.trailQuestionOne {
-  left: clamp(28px, 5vw, 84px);
-  top: clamp(72px, 12svh, 132px);
-  text-align: left;
-}
-
-.trailQuestionTwo {
-  right: clamp(28px, 5vw, 84px);
-  top: 44%;
+.journeyStopRight .journeyQuestion {
   text-align: right;
 }
 
-.trailQuestionThree {
-  left: clamp(28px, 7vw, 118px);
-  top: 67%;
-  text-align: left;
-}
-
-.trailScroll[data-trail-questions-faded='true'] .trailQuestions {
-  opacity: 0;
-  transform: translateY(-8px);
+.journeyStopAnchor[data-revealed='true'] .journeyQuestion {
+  opacity: 1;
+  visibility: visible;
 }
 
 .reassuranceSection {
-  position: absolute;
-  left: 50%;
-  top: 68%;
+  position: relative;
   z-index: 3;
-  width: min(98vw, 1700px);
-  height: clamp(300px, 36vw, 560px);
-  transform: translate(-50%, -50%) scale(0.985);
+  width: 100%;
+  height: clamp(320px, 38vw, 580px);
   opacity: 0;
+  transform: scale(0.985);
   pointer-events: none;
   transition:
     opacity 360ms cubic-bezier(0.22, 0.61, 0.36, 1),
     transform 460ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-.root[data-reassurance-active='true'] .reassuranceSection {
+.journeyStopAnchor[data-revealed='true'] .reassuranceSection {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
+  transform: scale(1);
   pointer-events: auto;
 }
 
@@ -261,67 +254,50 @@
 }
 
 @media (max-width: 900px) {
-  .trailQuestion {
+  .journeyStopAnchor {
     width: min(66vw, 720px);
+  }
+
+  .journeyQuestion {
     font-size: clamp(40px, 7.4vw, 78px);
-  }
-
-  .trailQuestionOne {
-    top: clamp(70px, 13svh, 118px);
-  }
-
-  .trailQuestionTwo {
-    top: 43%;
-  }
-
-  .trailQuestionThree {
-    top: 67%;
   }
 }
 
 @media (max-width: 720px) {
-  .trailScroll {
-    height: 520svh;
+  .journey {
+    min-height: 455svh;
   }
 
-  .trailSvgDesktop {
-    display: none;
+  .journeyLead {
+    height: 44svh;
   }
 
-  .trailSvgMobile {
-    display: block;
+  .journeyStop {
+    min-height: 100svh;
+    padding: clamp(46px, 7svh, 74px) var(--wr-page-pad);
   }
 
-  .trailPath {
-    stroke-width: 3;
+  .journeyStopAnchor {
+    width: min(78vw, 520px);
   }
 
-  .trailQuestion {
-    width: min(76vw, 520px);
+  .journeyStopAnchorWide {
+    width: 100%;
+  }
+
+  .journeyQuestion {
     font-size: clamp(32px, 9.2vw, 54px);
     line-height: 0.95;
     letter-spacing: -0.048em;
   }
 
-  .trailQuestionOne {
-    left: var(--wr-page-pad);
-    top: 13svh;
-  }
-
-  .trailQuestionTwo {
-    right: var(--wr-page-pad);
-    top: 42%;
-  }
-
-  .trailQuestionThree {
-    left: var(--wr-page-pad);
-    top: 66%;
+  .ribbonPath {
+    stroke-width: 3;
   }
 
   .reassuranceSection {
-    top: 67%;
-    width: 100vw;
-    height: clamp(260px, 70vw, 380px);
+    width: 100%;
+    height: clamp(280px, 74vw, 400px);
   }
 
   .particleTextFrame {
@@ -357,13 +333,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .trailQuestion,
-  .trailQuestions,
+  .journeyQuestion,
   .reassuranceSection {
     transition: none;
   }
 
-  .trailQuestion {
+  .journeyQuestion {
     transform: none;
   }
 
