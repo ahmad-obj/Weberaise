@@ -13,7 +13,8 @@
 - center navigation uses one measured inverse inner plate that glides and resizes between separate pills using GSAP, live DOM rectangles, `ResizeObserver`, and equivalent keyboard focus behavior;
 - `LET'S TALK` uses a deterministic monochrome Gooey Nav-inspired hover/focus burst with a bounded inverse core and ten same-color blobs;
 - hero center/CTA navigation requests use the existing EXPLORE transition first, then land directly on the requested main-site target after the scroll lock clears; navigation is inert while the exit transition is running;
-- main navigation uses explicit `data-nav-theme="dark|light"` section metadata and a requestAnimationFrame-coalesced probe instead of blend-mode guessing;
+- main navigation samples the underlying `data-nav-theme` independently beneath the logo, center group, and CTA using `elementsFromPoint`, so edge and center pills can invert separately when they sit over different horizontal backgrounds;
+- main-mode sampling is requestAnimationFrame-coalesced on scroll/resize and uses the actual zone rectangles rather than one global navbar probe;
 - hero and main instances share the same geometry so the EXPLORE handoff does not replay the entrance or require a layout swap;
 - mobile keeps logo and CTA on the first row and the center trio on a second centered row; coarse pointers and reduced motion remove decorative hover travel without removing destinations;
 - `SERVICES` exposes `data-nav-detach-anchor` on its own transform-free, unclipped slot so a later footer milestone can promote that exact pill into a detached fixed/portal layer;
@@ -127,11 +128,12 @@ The dependency-free navigation contract suite covers:
 - deterministic monochrome `LET'S TALK` goo system;
 - hero-link routing through the existing EXPLORE transition before landing on hidden main targets;
 - main-state-only navigation and explicit section theme metadata;
+- independent background-theme sampling beneath logo, center group, and CTA;
 - shared hero/main geometry and no main entrance replay;
 - mobile, coarse-pointer, keyboard-focus and reduced-motion contracts;
 - Services future-detachment seam without implementing footer behavior.
 
-Current focused result: **13/13 PASS** in the dependency-free structural harness used for this branch.
+Current focused result: **14/14 PASS** in the dependency-free structural harness used for this branch.
 
 The latest carried-forward ribbon geometry regression test also passes independently: **1/1 PASS**.
 
@@ -171,7 +173,7 @@ Then visually check:
 - `LET'S TALK` goo remains monochrome, bounded, retriggerable, and does not obscure focus handling;
 - clicking a hero center/CTA navigation item completes EXPLORE first and then lands directly on the requested target;
 - EXPLORE switches to main navigation with no flash, duplicate entrance, or geometry jump;
-- dark main sections show white pills/black text and a temporary light section correctly flips to black pills/white text;
+- logo, center group, and CTA independently switch pill contrast if they sit over different marked background themes;
 - mobile two-row navigation does not collide with hero typography;
 - Services exposes a stable detach anchor and remains in normal navigation flow;
 - EXPLORE is black on the untouched white hero and white only inside the liquid reveal;
