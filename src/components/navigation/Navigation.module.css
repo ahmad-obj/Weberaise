@@ -215,12 +215,12 @@
   }
 }
 
-.navRoot[data-navigation-mode='main'][data-nav-theme='dark'] {
+.navRoot[data-navigation-mode='main'] [data-nav-theme='dark'] {
   --nav-pill-bg: #fff;
   --nav-pill-fg: #000;
 }
 
-.navRoot[data-navigation-mode='main'][data-nav-theme='light'] {
+.navRoot[data-navigation-mode='main'] [data-nav-theme='light'] {
   --nav-pill-bg: #000;
   --nav-pill-fg: #fff;
 }
