@@ -5,7 +5,11 @@ import { CENTER_NAV_ITEMS } from './navigationModel';
 import { createCenterHoverMotion } from './centerHoverMotion';
 import styles from './Navigation.module.css';
 
-export function CenterNavCluster() {
+type CenterNavClusterProps = {
+  onNavigate?: (href: string) => void;
+};
+
+export function CenterNavCluster({ onNavigate }: CenterNavClusterProps) {
   const rootRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -34,6 +38,12 @@ export function CenterNavCluster() {
             className={`${styles.pill} ${styles.centerPill}`}
             href={item.href}
             data-center-nav-link
+            onClick={onNavigate
+              ? (event) => {
+                  event.preventDefault();
+                  onNavigate(item.href);
+                }
+              : undefined}
           >
             {item.label}
           </a>
