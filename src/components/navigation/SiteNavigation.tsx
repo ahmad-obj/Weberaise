@@ -61,6 +61,7 @@ export function SiteNavigation({
       data-navigation-disabled={interactive ? 'false' : 'true'}
       data-nav-theme={mode === 'main' ? theme : undefined}
       aria-label="Primary"
+      inert={!interactive ? true : undefined}
     >
       <div className={styles.logoZone} data-nav-zone="logo">
         <a className={`${styles.pill} ${styles.logoPill}`} href="/" aria-label="Weberaise home">
