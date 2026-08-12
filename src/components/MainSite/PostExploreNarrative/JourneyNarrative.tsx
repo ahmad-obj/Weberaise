@@ -3,18 +3,33 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { BuiltJourneyPath } from './buildJourneyPath';
 import { buildJourneyPath } from './buildJourneyPath';
+import { JourneyArtwork } from './JourneyArtwork';
 import { JourneyStop } from './JourneyStop';
 import { ParticleReassurance } from './ParticleReassurance';
 import { revealJourneyStop } from './questionReveal';
-import { RibbonTrail } from './RibbonTrail';
+import { RibbonBackLayer, RibbonFrontLayer } from './RibbonTrail';
 import { createRibbonController } from './ribbonController';
 import { getJourneyRoute, type JourneyStopId } from './journeyRoute';
 import styles from './PostExploreNarrative.module.css';
 
 type JourneyGeometry = BuiltJourneyPath & {
-  openingLength: number;
   sampleSpacing: number;
 };
+
+function LookQuestion({ text }: { text: string }) {
+  const match = text.match(/^(.*?)(look)(.*)$/i);
+  if (!match) return <>{text}</>;
+
+  return (
+    <>
+      {match[1]}
+      <span className={styles.lookWord} data-look-word>
+        l<span data-ribbon-glyph="look-o-1">o</span><span data-ribbon-glyph="look-o-2">o</span>k
+      </span>
+      {match[3]}
+    </>
+  );
+}
 
 export function JourneyNarrative({
   questions,
@@ -24,8 +39,9 @@ export function JourneyNarrative({
   reassurance: string;
 }) {
   const rootRef = useRef<HTMLElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
-  const pathRef = useRef<SVGPathElement>(null);
+  const backSvgRef = useRef<SVGSVGElement>(null);
+  const backPathRef = useRef<SVGPathElement>(null);
+  const frontPathRef = useRef<SVGPathElement>(null);
   const [geometry, setGeometry] = useState<JourneyGeometry | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
 
@@ -50,11 +66,7 @@ export function JourneyNarrative({
       const built = buildJourneyPath(root, config);
       lastWidth = built.width;
       lastHeight = built.height;
-      setGeometry({
-        ...built,
-        openingLength: config.openingLength,
-        sampleSpacing: config.sampleSpacing,
-      });
+      setGeometry({ ...built, sampleSpacing: config.sampleSpacing });
     };
 
     const scheduleRebuild = () => {
@@ -119,17 +131,19 @@ export function JourneyNarrative({
 
   useLayoutEffect(() => {
     const root = rootRef.current;
-    const svg = svgRef.current;
-    const path = pathRef.current;
-    if (!root || !svg || !path || !geometry?.d) return undefined;
+    const svg = backSvgRef.current;
+    const measurementPath = backPathRef.current;
+    const frontPath = frontPathRef.current;
+    if (!root || !svg || !measurementPath || !frontPath || !geometry?.d) return undefined;
 
     let cleanupController: () => void = () => undefined;
     const frame = window.requestAnimationFrame(() => {
       cleanupController = createRibbonController({
         root,
         svg,
-        path,
-        openingLength: geometry.openingLength,
+        measurementPath,
+        drawPaths: [measurementPath, frontPath],
+        openingLocalY: geometry.openingLocalY,
         sampleSpacing: geometry.sampleSpacing,
         stops: geometry.stops,
         reducedMotion,
@@ -156,44 +170,60 @@ export function JourneyNarrative({
   const width = geometry?.width ?? 1;
   const height = geometry?.height ?? 1;
   const pathD = geometry?.d ?? '';
+  const frontClipRects = geometry?.frontClipRects ?? [];
 
   return (
     <section ref={rootRef} className={styles.journey} data-journey>
-      <RibbonTrail
+      <RibbonBackLayer
         d={pathD}
         width={width}
         height={height}
-        svgRef={svgRef}
-        pathRef={pathRef}
-        aria-hidden="true"
-        data-ribbon-svg="true"
+        svgRef={backSvgRef}
+        backPathRef={backPathRef}
       />
 
       <div className={styles.journeyContent}>
         <div className={styles.journeyLead} aria-hidden="true" />
 
         <JourneyStop id="q1" align="left">
-          <h2 className={styles.journeyQuestion} data-journey-question>
-            {questions[0]}
-          </h2>
+          <div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft}`}>
+            <h2 className={styles.journeyQuestion} data-journey-question>
+              {questions[0]}
+            </h2>
+            <JourneyArtwork id="q1" label="Website concept artwork placeholder" />
+          </div>
         </JourneyStop>
 
         <JourneyStop id="q2" align="right">
-          <h2 className={styles.journeyQuestion} data-journey-question>
-            {questions[1]}
-          </h2>
+          <div className={`${styles.journeyBeat} ${styles.journeyBeatTextRight}`}>
+            <JourneyArtwork id="q2" label="Website redesign artwork placeholder" />
+            <h2 className={styles.journeyQuestion} data-journey-question>
+              {questions[1]}
+            </h2>
+          </div>
         </JourneyStop>
 
         <JourneyStop id="q3" align="left">
-          <h2 className={styles.journeyQuestion} data-journey-question>
-            {questions[2]}
-          </h2>
+          <div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft}`}>
+            <h2 className={styles.journeyQuestion} data-journey-question>
+              <LookQuestion text={questions[2] ?? ''} />
+            </h2>
+            <JourneyArtwork id="q3" label="Online presence artwork placeholder" />
+          </div>
         </JourneyStop>
 
         <JourneyStop id="reassurance" align="center">
           <ParticleReassurance text={reassurance} />
         </JourneyStop>
       </div>
+
+      <RibbonFrontLayer
+        d={pathD}
+        width={width}
+        height={height}
+        frontPathRef={frontPathRef}
+        frontClipRects={frontClipRects}
+      />
     </section>
   );
 }
