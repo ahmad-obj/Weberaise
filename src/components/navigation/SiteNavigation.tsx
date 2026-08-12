@@ -2,7 +2,8 @@
 
 import { useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { CENTER_NAV_ITEMS, type NavigationMode } from './navigationModel';
+import { CenterNavCluster } from './CenterNavCluster';
+import { type NavigationMode } from './navigationModel';
 import styles from './Navigation.module.css';
 
 export function SiteNavigation({ mode }: { mode: NavigationMode }) {
@@ -53,13 +54,7 @@ export function SiteNavigation({ mode }: { mode: NavigationMode }) {
       </div>
 
       <div className={styles.centerZone} data-nav-zone="center">
-        <div className={styles.centerCluster}>
-          {CENTER_NAV_ITEMS.map((item) => (
-            <a className={`${styles.pill} ${styles.centerPill}`} href={item.href} key={item.key}>
-              {item.label}
-            </a>
-          ))}
-        </div>
+        <CenterNavCluster />
       </div>
 
       <div className={styles.talkZone} data-nav-zone="talk">

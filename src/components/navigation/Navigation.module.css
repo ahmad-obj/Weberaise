@@ -29,6 +29,7 @@
 .talkZone { justify-self: end; }
 
 .centerCluster {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -67,7 +68,12 @@
   mask: url('/brand/weberaise-mark.svg') center / contain no-repeat;
 }
 
-.centerPill { min-width: 78px; }
+.centerPill {
+  min-width: 78px;
+  position: relative;
+  z-index: 1;
+}
+
 .talkPill { min-width: 118px; }
 
 .pill:focus-visible {
@@ -78,4 +84,31 @@
 .navRoot[data-navigation-mode='hero'] {
   --nav-pill-bg: #000;
   --nav-pill-fg: #fff;
+}
+
+.navItemSlot {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+}
+
+.centerHoverPlate {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  border-radius: calc(var(--nav-pill-radius) - 3px);
+  background: var(--nav-pill-fg);
+  color: var(--nav-pill-bg);
+  font-family: var(--font-body), Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.055em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, width, height, opacity;
 }

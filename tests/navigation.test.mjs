@@ -51,3 +51,24 @@ test('hero navigation is rendered before the reveal canvas and survives EXPLORE 
   assert.match(component, /mode !== 'hero'/);
   assert.match(component, /gsap\.fromTo/);
 });
+
+test('center navigation uses one measured inverse hover plate across separate pills', () => {
+  const component = read(`${navDir}/CenterNavCluster.tsx`);
+  const motion = read(`${navDir}/centerHoverMotion.ts`);
+
+  assert.match(component, /data-center-nav-cluster/);
+  assert.match(component, /data-center-hover-plate/);
+  assert.match(component, /data-nav-item=\{item\.key\}/);
+  assert.match(read(`${navDir}/navigationModel.ts`), /key: 'services'/);
+  assert.match(motion, /getBoundingClientRect\(\)/);
+  assert.match(motion, /ResizeObserver/);
+  assert.match(motion, /gsap\.to/);
+});
+
+test('services stays detach-ready and the center cluster does not clip item slots', () => {
+  const css = read(`${navDir}/Navigation.module.css`);
+
+  assert.doesNotMatch(css, /\.centerCluster\s*\{[^}]*overflow:\s*(hidden|clip)/s);
+  assert.doesNotMatch(css, /\.navItemSlot\s*\{[^}]*transform:/s);
+  assert.doesNotMatch(css, /\.navItemSlot\s*\{[^}]*filter:/s);
+});
