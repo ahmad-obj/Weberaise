@@ -119,3 +119,20 @@ test('hero and main navigation share geometry and main mode does not replay entr
   assert.match(css, /--nav-pill-radius/);
   assert.doesNotMatch(component, /mode === 'main'[\s\S]{0,240}gsap\.fromTo/);
 });
+
+test('navigation preserves all destinations on mobile and supports reduced motion', () => {
+  const css = read(`${navDir}/Navigation.module.css`);
+
+  assert.match(css, /@media\s*\(max-width:\s*720px\)/);
+  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(css, /@media\s*\(pointer:\s*coarse\)/);
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /grid-column:\s*1\s*\/\s*-1/);
+  assert.doesNotMatch(css, /\.centerZone\s*\{[^}]*transform:/s);
+});
+
+test('goo transform motion is not overwritten by main theme transitions', () => {
+  const css = read(`${navDir}/Navigation.module.css`);
+  assert.match(css, /\.gooCore\s*\{[\s\S]*transform 280ms/);
+  assert.doesNotMatch(css, /\.pill,\s*\.centerHoverPlate,\s*\.gooCore/);
+});
