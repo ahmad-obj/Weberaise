@@ -1,38 +1,74 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState, type RefObject } from 'react';
 
 export type NavigationTheme = 'dark' | 'light';
+export type NavigationZone = 'logo' | 'center' | 'talk';
+export type NavigationThemes = Record<NavigationZone, NavigationTheme>;
 
-const DEFAULT_THEME: NavigationTheme = 'dark';
-const NAV_PROBE_Y = 48;
+const ZONES: readonly NavigationZone[] = ['logo', 'center', 'talk'];
+const DEFAULT_THEMES: NavigationThemes = {
+  logo: 'dark',
+  center: 'dark',
+  talk: 'dark',
+};
 
-export function useNavigationTheme(enabled: boolean): NavigationTheme {
-  const [theme, setTheme] = useState<NavigationTheme>(DEFAULT_THEME);
+function themeUnderPoint(root: HTMLElement, x: number, y: number): NavigationTheme {
+  const stack = document.elementsFromPoint(x, y);
 
-  useEffect(() => {
+  for (const element of stack) {
+    if (root.contains(element)) continue;
+
+    const themed = element.closest<HTMLElement>('[data-nav-theme]');
+    if (!themed || root.contains(themed)) continue;
+
+    return themed.dataset.navTheme === 'light' ? 'light' : 'dark';
+  }
+
+  return 'dark';
+}
+
+function themesEqual(left: NavigationThemes, right: NavigationThemes) {
+  return ZONES.every((zone) => left[zone] === right[zone]);
+}
+
+export function useNavigationThemes(
+  enabled: boolean,
+  rootRef: RefObject<HTMLElement | null>,
+): NavigationThemes {
+  const [themes, setThemes] = useState<NavigationThemes>(DEFAULT_THEMES);
+
+  useLayoutEffect(() => {
     if (!enabled) return undefined;
 
     let frame = 0;
 
-    const readTheme = () => {
+    const readThemes = () => {
       frame = 0;
-      const probeY = Math.min(Math.max(0, NAV_PROBE_Y), Math.max(0, window.innerHeight - 1));
-      const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-nav-theme]'));
-      const activeSection = sections.find((section) => {
-        const rect = section.getBoundingClientRect();
-        return rect.top <= probeY && rect.bottom > probeY;
-      });
-      const nextTheme: NavigationTheme = activeSection?.dataset.navTheme === 'light' ? 'light' : 'dark';
-      setTheme((current) => (current === nextTheme ? current : nextTheme));
+      const root = rootRef.current;
+      if (!root) return;
+
+      const next: NavigationThemes = { ...DEFAULT_THEMES };
+
+      for (const zone of ZONES) {
+        const element = root.querySelector<HTMLElement>(`[data-nav-zone="${zone}"]`);
+        if (!element) continue;
+
+        const rect = element.getBoundingClientRect();
+        const x = Math.min(window.innerWidth - 1, Math.max(0, rect.left + rect.width * 0.5));
+        const y = Math.min(window.innerHeight - 1, Math.max(0, rect.top + rect.height * 0.5));
+        next[zone] = themeUnderPoint(root, x, y);
+      }
+
+      setThemes((current) => (themesEqual(current, next) ? current : next));
     };
 
     const scheduleRead = () => {
       if (frame) return;
-      frame = window.requestAnimationFrame(readTheme);
+      frame = window.requestAnimationFrame(readThemes);
     };
 
-    scheduleRead();
+    readThemes();
     window.addEventListener('scroll', scheduleRead, { passive: true });
     window.addEventListener('resize', scheduleRead, { passive: true });
 
@@ -41,7 +77,7 @@ export function useNavigationTheme(enabled: boolean): NavigationTheme {
       window.removeEventListener('scroll', scheduleRead);
       window.removeEventListener('resize', scheduleRead);
     };
-  }, [enabled]);
+  }, [enabled, rootRef]);
 
-  return theme;
+  return themes;
 }
