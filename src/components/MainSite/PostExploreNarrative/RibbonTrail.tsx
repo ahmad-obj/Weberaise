@@ -9,6 +9,7 @@ type RibbonTrailProps = SVGAttributes<SVGSVGElement> & {
   height: number;
   svgRef: RefObject<SVGSVGElement | null>;
   pathRef: RefObject<SVGPathElement | null>;
+  'data-ribbon-svg'?: string;
 };
 
 export function RibbonTrail({
