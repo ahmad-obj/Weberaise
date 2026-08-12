@@ -2,14 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildJourneyPath } from '../src/components/MainSite/PostExploreNarrative/buildJourneyPath.ts';
 
-const rect = (left, top, width, height) => ({
-  left,
-  top,
-  right: left + width,
-  bottom: top + height,
-  width,
-  height,
-});
+const rect = (left, top, width, height) => ({ left, top, right: left + width, bottom: top + height, width, height });
 
 const geometry = {
   q1: rect(52, 650, 1336, 430),
@@ -19,6 +12,7 @@ const geometry = {
   artQ1: rect(830, 700, 470, 350),
   artQ2: rect(120, 1540, 470, 350),
   artQ3: rect(830, 2390, 470, 350),
+  q2Text: rect(719, 1669, 649, 73),
   o1: rect(330, 2510, 62, 86),
   o2: rect(393, 2510, 62, 86),
 };
@@ -32,6 +26,7 @@ const lookup = new Map([
   ['[data-ribbon-artwork="q1"]', geometry.artQ1],
   ['[data-ribbon-artwork="q2"]', geometry.artQ2],
   ['[data-ribbon-artwork="q3"]', geometry.artQ3],
+  ['[data-ribbon-question="q2"]', geometry.q2Text],
   ['[data-ribbon-glyph="look-o-1"]', geometry.o1],
   ['[data-ribbon-glyph="look-o-2"]', geometry.o2],
 ]);
@@ -55,6 +50,11 @@ const config = {
   reassurance: { id: 'reassurance', side: 'left', clearance: 88, approachLead: 190, bandBias: -0.006 },
 };
 
+function cubicEndpoints(d) {
+  return [...d.matchAll(/C\s+[-\d.]+\s+[-\d.]+\s+[-\d.]+\s+[-\d.]+\s+([\d.-]+)\s+([\d.-]+)/g)]
+    .map((match) => ({ x: Number(match[1]), y: Number(match[2]) }));
+}
+
 test('art-directed path is one continuous cubic route measured from artwork and glyphs', () => {
   const built = buildJourneyPath(root, config);
   assert.match(built.d, /^M /);
@@ -64,6 +64,17 @@ test('art-directed path is one continuous cubic route measured from artwork and 
   assert.ok(built.openingLocalY > 120);
   assert.ok(built.stops.q3.localY >= geometry.o1.top - 80);
   assert.ok(built.stops.q3.localY <= geometry.o1.bottom + 160);
+});
+
+test('q2 calm bend stays in the measured artwork-to-text gap at text height', () => {
+  const built = buildJourneyPath(root, config);
+  const corridor = cubicEndpoints(built.d).filter(
+    (point) => point.y >= geometry.q2Text.top - 20 && point.y <= geometry.q2Text.bottom + 20,
+  );
+  assert.ok(corridor.length > 0);
+  for (const point of corridor) {
+    assert.ok(point.x <= geometry.q2Text.left - 12, `q2 route entered text at x=${point.x}`);
+  }
 });
 
 test('q1 and q3 expose intentional front-layer clip windows', () => {
