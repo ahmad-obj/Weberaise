@@ -67,7 +67,6 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
     x: clamp(leadX + config.opening.loopRadiusX * 1.14, config.edgeInset + config.opening.loopRadiusX, width - config.edgeInset - config.opening.loopRadiusX),
     y: Math.max(92, config.opening.loopRadiusY * 1.72),
   };
-  appendFlow(points, { x: leadX, y: openingCenter.y - config.opening.loopRadiusY * 0.14 }, 18);
   appendLooseOvalLoop(points, openingCenter, config.opening.loopRadiusX, config.opening.loopRadiusY, 0.06);
   const openingExit = points.at(-1)!;
   appendFlow(points, { x: clamp(width * 0.34, config.edgeInset, width - config.edgeInset), y: openingExit.y + config.opening.exitRun }, 20);
@@ -93,7 +92,6 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   const q2BendWidth = hasHorizontalGap ? Math.min(config.q2.bendWidth, Math.max(92, horizontalGap * 1.12)) : Math.min(config.q2.bendWidth, width * 0.42);
   appendGentleBend(points, 'right', { x: q2CenterX, y: centerY(q2) }, q2BendWidth);
 
-  appendFlow(points, { x: o1.left - Math.max(28, o1.width * 0.76), y: o1.top - Math.max(56, o1.height * 0.72) }, -20);
   appendGlyphLoop(points, o1, config.q3.glyphScaleX, config.q3.glyphScaleY);
   appendGlyphLoop(points, o2, config.q3.glyphScaleX, config.q3.glyphScaleY);
   const lookBounds: RibbonRect = {
@@ -102,11 +100,6 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   };
   frontClipRects.push(expand(lookBounds, 20, 26));
 
-  appendFlow(
-    points,
-    { x: reassuranceText.left - config.reassurance.paddingX * 0.55, y: Math.max(points.at(-1)!.y + 140, reassuranceText.top - config.reassurance.approachLead) },
-    -36,
-  );
   appendReassuranceLoop(points, reassuranceText, config.reassurance.paddingX, config.reassurance.paddingY, config.reassurance.skew);
   const reassuranceExit = points.at(-1)!;
   appendFlow(points, { x: reassuranceExit.x + config.reassurance.paddingX * 0.05, y: reassuranceExit.y + config.reassurance.exitRun }, 10);
