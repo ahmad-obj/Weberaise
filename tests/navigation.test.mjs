@@ -159,6 +159,7 @@ test('hero nav links use the existing explore handoff before scrolling to hidden
   assert.match(hero, /onNavigate=\{handleHeroNavigate\}/);
   assert.match(hero, /onExplore\(\)/);
   assert.match(hero, /scrollIntoView/);
+  assert.match(hero, /experience-scroll-locked/);
   assert.match(hero, /requestAnimationFrame/);
   assert.match(siteNav, /interactive= true|interactive = true/);
   assert.match(siteNav, /inert=\{!interactive \? true : undefined\}/);
@@ -166,4 +167,20 @@ test('hero nav links use the existing explore handoff before scrolling to hidden
   assert.match(center, /onNavigate\(item\.href\)/);
   assert.match(talk, /event\.preventDefault\(\)/);
   assert.match(talk, /onNavigate\('#contact'\)/);
+});
+
+test('main mode samples background theme independently under logo center and talk zones', () => {
+  const hook = read(`${navDir}/useNavigationTheme.ts`);
+  const siteNav = read(`${navDir}/SiteNavigation.tsx`);
+  const css = read(`${navDir}/Navigation.module.css`);
+
+  assert.match(hook, /elementsFromPoint/);
+  assert.match(hook, /logo/);
+  assert.match(hook, /center/);
+  assert.match(hook, /talk/);
+  assert.match(siteNav, /themes\.logo/);
+  assert.match(siteNav, /themes\.center/);
+  assert.match(siteNav, /themes\.talk/);
+  assert.match(css, /\[data-nav-theme='dark'\]/);
+  assert.match(css, /\[data-nav-theme='light'\]/);
 });
