@@ -42,15 +42,14 @@ test('artwork wrap markers preserve front behind front ordering', async () => {
   assert.ok(points.at(-1).y > markers.frontExitY);
 });
 
-test('glyph loop remains part of forward-progressing route', async () => {
+test('glyph loop returns near the glyph baseline with slight forward drop', async () => {
   const { appendGlyphLoop } = await import(modulePath);
   const points = [{ x: 300, y: 900 }];
-  appendGlyphLoop(
-    points,
-    { left: 330, top: 920, right: 390, bottom: 1000, width: 60, height: 80 },
-    1.18,
-    1.08,
-  );
+  const rect = { left: 330, top: 920, right: 390, bottom: 1000, width: 60, height: 80 };
+  appendGlyphLoop(points, rect, 1.18, 1.08);
+  const exit = points.at(-1);
   assert.ok(points.length >= 9);
-  assert.ok(points.at(-1).y > 1000);
+  assert.ok(exit.y > rect.top + rect.height * 0.5);
+  assert.ok(exit.y < rect.bottom + rect.height * 0.35);
+  assert.ok(exit.x > rect.left + rect.width * 0.5);
 });
