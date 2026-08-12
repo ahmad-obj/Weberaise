@@ -1,0 +1,76 @@
+.navRoot {
+  --nav-pill-height: 42px;
+  --nav-pill-radius: 16px;
+  --nav-pill-pad-x: 18px;
+  --nav-pill-bg: #fff;
+  --nav-pill-fg: #000;
+  position: fixed;
+  top: clamp(18px, 2.2vw, 28px);
+  left: 0;
+  right: 0;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  padding-inline: clamp(18px, 3vw, 42px);
+  background: transparent;
+  pointer-events: none;
+}
+
+.logoZone,
+.centerZone,
+.talkZone {
+  display: flex;
+  align-items: center;
+}
+
+.logoZone { justify-self: start; }
+.centerZone { justify-self: center; }
+.talkZone { justify-self: end; }
+
+.centerCluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: visible;
+}
+
+.pill {
+  min-height: var(--nav-pill-height);
+  border: 0;
+  border-radius: 16px;
+  padding-inline: var(--nav-pill-pad-x);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body), Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.055em;
+  background: var(--nav-pill-bg);
+  color: var(--nav-pill-fg);
+  text-decoration: none;
+  pointer-events: auto;
+}
+
+.logoPill {
+  width: 52px;
+  padding-inline: 0;
+}
+
+.logoMark {
+  width: 25px;
+  height: 18px;
+  background: currentColor;
+  -webkit-mask: url('/brand/weberaise-mark.svg') center / contain no-repeat;
+  mask: url('/brand/weberaise-mark.svg') center / contain no-repeat;
+}
+
+.centerPill { min-width: 78px; }
+.talkPill { min-width: 118px; }
+
+.pill:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
