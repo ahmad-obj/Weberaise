@@ -87,3 +87,24 @@ test('lets talk uses a deterministic hover-triggered monochrome goo system', () 
   assert.match(css, /contrast\(/);
   assert.match(css, /background:\s*var\(--nav-pill-fg\)/);
 });
+
+test('main navigation is mounted only in main state and sections declare nav theme', () => {
+  const shell = read('src/components/experience/ExperienceShell.tsx');
+  const main = read('src/components/MainSite/MainSite.tsx');
+  const narrative = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.tsx');
+
+  assert.match(shell, /state === 'main' && <SiteNavigation mode="main" \/>/);
+  assert.match(main, /data-nav-theme="dark"/);
+  assert.match(narrative, /data-nav-theme="dark"/);
+});
+
+test('main navigation theme changes through css variables rather than blend mode', () => {
+  const css = read(`${navDir}/Navigation.module.css`);
+  const hook = read(`${navDir}/useNavigationTheme.ts`);
+
+  assert.match(css, /data-nav-theme='dark'/);
+  assert.match(css, /data-nav-theme='light'/);
+  assert.match(hook, /getBoundingClientRect\(\)/);
+  assert.match(hook, /requestAnimationFrame/);
+  assert.doesNotMatch(css, /data-navigation-mode='main'[\s\S]{0,300}mix-blend-mode:\s*difference/);
+});

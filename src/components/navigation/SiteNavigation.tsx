@@ -5,10 +5,12 @@ import gsap from 'gsap';
 import { CenterNavCluster } from './CenterNavCluster';
 import { GooeyTalkButton } from './GooeyTalkButton';
 import { type NavigationMode } from './navigationModel';
+import { useNavigationTheme } from './useNavigationTheme';
 import styles from './Navigation.module.css';
 
 export function SiteNavigation({ mode }: { mode: NavigationMode }) {
   const rootRef = useRef<HTMLElement>(null);
+  const theme = useNavigationTheme(mode === 'main');
 
   useLayoutEffect(() => {
     if (mode !== 'hero' || !rootRef.current) return undefined;
@@ -46,6 +48,7 @@ export function SiteNavigation({ mode }: { mode: NavigationMode }) {
       className={styles.navRoot}
       data-site-navigation
       data-navigation-mode={mode}
+      data-nav-theme={mode === 'main' ? theme : undefined}
       aria-label="Primary"
     >
       <div className={styles.logoZone} data-nav-zone="logo">

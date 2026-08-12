@@ -208,3 +208,22 @@
     transform: translate(-50%, -50%) translate(0, 0) scale(0.12);
   }
 }
+
+.navRoot[data-navigation-mode='main'][data-nav-theme='dark'] {
+  --nav-pill-bg: #fff;
+  --nav-pill-fg: #000;
+}
+
+.navRoot[data-navigation-mode='main'][data-nav-theme='light'] {
+  --nav-pill-bg: #000;
+  --nav-pill-fg: #fff;
+}
+
+.pill,
+.centerHoverPlate,
+.gooCore,
+.gooParticle {
+  transition-property: background-color, color;
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(.2, .8, .2, 1);
+}

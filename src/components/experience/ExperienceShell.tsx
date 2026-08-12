@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { Loader } from '@/components/experience/Loader/Loader';
 import { Hero } from '@/components/experience/Hero/Hero';
+import { SiteNavigation } from '@/components/navigation/SiteNavigation';
 import {
   experienceReducer,
   INITIAL_EXPERIENCE_STATE,
@@ -58,6 +59,7 @@ export function ExperienceShell({ children }: { children: React.ReactNode }) {
         )}
       </div>
       <div className="main-stage" inert={state !== 'main'} aria-hidden={state !== 'main'}>
+        {state === 'main' && <SiteNavigation mode="main" />}
         {children}
       </div>
     </div>
