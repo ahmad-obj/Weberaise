@@ -1,11 +1,11 @@
 'use client';
 
+import ShutterText from '@/components/ui/shutter-text';
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { BuiltJourneyPath } from './buildJourneyPath';
 import { buildJourneyPath } from './buildJourneyPath';
 import { JourneyArtwork } from './JourneyArtwork';
 import { JourneyStop } from './JourneyStop';
-import { ParticleReassurance } from './ParticleReassurance';
 import { revealJourneyStop } from './questionReveal';
 import { RibbonBackLayer, RibbonFrontLayer } from './RibbonTrail';
 import { createRibbonController } from './ribbonController';
@@ -35,6 +35,7 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
   const frontPathRef = useRef<SVGPathElement>(null);
   const [geometry, setGeometry] = useState<JourneyGeometry | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [reassuranceActive, setReassuranceActive] = useState(false);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -119,10 +120,14 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
         onReveal: (id: JourneyStopId) => {
           const anchor = root.querySelector<HTMLElement>(`[data-journey-stop="${id}"]`);
           if (!anchor || anchor.dataset.revealed === 'true') return;
-          if (id !== 'reassurance') {
+
+          if (id === 'reassurance') {
+            setReassuranceActive(true);
+          } else {
             const target = anchor.querySelector<HTMLElement>('[data-journey-question]');
             if (target) revealJourneyStop(target, reducedMotion);
           }
+
           anchor.dataset.revealed = 'true';
         },
       });
@@ -158,7 +163,11 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
             <JourneyArtwork id="q3" label="Online presence artwork placeholder" />
           </div>
         </JourneyStop>
-        <JourneyStop id="reassurance" align="center"><ParticleReassurance text={reassurance} /></JourneyStop>
+        <JourneyStop id="reassurance" align="center">
+          <h2 className={styles.reassuranceHeading} data-reassurance-text>
+            <ShutterText text={reassurance} active={reassuranceActive} />
+          </h2>
+        </JourneyStop>
       </div>
       <RibbonFrontLayer d={pathD} width={width} height={height} frontPathRef={frontPathRef} frontClipRects={frontClipRects} />
     </section>
