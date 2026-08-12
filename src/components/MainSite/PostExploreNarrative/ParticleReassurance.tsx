@@ -12,12 +12,16 @@ import {
 import styles from './PostExploreNarrative.module.css';
 
 type Particle = {
+  x: number;
+  y: number;
   startX: number;
   startY: number;
   targetX: number;
   targetY: number;
   size: number;
   color: string;
+  seed: number;
+  depth: number;
   delay: number;
 };
 
@@ -30,6 +34,9 @@ type Target = {
 const WHITE = '#F5F7FA';
 const GLOW_BLUE = '#60A5FA';
 const ACCENT_BLUE = '#3B82F6';
+const pointerRepel = 42;
+const repelRadius = 120;
+const idleDrift = 0.55;
 
 function materialSizeChange(previous: DOMRectReadOnly | null, next: DOMRectReadOnly) {
   if (!previous) return true;
@@ -42,13 +49,11 @@ export function ParticleReassurance({ text }: { text: string }) {
   );
   const frameRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const resolvedRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const frame = frameRef.current;
     const canvas = canvasRef.current;
-    const resolved = resolvedRef.current;
-    if (!frame || !canvas || !resolved) return undefined;
+    if (!frame || !canvas) return undefined;
 
     const context = canvas.getContext('2d');
     if (!context) return undefined;
@@ -61,13 +66,22 @@ export function ParticleReassurance({ text }: { text: string }) {
     let height = 0;
     let dpr = 1;
     let animationFrame: number | null = null;
-    let startTime = 0;
-    let elapsedBeforePause = 0;
+    let resizeFrame: number | null = null;
+    let buildId = 0;
     let isIntersecting = false;
     let hasStarted = false;
-    let isSettled = false;
-    let buildId = 0;
+    let gathering = false;
+    let gatherStart = 0;
+    let gatherElapsedBeforePause = 0;
     let lastRect: DOMRectReadOnly | null = null;
+
+    const pointer = {
+      active: false,
+      x: 0,
+      y: 0,
+      smoothX: 0,
+      smoothY: 0,
+    };
 
     const cancelFrame = () => {
       if (animationFrame !== null) {
@@ -80,75 +94,103 @@ export function ParticleReassurance({ text }: { text: string }) {
       context.clearRect(0, 0, width, height);
     };
 
-    const setSettled = (settled: boolean) => {
-      isSettled = settled;
-      frame.dataset.particleSettled = settled ? 'true' : 'false';
+    const drawParticle = (particle: Particle, x = particle.x, y = particle.y) => {
+      context.fillStyle = particle.color;
+      context.fillRect(x - particle.size / 2, y - particle.size / 2, particle.size, particle.size);
     };
 
-    const drawParticle = (particle: Particle, x: number, y: number) => {
-      context.fillStyle = particle.color;
-      context.globalAlpha = 1;
-      context.fillRect(x - particle.size / 2, y - particle.size / 2, particle.size, particle.size);
+    const drawCurrentParticles = () => {
+      clearCanvas();
+      for (const particle of particles) drawParticle(particle);
     };
 
     const drawSettledParticles = () => {
       clearCanvas();
-      for (const particle of particles) {
-        drawParticle(particle, particle.targetX, particle.targetY);
-      }
-      context.globalAlpha = 1;
+      for (const particle of particles) drawParticle(particle, particle.targetX, particle.targetY);
     };
 
-    const drawScatteredParticles = () => {
-      clearCanvas();
-      for (const particle of particles) {
-        drawParticle(particle, particle.startX, particle.startY);
-      }
-      context.globalAlpha = 1;
+    const ensureRenderLoop = () => {
+      if (reducedMotion || !isIntersecting || animationFrame !== null || particles.length === 0) return;
+      animationFrame = window.requestAnimationFrame(render);
     };
 
     const render = (now: number) => {
-      const elapsed = elapsedBeforePause + (now - startTime);
-      let complete = true;
+      animationFrame = null;
       clearCanvas();
 
+      pointer.smoothX += (pointer.x - pointer.smoothX) * 0.18;
+      pointer.smoothY += (pointer.y - pointer.smoothY) * 0.18;
+
+      let gatherComplete = true;
+
       for (const particle of particles) {
-        const local = (elapsed - particle.delay) / profile.gatherDuration;
-        const progress = Math.min(1, Math.max(0, local));
-        const eased = easeOutCubic(progress);
-        const x = particle.startX + (particle.targetX - particle.startX) * eased;
-        const y = particle.startY + (particle.targetY - particle.startY) * eased;
+        let baseX = particle.targetX;
+        let baseY = particle.targetY;
 
-        if (progress < 1) complete = false;
-        drawParticle(particle, x, y);
+        if (gathering) {
+          const elapsed = gatherElapsedBeforePause + (now - gatherStart);
+          const local = (elapsed - particle.delay) / profile.gatherDuration;
+          const progress = Math.min(1, Math.max(0, local));
+          const eased = easeOutCubic(progress);
+          baseX = particle.startX + (particle.targetX - particle.startX) * eased;
+          baseY = particle.startY + (particle.targetY - particle.startY) * eased;
+          if (progress < 1) gatherComplete = false;
+        } else {
+          const driftTime = now * 0.001;
+          baseX += Math.sin(driftTime * 0.9 + particle.seed * 10) * idleDrift * particle.depth;
+          baseY += Math.cos(driftTime * 0.75 + particle.depth * 10) * idleDrift * particle.depth;
+        }
+
+        if (pointer.active) {
+          const dx = baseX - pointer.smoothX;
+          const dy = baseY - pointer.smoothY;
+          const distance = Math.hypot(dx, dy);
+          if (distance > 0 && distance < repelRadius) {
+            const force = Math.pow(1 - distance / repelRadius, 2) * pointerRepel;
+            baseX += (dx / distance) * force;
+            baseY += (dy / distance) * force;
+          }
+        }
+
+        particle.x += (baseX - particle.x) * 0.22;
+        particle.y += (baseY - particle.y) * 0.22;
+        drawParticle(particle);
       }
 
-      context.globalAlpha = 1;
-
-      if (complete) {
-        drawSettledParticles();
-        setSettled(true);
-        animationFrame = null;
-        return;
+      if (gathering && gatherComplete) {
+        gathering = false;
+        gatherElapsedBeforePause = 0;
       }
 
-      animationFrame = window.requestAnimationFrame(render);
+      ensureRenderLoop();
     };
 
-    const startOrResume = () => {
-      if (reducedMotion || isSettled || !particles.length || animationFrame !== null) return;
+    const startGather = () => {
+      if (reducedMotion || particles.length === 0) return;
       hasStarted = true;
-      startTime = performance.now();
-      animationFrame = window.requestAnimationFrame(render);
+      gathering = true;
+      gatherElapsedBeforePause = 0;
+      gatherStart = performance.now();
+      particles.forEach((particle) => {
+        particle.startX = particle.x;
+        particle.startY = particle.y;
+      });
+      ensureRenderLoop();
     };
 
     const pause = () => {
-      if (animationFrame === null || isSettled) return;
-      elapsedBeforePause += performance.now() - startTime;
+      if (animationFrame !== null && gathering) {
+        gatherElapsedBeforePause += performance.now() - gatherStart;
+      }
       cancelFrame();
     };
 
-    const sampleText = async (animateAfterBuild: boolean) => {
+    const resume = () => {
+      if (gathering) gatherStart = performance.now();
+      ensureRenderLoop();
+    };
+
+    const sampleText = async (scatterInitial: boolean) => {
       const currentBuild = ++buildId;
       const rect = frame.getBoundingClientRect();
       width = Math.max(1, Math.floor(rect.width));
@@ -162,7 +204,7 @@ export function ParticleReassurance({ text }: { text: string }) {
       canvas.style.height = '100%';
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const computed = window.getComputedStyle(resolved);
+      const computed = window.getComputedStyle(frame);
       const baseFontSize = Number.parseFloat(computed.fontSize) || 96;
       const baseLineHeight = Number.parseFloat(computed.lineHeight) || baseFontSize * 0.9;
       let resolvedFontSize = baseFontSize;
@@ -174,7 +216,7 @@ export function ParticleReassurance({ text }: { text: string }) {
         await document.fonts.load(font, text);
         await document.fonts.ready;
       } catch {
-        // Continue with computed fallback font metrics if font loading is unavailable.
+        // Computed fallback metrics remain usable if font loading is unavailable.
       }
       if (currentBuild !== buildId) return;
 
@@ -223,13 +265,12 @@ export function ParticleReassurance({ text }: { text: string }) {
       offscreenContext.clearRect(0, 0, offscreen.width, offscreen.height);
 
       displayLines.forEach((line, index) => {
-        const baseline = padding + ascent + index * baselineStep;
-        offscreenContext.fillText(line, offscreen.width / 2, baseline);
+        offscreenContext.fillText(line, offscreen.width / 2, padding + ascent + index * baselineStep);
       });
 
       const imageData = offscreenContext.getImageData(0, 0, offscreen.width, offscreen.height);
       const candidates: Target[] = [];
-      const step = width < 720 ? 3 : 3;
+      const step = 3;
 
       for (let y = 0; y < offscreen.height; y += step) {
         for (let x = 0; x < offscreen.width; x += step) {
@@ -248,49 +289,60 @@ export function ParticleReassurance({ text }: { text: string }) {
       const selected = candidates.filter((_, index) => index % stride === 0).slice(0, profile.maxParticles);
 
       particles = selected.map((target, index) => {
-        const angle = deterministicUnit(index, 1) * Math.PI * 2;
+        const seed = deterministicUnit(index, 1);
+        const depth = 0.5 + deterministicUnit(index, 2) * 0.85;
+        const angle = deterministicUnit(index, 3) * Math.PI * 2;
         const scatter =
           profile.scatterMin +
-          (profile.scatterMax - profile.scatterMin) * deterministicUnit(index, 2);
-        const colorChoice = deterministicUnit(index, 3);
+          (profile.scatterMax - profile.scatterMin) * deterministicUnit(index, 4);
+        const colorChoice = deterministicUnit(index, 5);
         const color = colorChoice > 0.955 ? GLOW_BLUE : colorChoice > 0.91 ? ACCENT_BLUE : WHITE;
-        const size = 1.2 + target.alpha * 0.65 + deterministicUnit(index, 4) * 0.12;
+        const size = 1.2 + target.alpha * 0.65 + deterministicUnit(index, 6) * 0.12;
+        const startX = scatterInitial ? target.x + Math.cos(angle) * scatter : target.x;
+        const startY = scatterInitial ? target.y + Math.sin(angle) * scatter : target.y;
 
         return {
+          x: startX,
+          y: startY,
+          startX,
+          startY,
           targetX: target.x,
           targetY: target.y,
-          startX: target.x + Math.cos(angle) * scatter,
-          startY: target.y + Math.sin(angle) * scatter,
           size,
           color,
-          delay: deterministicUnit(index, 5) * 150,
+          seed,
+          depth,
+          delay: deterministicUnit(index, 7) * 150,
         };
       });
 
-      cancelFrame();
-      elapsedBeforePause = 0;
+      pointer.x = width / 2;
+      pointer.y = height / 2;
+      pointer.smoothX = pointer.x;
+      pointer.smoothY = pointer.y;
+      gathering = false;
+      gatherElapsedBeforePause = 0;
 
       if (reducedMotion) {
         drawSettledParticles();
-        setSettled(true);
         return;
       }
 
-      if (isSettled && !animateAfterBuild) {
-        drawSettledParticles();
-        setSettled(true);
-        return;
-      }
+      drawCurrentParticles();
 
-      if (!animateAfterBuild) {
-        setSettled(false);
-        drawScatteredParticles();
-        return;
+      if (scatterInitial && isIntersecting && !hasStarted) {
+        startGather();
+      } else if (isIntersecting) {
+        ensureRenderLoop();
       }
+    };
 
-      setSettled(false);
-      drawScatteredParticles();
-      if (isIntersecting) startOrResume();
+    const queueSample = () => {
+      if (resizeFrame !== null) window.cancelAnimationFrame(resizeFrame);
+      resizeFrame = window.requestAnimationFrame(() => {
+        resizeFrame = null;
+        void sampleText(!hasStarted);
+      });
     };
 
     const intersectionObserver = new IntersectionObserver(
@@ -300,12 +352,8 @@ export function ParticleReassurance({ text }: { text: string }) {
         isIntersecting = entry.isIntersecting;
 
         if (entry.isIntersecting) {
-          if (!hasStarted && !reducedMotion) {
-            hasStarted = true;
-            void sampleText(true);
-          } else {
-            startOrResume();
-          }
+          if (!hasStarted) startGather();
+          else resume();
         } else {
           pause();
         }
@@ -317,52 +365,62 @@ export function ParticleReassurance({ text }: { text: string }) {
       const entry = entries[0];
       if (!entry || !materialSizeChange(lastRect, entry.contentRect)) return;
       lastRect = entry.contentRect;
-      const shouldAnimate = hasStarted && !isSettled && !reducedMotion;
-      void sampleText(shouldAnimate);
+      queueSample();
     });
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      pointer.x = event.clientX - rect.left;
+      pointer.y = event.clientY - rect.top;
+      pointer.active = true;
+      ensureRenderLoop();
+    };
+
+    const handlePointerEnter = (event: PointerEvent) => {
+      handlePointerMove(event);
+    };
+
+    const handlePointerLeave = () => {
+      pointer.active = false;
+    };
 
     const handleMotionPreference = (event: MediaQueryListEvent) => {
       reducedMotion = event.matches;
       cancelFrame();
-      elapsedBeforePause = 0;
-
       if (reducedMotion) {
-        setSettled(true);
-        clearCanvas();
-      } else {
-        hasStarted = isIntersecting;
-        setSettled(false);
-        void sampleText(isIntersecting);
+        gathering = false;
+        drawSettledParticles();
+      } else if (isIntersecting) {
+        ensureRenderLoop();
       }
     };
 
-    frame.dataset.particleSettled = reducedMotion ? 'true' : 'false';
     intersectionObserver.observe(frame);
     resizeObserver.observe(frame);
+    canvas.addEventListener('pointerenter', handlePointerEnter);
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerleave', handlePointerLeave);
     motionQuery.addEventListener('change', handleMotionPreference);
-
-    // Prime deterministic geometry without triggering the gather before the scene approaches view.
-    void sampleText(false);
+    void sampleText(true);
 
     return () => {
       buildId += 1;
       cancelFrame();
+      if (resizeFrame !== null) window.cancelAnimationFrame(resizeFrame);
       intersectionObserver.disconnect();
       resizeObserver.disconnect();
+      canvas.removeEventListener('pointerenter', handlePointerEnter);
+      canvas.removeEventListener('pointermove', handlePointerMove);
+      canvas.removeEventListener('pointerleave', handlePointerLeave);
       motionQuery.removeEventListener('change', handleMotionPreference);
     };
   }, [text]);
 
   return (
     <section className={styles.reassuranceSection} data-particle-reassurance>
-      <div ref={frameRef} className={styles.particleTextFrame} data-particle-settled="false">
+      <div ref={frameRef} className={styles.particleTextFrame} aria-label={text}>
         <h2 className="sr-only">{text}</h2>
         <canvas ref={canvasRef} className={styles.particleCanvas} aria-hidden="true" />
-        <span ref={resolvedRef} className={styles.reassuranceResolved} aria-hidden="true">
-          {displayLines.map((line) => (
-            <span className={styles.reassuranceLine} key={line}>{line}</span>
-          ))}
-        </span>
       </div>
     </section>
   );
