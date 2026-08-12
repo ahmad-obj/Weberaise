@@ -3,7 +3,7 @@ import {
   appendArtworkWrap,
   appendFlow,
   appendGentleBend,
-  appendGlyphLoop,
+  appendGlyphPairLoops,
   appendLooseOvalLoop,
   appendReassuranceLoop,
   buildTaperPolygon,
@@ -92,21 +92,22 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   const q2BendWidth = hasHorizontalGap ? Math.min(config.q2.bendWidth, Math.max(92, horizontalGap * 1.12)) : Math.min(config.q2.bendWidth, width * 0.42);
   appendGentleBend(points, 'right', { x: q2CenterX, y: centerY(q2) }, q2BendWidth);
 
-  appendGlyphLoop(points, o1, config.q3.glyphScaleX, config.q3.glyphScaleY);
-  appendGlyphLoop(points, o2, config.q3.glyphScaleX, config.q3.glyphScaleY);
+  appendGlyphPairLoops(points, o1, o2, config.q3.glyphScaleX, config.q3.glyphScaleY);
   const lookBounds: RibbonRect = {
     left: Math.min(o1.left, o2.left), top: Math.min(o1.top, o2.top), right: Math.max(o1.right, o2.right), bottom: Math.max(o1.bottom, o2.bottom),
     width: Math.max(o1.right, o2.right) - Math.min(o1.left, o2.left), height: Math.max(o1.bottom, o2.bottom) - Math.min(o1.top, o2.top),
   };
   frontClipRects.push(expand(lookBounds, 20, 26));
 
-  appendReassuranceLoop(points, reassuranceText, config.reassurance.paddingX, config.reassurance.paddingY, config.reassurance.skew);
+  const reassuranceSideMargin = Math.max(0, Math.min(reassuranceText.left, width - reassuranceText.right));
+  const reassurancePaddingX = Math.min(config.reassurance.paddingX, Math.max(4, reassuranceSideMargin - 8));
+  appendReassuranceLoop(points, reassuranceText, reassurancePaddingX, config.reassurance.paddingY, config.reassurance.skew);
   const reassuranceExit = points.at(-1)!;
-  appendFlow(points, { x: reassuranceExit.x + config.reassurance.paddingX * 0.05, y: reassuranceExit.y + config.reassurance.exitRun }, 10);
+  appendFlow(points, { x: reassuranceExit.x, y: reassuranceExit.y + config.reassurance.exitRun }, 0);
 
   const taperStartIndex = points.length - 1;
   const taperStart = points[taperStartIndex]!;
-  appendFlow(points, { x: taperStart.x + 5, y: Math.min(height - 22, taperStart.y + config.reassurance.taperLength) }, 11);
+  appendFlow(points, { x: taperStart.x, y: Math.min(height - 22, taperStart.y + config.reassurance.taperLength) }, 0);
   const taperCenterline = points.slice(taperStartIndex);
   const taper: RibbonTaperGeometry = {
     startLocalY: taperStart.y,

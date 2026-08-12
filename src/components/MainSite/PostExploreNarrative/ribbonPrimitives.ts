@@ -26,9 +26,9 @@ export function appendFlow(points: RibbonPoint[], target: RibbonPoint, bendX = 0
 
 function appendCleanOvalLoop(points: RibbonPoint[], center: RibbonPoint, rx: number, ry: number, skew = 0) {
   const topY = center.y - ry;
-  const preEntryX = center.x - rx * 0.52;
+  const tangentRun = Math.max(8, Math.min(24, rx * 0.16));
 
-  appendFlow(points, { x: preEntryX, y: topY }, Math.min(18, rx * 0.08));
+  appendFlow(points, { x: center.x - tangentRun, y: topY }, Math.min(12, rx * 0.05));
   push(points, center.x, topY);
 
   const steps = 16;
@@ -38,12 +38,43 @@ function appendCleanOvalLoop(points: RibbonPoint[], center: RibbonPoint, rx: num
     push(points, point.x, point.y);
   }
 
-  push(points, center.x + rx * 0.52, topY);
-  push(points, center.x + rx * 0.92, topY + ry * 0.16);
+  push(points, center.x + tangentRun, topY);
+}
+
+function appendAngledOvalLoop(
+  points: RibbonPoint[],
+  center: RibbonPoint,
+  rx: number,
+  ry: number,
+  startAngle: number,
+  skew = 0,
+) {
+  const seam = ellipsePoint(center, rx, ry, startAngle, skew);
+  const tangentX = -Math.sin(startAngle) * rx + Math.cos(startAngle) * rx * skew * 0.04;
+  const tangentY = Math.cos(startAngle) * ry;
+  const tangentLength = Math.max(0.0001, Math.hypot(tangentX, tangentY));
+  const tx = tangentX / tangentLength;
+  const ty = tangentY / tangentLength;
+  const tangentRun = Math.max(10, Math.min(26, Math.min(rx, ry) * 0.18));
+
+  appendFlow(points, { x: seam.x - tx * tangentRun, y: seam.y - ty * tangentRun }, Math.min(14, rx * 0.04));
+  push(points, seam.x, seam.y);
+
+  const steps = 24;
+  for (let index = 1; index <= steps; index += 1) {
+    const angle = startAngle + (Math.PI * 2 * index) / steps;
+    const point = ellipsePoint(center, rx, ry, angle, skew);
+    push(points, point.x, point.y);
+  }
+
+  push(points, seam.x + tx * tangentRun, seam.y + ty * tangentRun);
 }
 
 export function appendLooseOvalLoop(points: RibbonPoint[], center: RibbonPoint, radiusX: number, radiusY: number, skew = 0.14) {
-  appendCleanOvalLoop(points, center, Math.max(20, radiusX), Math.max(14, radiusY), Math.min(0.12, skew));
+  const rx = Math.max(20, radiusX);
+  const ry = Math.max(14, radiusY);
+  appendCleanOvalLoop(points, center, rx, ry, Math.min(0.12, skew));
+  push(points, center.x + rx + Math.max(12, rx * 0.12), center.y - ry);
 }
 
 export function appendArtworkWrap(points: RibbonPoint[], rect: RibbonRect, side: 'left' | 'right', clearance: number): RibbonWrapMarkers {
@@ -55,7 +86,14 @@ export function appendArtworkWrap(points: RibbonPoint[], rect: RibbonRect, side:
   const rx = rect.width * 0.5 + clearance * 0.12;
   const ry = rect.height * 0.5 + clearance * 0.24;
 
-  appendCleanOvalLoop(points, center, rx, ry, sign * 0.035);
+  appendAngledOvalLoop(
+    points,
+    center,
+    rx,
+    ry,
+    side === 'right' ? -Math.PI * 0.25 : -Math.PI * 0.75,
+    sign * 0.035,
+  );
 
   const frontExitY = rect.bottom + Math.max(48, clearance * 0.55);
   appendFlow(
@@ -108,13 +146,53 @@ export function appendGlyphLoop(points: RibbonPoint[], rect: RibbonRect, scaleX:
   );
 }
 
+export function appendGlyphPairLoops(
+  points: RibbonPoint[],
+  firstRect: RibbonRect,
+  secondRect: RibbonRect,
+  scaleX: number,
+  scaleY: number,
+) {
+  const firstCenter = { x: firstRect.left + firstRect.width * 0.5, y: firstRect.top + firstRect.height * 0.5 };
+  const secondCenter = { x: secondRect.left + secondRect.width * 0.5, y: secondRect.top + secondRect.height * 0.5 };
+  const centerGap = Math.max(1, secondCenter.x - firstCenter.x);
+  const desiredFirstRx = Math.max(6, firstRect.width * 0.5 * scaleX);
+  const desiredSecondRx = Math.max(6, secondRect.width * 0.5 * scaleX);
+  const pairScale = Math.min(1, centerGap / Math.max(1, desiredFirstRx + desiredSecondRx));
+  const firstRx = desiredFirstRx * pairScale;
+  const secondRx = desiredSecondRx * pairScale;
+  const firstRy = Math.max(10, firstRect.height * 0.5 * scaleY);
+  const secondRy = Math.max(10, secondRect.height * 0.5 * scaleY);
+
+  appendCleanOvalLoop(points, firstCenter, firstRx, firstRy, 0);
+  appendCleanOvalLoop(points, secondCenter, secondRx, secondRy, 0);
+
+  const secondTopY = secondCenter.y - secondRy;
+  push(points, secondCenter.x + secondRx + 14, secondTopY);
+  appendFlow(
+    points,
+    {
+      x: secondRect.right + Math.max(14, secondRect.width * 0.55),
+      y: secondCenter.y + Math.max(8, secondRy * 0.18),
+    },
+    Math.min(8, centerGap * 0.06),
+  );
+}
+
 export function appendReassuranceLoop(points: RibbonPoint[], rect: RibbonRect, paddingX: number, paddingY: number, skew = 0.12) {
   const center = { x: rect.left + rect.width * 0.5, y: rect.top + rect.height * 0.5 };
-  const rx = rect.width * 0.5 + Math.max(24, paddingX);
+  const rx = rect.width * 0.5 + Math.max(8, paddingX);
   const ry = rect.height * 0.5 + Math.max(22, paddingY);
-  appendCleanOvalLoop(points, center, rx, ry, Math.min(0.08, skew));
-  const exit = points.at(-1)!;
-  push(points, exit.x + rx * 0.08, Math.max(exit.y + 34, rect.bottom + paddingY * 0.42));
+  appendAngledOvalLoop(points, center, rx, ry, 0, Math.min(0.08, skew));
+  const tangentExit = points.at(-1)!;
+  appendFlow(
+    points,
+    {
+      x: tangentExit.x,
+      y: center.y + ry + Math.max(28, paddingY * 0.5),
+    },
+    0,
+  );
 }
 
 export function buildTaperPolygon(centerline: readonly RibbonPoint[], fullWidth: number): RibbonPoint[] {
