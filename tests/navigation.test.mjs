@@ -148,3 +148,22 @@ test('services exposes a stable future detach seam without implementing detachme
   assert.doesNotMatch(css, /\.navItemSlot\s*\{[^}]*transform:/s);
   assert.doesNotMatch(css, /\.navItemSlot\s*\{[^}]*contain:\s*paint/s);
 });
+
+test('hero nav links use the existing explore handoff before scrolling to hidden main targets', () => {
+  const hero = read('src/components/experience/Hero/Hero.tsx');
+  const siteNav = read(`${navDir}/SiteNavigation.tsx`);
+  const center = read(`${navDir}/CenterNavCluster.tsx`);
+  const talk = read(`${navDir}/GooeyTalkButton.tsx`);
+
+  assert.match(hero, /pendingTargetRef/);
+  assert.match(hero, /onNavigate=\{handleHeroNavigate\}/);
+  assert.match(hero, /onExplore\(\)/);
+  assert.match(hero, /scrollIntoView/);
+  assert.match(hero, /requestAnimationFrame/);
+  assert.match(siteNav, /interactive= true|interactive = true/);
+  assert.match(siteNav, /inert=\{!interactive \? true : undefined\}/);
+  assert.match(center, /event\.preventDefault\(\)/);
+  assert.match(center, /onNavigate\(item\.href\)/);
+  assert.match(talk, /event\.preventDefault\(\)/);
+  assert.match(talk, /onNavigate\('#contact'\)/);
+});
