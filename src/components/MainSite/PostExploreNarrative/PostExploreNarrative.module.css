@@ -24,13 +24,8 @@
   pointer-events: none;
 }
 
-.ribbonSvgBack {
-  z-index: 1;
-}
-
-.ribbonSvgFront {
-  z-index: 3;
-}
+.ribbonSvgBack { z-index: 1; }
+.ribbonSvgFront { z-index: 3; }
 
 .ribbonPath {
   fill: none;
@@ -40,6 +35,11 @@
   vector-effect: non-scaling-stroke;
   filter: drop-shadow(0 0 5px rgb(59 130 246 / 0.16));
   will-change: stroke-dashoffset;
+}
+
+.ribbonTaper {
+  pointer-events: none;
+  filter: drop-shadow(0 0 5px rgb(59 130 246 / 0.12));
 }
 
 .journeyContent {
@@ -60,26 +60,16 @@
   padding: clamp(56px, 8svh, 104px) var(--wr-page-pad);
 }
 
-.journeyStopLeft {
-  justify-content: flex-start;
-}
-
-.journeyStopRight {
-  justify-content: flex-end;
-}
-
-.journeyStopCenter {
-  justify-content: center;
-}
+.journeyStopLeft { justify-content: flex-start; }
+.journeyStopRight { justify-content: flex-end; }
+.journeyStopCenter { justify-content: center; }
 
 .journeyStopAnchor {
   position: relative;
   width: min(100%, 1480px);
 }
 
-.journeyStopAnchorWide {
-  width: min(98vw, 1700px);
-}
+.journeyStopAnchorWide { width: min(98vw, 1700px); }
 
 .journeyBeat {
   display: grid;
@@ -110,9 +100,7 @@
   will-change: transform, opacity;
 }
 
-.journeyBeatTextRight .journeyQuestion {
-  text-align: right;
-}
+.journeyBeatTextRight .journeyQuestion { text-align: right; }
 
 .journeyStopAnchor[data-revealed='true'] .journeyQuestion {
   opacity: 1;
@@ -124,9 +112,7 @@
   white-space: nowrap;
 }
 
-.lookWord [data-ribbon-glyph] {
-  display: inline-block;
-}
+.lookWord [data-ribbon-glyph] { display: inline-block; }
 
 .journeyArtwork {
   position: relative;
@@ -138,9 +124,7 @@
   border-radius: clamp(22px, 2.2vw, 34px);
   overflow: hidden;
   background: #0a0f18;
-  box-shadow:
-    0 24px 70px rgb(0 0 0 / 0.34),
-    inset 0 1px 0 rgb(255 255 255 / 0.035);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 0.34), inset 0 1px 0 rgb(255 255 255 / 0.035);
 }
 
 .journeyArtworkSurface {
@@ -188,48 +172,19 @@
   letter-spacing: 0.18em;
 }
 
-.reassuranceSection {
+.reassuranceHeading {
   position: relative;
   z-index: 2;
-  width: 100%;
-  height: clamp(320px, 38vw, 580px);
-  opacity: 0;
-  transform: scale(0.985);
-  pointer-events: none;
-  transition:
-    opacity 360ms cubic-bezier(0.22, 0.61, 0.36, 1),
-    transform 460ms cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-
-.journeyStopAnchor[data-revealed='true'] .reassuranceSection {
-  opacity: 1;
-  transform: scale(1);
-  pointer-events: auto;
-}
-
-.particleTextFrame {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  isolation: isolate;
+  width: min(92vw, 1500px);
+  margin: 0 auto;
+  color: var(--wr-text);
   font-family: var(--font-hero), Arial, sans-serif;
-  font-size: clamp(96px, 15vw, 240px);
-  font-weight: 800;
-  line-height: 0.86;
-  letter-spacing: -0.065em;
+  font-size: clamp(56px, 7.4vw, 116px);
+  font-weight: 900;
+  line-height: 0.88;
+  letter-spacing: -0.055em;
   text-align: center;
-}
-
-.particleCanvas {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-  pointer-events: auto;
-  touch-action: pan-y;
+  text-wrap: balance;
 }
 
 .purposeSection {
@@ -255,9 +210,7 @@
   text-wrap: balance;
 }
 
-.statementLead {
-  display: block;
-}
+.statementLead { display: block; }
 
 .auroraText {
   display: inline-block;
@@ -334,14 +287,9 @@
     grid-template-columns: minmax(0, 1fr) minmax(270px, 0.82fr);
     gap: clamp(36px, 6vw, 72px);
   }
-
-  .journeyBeatTextRight {
-    grid-template-columns: minmax(270px, 0.82fr) minmax(0, 1fr);
-  }
-
-  .journeyQuestion {
-    font-size: clamp(38px, 6.8vw, 72px);
-  }
+  .journeyBeatTextRight { grid-template-columns: minmax(270px, 0.82fr) minmax(0, 1fr); }
+  .journeyQuestion { font-size: clamp(38px, 6.8vw, 72px); }
+  .reassuranceHeading { font-size: clamp(48px, 7.1vw, 82px); }
 }
 
 @media (max-width: 720px) {
@@ -349,111 +297,62 @@
     --ribbon-width: 3.9px;
     min-height: 455svh;
   }
-
-  .journeyLead {
-    height: 44svh;
-  }
-
+  .journeyLead { height: 44svh; }
   .journeyStop {
     min-height: 100svh;
     padding: clamp(46px, 7svh, 74px) var(--wr-page-pad);
   }
-
   .journeyStopAnchor,
-  .journeyStopAnchorWide {
-    width: 100%;
-  }
-
+  .journeyStopAnchorWide { width: 100%; }
   .journeyBeat,
   .journeyBeatTextRight {
     grid-template-columns: 1fr;
     gap: clamp(28px, 7svh, 58px);
   }
-
   .journeyQuestion {
     max-width: 86vw;
     font-size: clamp(32px, 9.2vw, 54px);
     line-height: 0.95;
     letter-spacing: -0.048em;
   }
-
   .journeyBeatTextRight .journeyQuestion {
     justify-self: end;
     text-align: right;
   }
-
-  .journeyArtwork {
-    width: min(88vw, 520px);
+  .journeyArtwork { width: min(88vw, 520px); }
+  .journeyBeatTextLeft .journeyArtwork { justify-self: end; }
+  .journeyBeatTextRight .journeyArtwork { justify-self: start; }
+  .reassuranceHeading {
+    width: min(91vw, 680px);
+    font-size: clamp(28px, 8vw, 36px);
+    line-height: 0.92;
   }
-
-  .journeyBeatTextLeft .journeyArtwork {
-    justify-self: end;
-  }
-
-  .journeyBeatTextRight .journeyArtwork {
-    justify-self: start;
-  }
-
-  .reassuranceSection {
-    width: 100%;
-    height: clamp(280px, 74vw, 400px);
-  }
-
-  .particleTextFrame {
-    font-size: clamp(72px, 22vw, 132px);
-    line-height: 0.88;
-  }
-
   .purposeSection {
     min-height: 82svh;
     padding-top: clamp(44px, 6svh, 68px);
     padding-bottom: clamp(108px, 14svh, 160px);
   }
-
   .statement {
     width: min(92vw, 680px);
     font-size: clamp(40px, 10.8vw, 76px);
     line-height: 0.93;
   }
-
   .growthRing {
     --ring-size: clamp(210px, 62vw, 240px);
     margin-top: clamp(2.5rem, 5vh, 3.5rem);
   }
-
-  .ringChar {
-    font-size: 11px;
-    font-weight: 800;
-  }
-
-  .ringCenter {
-    font-size: clamp(28px, 8vw, 34px);
-  }
+  .ringChar { font-size: 11px; font-weight: 800; }
+  .ringCenter { font-size: clamp(28px, 8vw, 34px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .journeyQuestion,
-  .reassuranceSection {
-    transition: none;
-  }
-
-  .journeyQuestion {
-    transform: none;
-  }
-
-  .particleCanvas {
-    pointer-events: none;
-  }
-
-  .ribbonPath {
-    filter: none;
-  }
-
+  .journeyQuestion { transform: none; }
+  .ribbonPath,
+  .ribbonTaper { filter: none; }
   .auroraText {
     animation: none;
     background-position: 55% 50%;
   }
-
   .ringTrack {
     animation: none;
     will-change: auto;
