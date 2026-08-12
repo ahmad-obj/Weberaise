@@ -101,14 +101,17 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
       ? clamp(width * 0.72, config.edgeInset, width - config.edgeInset)
       : clamp(width * 0.28, config.edgeInset, width - config.edgeInset);
 
-    const approachY = Math.max(lastY + 90, stop.centerY - visit.approachLead);
-    const passY = Math.max(approachY + 54, stop.centerY);
+    const corridorGuard = Math.min(visit.clearance, 80);
+    const safeEntryY = Math.max(lastY + 144, stop.top - corridorGuard);
+    const sweepY = Math.max(lastY + 90, Math.min(safeEntryY - 54, stop.top - visit.approachLead));
+    const passY = Math.max(safeEntryY + 54, stop.centerY);
     const departY = Math.max(
       passY + 58,
-      Math.min(stop.bottom + visit.approachLead * 0.44, height - 70),
+      Math.min(stop.bottom + corridorGuard, height - 70),
     );
 
-    points.push({ x: oppositeX, y: approachY });
+    points.push({ x: oppositeX, y: sweepY });
+    points.push({ x: passX, y: safeEntryY });
     points.push({ x: passX, y: passY });
     points.push({ x: passX, y: departY });
 
