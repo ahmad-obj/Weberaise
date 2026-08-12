@@ -5,12 +5,12 @@ import {
   selectedWork,
   services,
 } from '@/content/homepage';
-import { FirstImpression } from './FirstImpression';
+import { PostExploreNarrative } from './PostExploreNarrative/PostExploreNarrative';
 
 export function MainSite() {
   return (
     <main className="main-site" data-main-site>
-      <FirstImpression />
+      <PostExploreNarrative />
 
       <section id="work" className="section-shell section-shell--dark">
         <header className="section-heading-row">

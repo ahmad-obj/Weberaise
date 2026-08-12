@@ -58,3 +58,18 @@ test('full quality profile encodes age-aware lifetime and bounded primitive coun
   assert.match(quality, /surfaceThreshold:\s*0\.4/);
   assert.match(quality, /maskShortAxis:\s*Math\.min\(512/);
 });
+
+test('post-explore root owns the seamless black handoff from EXPLORE', () => {
+  const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
+  const shell = read('src/components/experience/ExperienceShell.tsx');
+  assert.match(css, /\.root\s*\{[^}]*background:\s*var\(--wr-black\)/s);
+  assert.match(shell, /state\s*!==\s*'main'/);
+  assert.match(shell, /EXPLORE_COMPLETE/);
+});
+
+test('post-explore effects include reduced-motion handling without adding Motion', () => {
+  const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
+  const pkg = read('package.json');
+  assert.match(css, /prefers-reduced-motion:\s*reduce/);
+  assert.doesNotMatch(pkg, /"motion"\s*:|"framer-motion"\s*:/);
+});

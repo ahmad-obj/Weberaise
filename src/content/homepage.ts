@@ -1,5 +1,5 @@
 export const homepageSections = [
-  { id: 'first-impression', label: '01 / FIRST IMPRESSION' },
+  { id: 'post-explore', label: '01 / INTRO' },
   { id: 'work', label: '02 / SELECTED WORK' },
   { id: 'services', label: '03 / WHAT WE DO' },
   { id: 'audit', label: '04 / WEBSITE AUDIT' },
@@ -10,9 +10,17 @@ export const homepageSections = [
   { id: 'contact', label: '09 / LET’S WORK' },
 ] as const;
 
-export const firstImpressionCopy = {
-  heading: 'Your work can be excellent. Your website can still make it look ordinary.',
-  close: 'We close that gap.',
+export const postExploreCopy = {
+  questions: [
+    'Need a website?',
+    'Need a redesign?',
+    'Need to look better online?',
+  ],
+  reassurance: 'DONT WORRY. WE GOT YOU',
+  statementLead: 'We build websites that',
+  statementAurora: 'move businesses forward.',
+  ring: 'WEB DEVELOPMENT · SEO · BRANDING ·',
+  ringCenter: 'GROW',
 } as const;
 
 export const selectedWork = [
