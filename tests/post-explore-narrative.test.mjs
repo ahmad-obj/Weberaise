@@ -35,61 +35,86 @@ test('MainSite installs the post-explore narrative instead of FirstImpression', 
   assert.doesNotMatch(main, /FirstImpression/);
 });
 
-test('ribbon trail feature files replace the old Scroll Float question system', () => {
-  for (const file of ['TrailNarrative.tsx', 'trailPath.ts', 'trailMotion.ts']) {
+test('document-space journey files replace the sticky ribbon system', () => {
+  for (const file of [
+    'JourneyNarrative.tsx',
+    'JourneyStop.tsx',
+    'RibbonTrail.tsx',
+    'journeyRoute.ts',
+    'buildJourneyPath.ts',
+    'pathLookup.ts',
+    'ribbonController.ts',
+    'questionReveal.ts',
+  ]) {
     assert.equal(existsSync(resolve(root, featureDir, file)), true, `${file} must exist`);
   }
 
   const composition = read(`${featureDir}/PostExploreNarrative.tsx`);
-  assert.match(composition, /TrailNarrative/);
-  assert.doesNotMatch(composition, /QuestionSequence/);
+  assert.match(composition, /JourneyNarrative/);
+  assert.doesNotMatch(composition, /TrailNarrative/);
 });
 
-test('trail timing is normalized and reverse scroll keeps the automatic opening floor', () => {
-  const motion = read(`${featureDir}/trailMotion.ts`);
-  for (const contract of [
-    /initial:\s*0\.09/,
-    /q1:\s*0\.23/,
-    /q2:\s*0\.47/,
-    /q3:\s*0\.69/,
-    /questionsFade:\s*0\.83/,
-    /reassurance:\s*0\.94/,
-  ]) assert.match(motion, contract);
-
-  assert.match(motion, /getTotalLength\(\)/);
-  assert.match(motion, /strokeDasharray/);
-  assert.match(motion, /strokeDashoffset/);
-  assert.match(motion, /Math\.max\(TRAIL_TIMING\.initial/);
-  assert.match(motion, /ScrollTrigger/);
-});
-
-test('trail path geometry is isolated into editable desktop and mobile definitions', () => {
-  const path = read(`${featureDir}/trailPath.ts`);
-  assert.match(path, /TrailPathDefinition/);
-  assert.match(path, /DESKTOP_TRAIL/);
-  assert.match(path, /MOBILE_TRAIL/);
-  assert.match(path, /viewBox/);
-  assert.match(path, /d:/);
-});
-
-test('trail narrative uses fixed semantic question anchors and a decorative SVG', () => {
-  const component = read(`${featureDir}/TrailNarrative.tsx`);
+test('journey is normal document flow rather than a sticky viewport stage', () => {
+  const component = read(`${featureDir}/JourneyNarrative.tsx`);
   const css = read(`${featureDir}/PostExploreNarrative.module.css`);
 
+  assert.match(component, /data-journey/);
+  assert.match(component, /data-journey-stop/);
+  assert.match(component, /data-ribbon-svg/);
   assert.match(component, /aria-hidden="true"/);
-  assert.match(component, /data-trail-path/);
-  assert.match(component, /data-trail-question=\{index\}/);
-  assert.match(component, /trailQuestionOne/);
-  assert.match(component, /trailQuestionTwo/);
-  assert.match(component, /trailQuestionThree/);
-  assert.doesNotMatch(component, /data-question-char|questionChar/);
 
-  assert.match(css, /\.trailScroll\s*\{[^}]*height:\s*500svh/s);
-  assert.match(css, /height:\s*520svh/);
-  assert.match(css, /\.trailQuestionOne\s*\{/);
-  assert.match(css, /\.trailQuestionTwo\s*\{/);
-  assert.match(css, /\.trailQuestionThree\s*\{/);
-  assert.match(css, /\.trailQuestionThree\s*\{[^}]*top:\s*6[6-8]%/s);
+  assert.match(css, /\.journey\s*\{/);
+  assert.match(css, /\.journeyStop\s*\{/);
+  assert.match(css, /\.ribbonSvg\s*\{[^}]*position:\s*absolute/s);
+  assert.doesNotMatch(css, /\.trailStage\s*\{[^}]*position:\s*sticky/s);
+  assert.doesNotMatch(css, /\.trailQuestion(?:One|Two|Three)/);
+  assert.doesNotMatch(css, /\.reassuranceSection\s*\{[^}]*position:\s*absolute/s);
+});
+
+test('route geometry is measured from real stop rectangles and keeps clearance isolated from controller logic', () => {
+  const route = read(`${featureDir}/journeyRoute.ts`);
+  const builder = read(`${featureDir}/buildJourneyPath.ts`);
+
+  assert.match(route, /JourneyRouteConfig/);
+  assert.match(route, /clearance/);
+  assert.match(route, /approachLead/);
+  assert.match(route, /bandBias/);
+  assert.match(builder, /getBoundingClientRect\(/);
+  assert.match(builder, /data-journey-stop/);
+  assert.match(builder, /clearance/);
+  assert.doesNotMatch(builder, /strokeDashoffset/);
+});
+
+test('path lookup samples getPointAtLength and resolves document Y with binary search', () => {
+  const lookup = read(`${featureDir}/pathLookup.ts`);
+  assert.match(lookup, /getTotalLength\(\)/);
+  assert.match(lookup, /getPointAtLength\(/);
+  assert.match(lookup, /binary/i);
+  assert.match(lookup, /documentY/);
+  assert.match(lookup, /resolveLengthForDocumentY/);
+});
+
+test('ribbon controller maintains soft center band reverse floor and one-way reveals', () => {
+  const controller = read(`${featureDir}/ribbonController.ts`);
+  assert.match(controller, /HEAD_BAND_MIN\s*=\s*0\.45/);
+  assert.match(controller, /HEAD_BAND_MAX\s*=\s*0\.58/);
+  assert.match(controller, /HEAD_NOMINAL\s*=\s*0\.52/);
+  assert.match(controller, /resolveLengthForDocumentY/);
+  assert.match(controller, /strokeDasharray/);
+  assert.match(controller, /strokeDashoffset/);
+  assert.match(controller, /revealedStops/);
+  assert.match(controller, /Math\.max\([^\n]*opening/);
+  assert.doesNotMatch(controller, /preventDefault\(/);
+});
+
+test('question reveal is entrance-only and reduced-motion aware', () => {
+  const reveal = read(`${featureDir}/questionReveal.ts`);
+  assert.match(reveal, /autoAlpha:\s*0/);
+  assert.match(reveal, /y:\s*24/);
+  assert.match(reveal, /duration:\s*0\.82/);
+  assert.match(reveal, /power3\.out/);
+  assert.match(reveal, /reducedMotion/);
+  assert.doesNotMatch(reveal, /reverse\(|onLeave|onLeaveBack/);
 });
 
 test('particle profiles increase density while staying bounded', () => {
