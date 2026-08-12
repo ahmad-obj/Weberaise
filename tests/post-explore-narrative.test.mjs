@@ -33,16 +33,30 @@ test('MainSite installs the new narrative instead of FirstImpression', () => {
   assert.doesNotMatch(main, /FirstImpression/);
 });
 
-test('question motion preserves approved windows and Scroll Float geometry', () => {
+test('questions accumulate before one shared fade and keep Scroll Float entrance geometry', () => {
   const motion = read('src/components/MainSite/PostExploreNarrative/questionMotion.ts');
-  assert.match(motion, /enterStart:\s*0\.0/);
-  assert.match(motion, /enterStart:\s*0\.3/);
-  assert.match(motion, /enterStart:\s*0\.6/);
+  assert.match(motion, /enterStart:\s*0(?:\.0+)?/);
+  assert.match(motion, /enterStart:\s*0\.25/);
+  assert.match(motion, /enterStart:\s*0\.48/);
+  assert.match(motion, /GROUP_FADE_START\s*=\s*0\.82/);
+  assert.match(motion, /GROUP_FADE_END\s*=\s*0\.98/);
   assert.match(motion, /yPercent:\s*120/);
   assert.match(motion, /scaleY:\s*2\.3/);
   assert.match(motion, /scaleX:\s*0\.7/);
   assert.match(motion, /ScrollTrigger/);
-  assert.match(motion, /filter:\s*'blur\(3px\)'/);
+  assert.match(motion, /visuals/);
+  assert.doesNotMatch(motion, /firstExitSpan|finalExitAt|EXIT_STAGGER/);
+});
+
+test('question layout uses top-left middle-right bottom-left and doubles scroll distance', () => {
+  const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
+  assert.match(css, /\.questionScroll\s*\{[^}]*height:\s*520svh/s);
+  assert.match(css, /data-question-index='0'[\s\S]*top:\s*15svh/);
+  assert.match(css, /data-question-index='0'[\s\S]*left:\s*max\(/);
+  assert.match(css, /data-question-index='1'[\s\S]*right:\s*max\(/);
+  assert.match(css, /data-question-index='1'[\s\S]*top:\s*50%/);
+  assert.match(css, /data-question-index='2'[\s\S]*bottom:\s*11svh/);
+  assert.match(css, /height:\s*560svh/);
 });
 
 test('question DOM keeps whole-string accessible text and decorative characters', () => {
@@ -67,15 +81,21 @@ test('particle profiles remain inside the approved performance budget', () => {
   assert.doesNotMatch(model, /Math\.random/);
 });
 
-test('particle reassurance uses bounded Canvas lifecycle with no pointer interaction or idle loop', () => {
+test('particle reassurance stays as an interactive live particle canvas', () => {
   const component = read('src/components/MainSite/PostExploreNarrative/ParticleReassurance.tsx');
+  const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
+  assert.match(component, /pointerRepel/);
+  assert.match(component, /repelRadius/);
+  assert.match(component, /idleDrift/);
+  assert.match(component, /pointerenter/);
+  assert.match(component, /pointermove/);
+  assert.match(component, /pointerleave/);
   assert.match(component, /IntersectionObserver/);
   assert.match(component, /ResizeObserver/);
   assert.match(component, /cancelAnimationFrame/);
-  assert.match(component, /animationFrame\s*=\s*null/);
-  assert.match(component, /aria-hidden="true"/);
-  assert.doesNotMatch(component, /pointermove|pointerenter|pointerleave|mousemove/);
-  assert.doesNotMatch(component, /Math\.random/);
+  assert.doesNotMatch(component, /reassuranceResolved|particleSettled/);
+  assert.match(css, /\.particleCanvas\s*\{[^}]*pointer-events:\s*auto/s);
+  assert.doesNotMatch(css, /particleTextFrame\[data-particle-settled/);
 });
 
 test('Aurora is limited to the business-outcome phrase and Weberaise palette', () => {
@@ -89,21 +109,20 @@ test('Aurora is limited to the business-outcome phrase and Weberaise palette', (
   assert.match(css, /animation:\s*wrAurora\s+15s\s+linear\s+infinite/);
 });
 
-test('growth ring uses CSS rotation with a stationary center', () => {
+test('growth ring is larger bolder and uses high-contrast service text', () => {
   const ring = read('src/components/MainSite/PostExploreNarrative/GrowthRing.tsx');
   const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
   assert.match(ring, /ringTrack/);
   assert.match(ring, /ringCenter/);
   assert.match(ring, /aria-hidden="true"/);
+  assert.match(css, /--ring-size:\s*clamp\(280px,/);
+  assert.match(css, /\.ringChar\s*\{[^}]*font-size:\s*14px[^}]*font-weight:\s*800[^}]*color:\s*var\(--wr-text\)/s);
   assert.match(css, /animation:\s*wrServiceRing\s+22s\s+linear\s+infinite/);
-  assert.match(css, /\.ringCenter\s*\{/);
 });
 
 test('post-explore owns a continuous black handoff and reduced-motion fallbacks', () => {
   const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
   assert.match(css, /\.root\s*\{[^}]*background:\s*var\(--wr-black\)/s);
-  assert.match(css, /\.questionScroll\s*\{[^}]*height:\s*260svh/s);
-  assert.match(css, /height:\s*280svh/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /\.ringTrack\s*\{[\s\S]*animation:\s*none/);
 });
