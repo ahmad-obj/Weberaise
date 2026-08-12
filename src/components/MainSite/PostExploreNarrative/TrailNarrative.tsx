@@ -19,19 +19,47 @@ export function TrailNarrative({
     const root = rootRef.current;
     if (!root) return undefined;
 
+    const shell = root.closest<HTMLElement>('[data-experience-state]');
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let cleanup = createTrailMotion(root, motionQuery.matches);
+    let cleanupMotion = () => undefined;
+    let started = false;
+    let experienceObserver: MutationObserver | null = null;
+
+    const startMotion = () => {
+      if (started) return;
+      if (shell && shell.dataset.experienceState !== 'main') return;
+      started = true;
+      cleanupMotion = createTrailMotion(root, motionQuery.matches);
+    };
 
     const handleMotionPreference = () => {
-      cleanup();
-      cleanup = createTrailMotion(root, motionQuery.matches);
+      if (!started) return;
+      cleanupMotion();
+      cleanupMotion = createTrailMotion(root, motionQuery.matches);
     };
+
+    if (shell && shell.dataset.experienceState !== 'main') {
+      experienceObserver = new MutationObserver(() => {
+        if (shell.dataset.experienceState === 'main') {
+          startMotion();
+          experienceObserver?.disconnect();
+          experienceObserver = null;
+        }
+      });
+      experienceObserver.observe(shell, {
+        attributes: true,
+        attributeFilter: ['data-experience-state'],
+      });
+    } else {
+      startMotion();
+    }
 
     motionQuery.addEventListener('change', handleMotionPreference);
 
     return () => {
+      experienceObserver?.disconnect();
       motionQuery.removeEventListener('change', handleMotionPreference);
-      cleanup();
+      if (started) cleanupMotion();
     };
   }, []);
 
