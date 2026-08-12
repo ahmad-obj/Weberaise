@@ -21,11 +21,7 @@ export function JourneyStop({ id, align, children }: JourneyStopProps) {
 
   return (
     <section className={`${styles.journeyStop} ${alignmentClass}`}>
-      <div
-        className={anchorClass}
-        data-journey-stop={id}
-        data-revealed="false"
-      >
+      <div className={anchorClass} data-journey-stop={id}>
         {children}
       </div>
     </section>
