@@ -15,8 +15,9 @@ const ACQUISITION_DISTANCE = 0.46;
 type RibbonControllerOptions = {
   root: HTMLElement;
   svg: SVGSVGElement;
-  path: SVGPathElement;
-  openingLength: number;
+  measurementPath: SVGPathElement;
+  drawPaths: readonly SVGPathElement[];
+  openingLocalY: number;
   sampleSpacing: number;
   stops: BuiltJourneyPath['stops'];
   reducedMotion: boolean;
@@ -66,8 +67,9 @@ function centerBandRatio(
 export function createRibbonController({
   root,
   svg,
-  path,
-  openingLength,
+  measurementPath,
+  drawPaths,
+  openingLocalY,
   sampleSpacing,
   stops,
   reducedMotion,
@@ -75,8 +77,12 @@ export function createRibbonController({
 }: RibbonControllerOptions): () => void {
   const rootRect = root.getBoundingClientRect();
   const rootDocumentTop = window.scrollY + rootRect.top;
-  const lookup = buildPathLookup(path, svg, rootDocumentTop, sampleSpacing);
-  const openingFloor = Math.min(openingLength, lookup.totalLength);
+  const lookup = buildPathLookup(measurementPath, svg, rootDocumentTop, sampleSpacing);
+  const openingDocumentY = rootDocumentTop + openingLocalY;
+  const openingFloor = Math.min(
+    lookup.totalLength,
+    resolveLengthForDocumentY(lookup, openingDocumentY),
+  );
   const initialScrollY = window.scrollY;
   const openingPlayed = root.dataset.ribbonOpened === 'true';
   const revealedStops = new Set<JourneyStopId>();
@@ -86,11 +92,15 @@ export function createRibbonController({
     if (element?.dataset.revealed === 'true') revealedStops.add(id);
   }
 
-  path.style.strokeDasharray = `${lookup.totalLength}`;
+  for (const drawPath of drawPaths) {
+    drawPath.style.strokeDasharray = `${lookup.totalLength}`;
+  }
 
   const setVisibleLength = (length: number) => {
     const clampedLength = clamp(length, 0, lookup.totalLength);
-    path.style.strokeDashoffset = `${lookup.totalLength - clampedLength}`;
+    for (const drawPath of drawPaths) {
+      drawPath.style.strokeDashoffset = `${lookup.totalLength - clampedLength}`;
+    }
   };
 
   let latestResolvedLength = 0;
@@ -134,8 +144,7 @@ export function createRibbonController({
     const opening = root.dataset.ribbonOpened === 'true'
       ? openingFloor
       : introState.opening;
-    const visibleLength = Math.max(opening, latestResolvedLength);
-    setVisibleLength(visibleLength);
+    setVisibleLength(Math.max(opening, latestResolvedLength));
 
     if (travel > 1) revealReachedStops();
   };
@@ -158,11 +167,10 @@ export function createRibbonController({
     setVisibleLength(0);
     introTween = gsap.to(introState, {
       opening: openingFloor,
-      duration: 0.65,
+      duration: 0.82,
       ease: 'power2.out',
       onUpdate: () => {
-        const visibleLength = Math.max(introState.opening, latestResolvedLength);
-        setVisibleLength(visibleLength);
+        setVisibleLength(Math.max(introState.opening, latestResolvedLength));
       },
       onComplete: () => {
         root.dataset.ribbonOpened = 'true';
