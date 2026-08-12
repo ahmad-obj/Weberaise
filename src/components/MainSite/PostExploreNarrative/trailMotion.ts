@@ -58,7 +58,7 @@ export function createTrailMotion(root: HTMLElement, reducedMotion: boolean): ()
   setPathProgress(paths, 0);
   setQuestionStates(root, 0);
 
-  let scrollTrigger: ScrollTrigger | null = null;
+  let scrollTrigger: ReturnType<typeof ScrollTrigger.create> | null = null;
   const autoState = { progress: 0 };
 
   const applyScrollProgress = (scrollProgress: number) => {
@@ -81,7 +81,7 @@ export function createTrailMotion(root: HTMLElement, reducedMotion: boolean): ()
     applyScrollProgress(scrollTrigger.progress);
   };
 
-  let introTween: gsap.core.Tween | null = null;
+  let introTween: ReturnType<typeof gsap.to> | null = null;
 
   if (reducedMotion) {
     setPathProgress(paths, TRAIL_TIMING.initial);
