@@ -5,6 +5,8 @@ import {
   appendGentleBend,
   appendGlyphLoop,
   appendLooseOvalLoop,
+  appendReassuranceLoop,
+  buildTaperPolygon,
   smoothRibbonPath,
   type RibbonPoint,
   type RibbonRect,
@@ -12,6 +14,11 @@ import {
 
 export type BuiltJourneyStop = { localY: number; revealLocalY: number; bandBias: number };
 export type RibbonClipRect = { x: number; y: number; width: number; height: number };
+export type RibbonTaperGeometry = {
+  startLocalY: number;
+  centerlineD: string;
+  polygonPoints: readonly RibbonPoint[];
+};
 export type BuiltJourneyPath = {
   d: string;
   width: number;
@@ -19,36 +26,22 @@ export type BuiltJourneyPath = {
   openingLocalY: number;
   stops: Record<JourneyStopId, BuiltJourneyStop>;
   frontClipRects: readonly RibbonClipRect[];
+  taper: RibbonTaperGeometry;
 };
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
+function clamp(value: number, min: number, max: number) { return Math.min(max, Math.max(min, value)); }
 function localRect(rootRect: DOMRect, rect: DOMRect): RibbonRect {
-  return {
-    left: rect.left - rootRect.left,
-    top: rect.top - rootRect.top,
-    right: rect.right - rootRect.left,
-    bottom: rect.bottom - rootRect.top,
-    width: rect.width,
-    height: rect.height,
-  };
+  return { left: rect.left - rootRect.left, top: rect.top - rootRect.top, right: rect.right - rootRect.left, bottom: rect.bottom - rootRect.top, width: rect.width, height: rect.height };
 }
-
 function measure(root: HTMLElement, rootRect: DOMRect, selector: string): RibbonRect {
   const element = root.querySelector<HTMLElement>(selector);
   if (!element) throw new Error(`Missing journey geometry target: ${selector}`);
   return localRect(rootRect, element.getBoundingClientRect());
 }
-
 function expand(rect: RibbonRect, x: number, y = x): RibbonClipRect {
   return { x: rect.left - x, y: rect.top - y, width: rect.width + x * 2, height: rect.height + y * 2 };
 }
-
-function centerY(rect: RibbonRect) {
-  return rect.top + rect.height * 0.5;
-}
+function centerY(rect: RibbonRect) { return rect.top + rect.height * 0.5; }
 
 export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig): BuiltJourneyPath {
   const rootRect = root.getBoundingClientRect();
@@ -58,122 +51,86 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   const q1 = measure(root, rootRect, '[data-journey-stop="q1"]');
   const q2 = measure(root, rootRect, '[data-journey-stop="q2"]');
   const q3 = measure(root, rootRect, '[data-journey-stop="q3"]');
-  const reassurance = measure(root, rootRect, '[data-journey-stop="reassurance"]');
   const artQ1 = measure(root, rootRect, '[data-ribbon-artwork="q1"]');
   const artQ2 = measure(root, rootRect, '[data-ribbon-artwork="q2"]');
   measure(root, rootRect, '[data-ribbon-artwork="q3"]');
   const q2Text = measure(root, rootRect, '[data-ribbon-question="q2"]');
   const o1 = measure(root, rootRect, '[data-ribbon-glyph="look-o-1"]');
   const o2 = measure(root, rootRect, '[data-ribbon-glyph="look-o-2"]');
+  const reassuranceText = measure(root, rootRect, '[data-reassurance-text]');
 
   const points: RibbonPoint[] = [{ x: 0, y: 18 }];
   const frontClipRects: RibbonClipRect[] = [];
 
   const leadX = clamp(config.opening.lead, config.edgeInset + 60, width * 0.42);
   const openingCenter = {
-    x: clamp(
-      leadX + config.opening.loopRadiusX * 1.18,
-      config.edgeInset + config.opening.loopRadiusX,
-      width - config.edgeInset - config.opening.loopRadiusX,
-    ),
+    x: clamp(leadX + config.opening.loopRadiusX * 1.18, config.edgeInset + config.opening.loopRadiusX, width - config.edgeInset - config.opening.loopRadiusX),
     y: Math.max(92, config.opening.loopRadiusY * 1.72),
   };
   appendFlow(points, { x: leadX, y: openingCenter.y - config.opening.loopRadiusY * 0.18 }, 24);
   appendLooseOvalLoop(points, openingCenter, config.opening.loopRadiusX, config.opening.loopRadiusY, 0.17);
   const openingExit = points.at(-1)!;
-  appendFlow(
-    points,
-    { x: clamp(width * 0.34, config.edgeInset, width - config.edgeInset), y: openingExit.y + config.opening.exitRun },
-    32,
-  );
+  appendFlow(points, { x: clamp(width * 0.34, config.edgeInset, width - config.edgeInset), y: openingExit.y + config.opening.exitRun }, 32);
   const openingLocalY = points.at(-1)!.y;
 
-  const wrapRect: RibbonRect = config.q1.wrapScale === 1
-    ? artQ1
-    : {
-        left: artQ1.left + artQ1.width * (1 - config.q1.wrapScale) * 0.5,
-        right: artQ1.right - artQ1.width * (1 - config.q1.wrapScale) * 0.5,
-        top: artQ1.top + artQ1.height * (1 - config.q1.wrapScale) * 0.5,
-        bottom: artQ1.bottom - artQ1.height * (1 - config.q1.wrapScale) * 0.5,
-        width: artQ1.width * config.q1.wrapScale,
-        height: artQ1.height * config.q1.wrapScale,
-      };
+  const wrapRect: RibbonRect = config.q1.wrapScale === 1 ? artQ1 : {
+    left: artQ1.left + artQ1.width * (1 - config.q1.wrapScale) * 0.5,
+    right: artQ1.right - artQ1.width * (1 - config.q1.wrapScale) * 0.5,
+    top: artQ1.top + artQ1.height * (1 - config.q1.wrapScale) * 0.5,
+    bottom: artQ1.bottom - artQ1.height * (1 - config.q1.wrapScale) * 0.5,
+    width: artQ1.width * config.q1.wrapScale,
+    height: artQ1.height * config.q1.wrapScale,
+  };
   appendArtworkWrap(points, wrapRect, 'right', config.q1.clearance);
-  frontClipRects.push({
-    x: artQ1.left - 34,
-    y: artQ1.top - 48,
-    width: artQ1.width * 0.58,
-    height: artQ1.height * 0.34,
-  });
-  frontClipRects.push({
-    x: artQ1.left + artQ1.width * 0.06,
-    y: artQ1.bottom - artQ1.height * 0.2,
-    width: artQ1.width + config.q1.clearance,
-    height: artQ1.height * 0.34 + config.q1.clearance,
-  });
+  frontClipRects.push(
+    { x: artQ1.left - 34, y: artQ1.top - 48, width: artQ1.width * 0.58, height: artQ1.height * 0.34 },
+    { x: artQ1.left + artQ1.width * 0.06, y: artQ1.bottom - artQ1.height * 0.2, width: artQ1.width + config.q1.clearance, height: artQ1.height * 0.34 + config.q1.clearance },
+  );
 
   const horizontalGap = q2Text.left - artQ2.right;
   const hasHorizontalGap = horizontalGap > 36;
-  const q2CenterX = hasHorizontalGap
-    ? artQ2.right + horizontalGap * 0.5
-    : width * (0.5 + config.q2.bendBias);
-  const q2BendWidth = hasHorizontalGap
-    ? Math.min(config.q2.bendWidth, Math.max(84, horizontalGap * 1.25))
-    : Math.min(config.q2.bendWidth, width * 0.46);
+  const q2CenterX = hasHorizontalGap ? artQ2.right + horizontalGap * 0.5 : width * (0.5 + config.q2.bendBias);
+  const q2BendWidth = hasHorizontalGap ? Math.min(config.q2.bendWidth, Math.max(84, horizontalGap * 1.25)) : Math.min(config.q2.bendWidth, width * 0.46);
   appendGentleBend(points, 'right', { x: q2CenterX, y: centerY(q2) }, q2BendWidth);
 
-  appendFlow(
-    points,
-    { x: o1.left - Math.max(22, o1.width * 0.7), y: o1.top - Math.max(72, o1.height * 0.95) },
-    -34,
-  );
+  appendFlow(points, { x: o1.left - Math.max(22, o1.width * 0.7), y: o1.top - Math.max(72, o1.height * 0.95) }, -34);
   appendGlyphLoop(points, o1, config.q3.glyphScaleX, config.q3.glyphScaleY);
   appendGlyphLoop(points, o2, config.q3.glyphScaleX, config.q3.glyphScaleY);
   const lookBounds: RibbonRect = {
-    left: Math.min(o1.left, o2.left),
-    top: Math.min(o1.top, o2.top),
-    right: Math.max(o1.right, o2.right),
-    bottom: Math.max(o1.bottom, o2.bottom),
-    width: Math.max(o1.right, o2.right) - Math.min(o1.left, o2.left),
-    height: Math.max(o1.bottom, o2.bottom) - Math.min(o1.top, o2.top),
+    left: Math.min(o1.left, o2.left), top: Math.min(o1.top, o2.top), right: Math.max(o1.right, o2.right), bottom: Math.max(o1.bottom, o2.bottom),
+    width: Math.max(o1.right, o2.right) - Math.min(o1.left, o2.left), height: Math.max(o1.bottom, o2.bottom) - Math.min(o1.top, o2.top),
   };
   frontClipRects.push(expand(lookBounds, 20, 26));
 
-  const reassurancePassX = config.reassurance.side === 'left'
-    ? clamp(reassurance.left - config.reassurance.clearance, config.edgeInset, width - config.edgeInset)
-    : clamp(reassurance.right + config.reassurance.clearance, config.edgeInset, width - config.edgeInset);
   appendFlow(
     points,
-    {
-      x: reassurancePassX,
-      y: Math.max(points.at(-1)!.y + 140, reassurance.top - config.reassurance.approachLead),
-    },
-    reassurancePassX < width * 0.5 ? -54 : 54,
+    { x: reassuranceText.left - config.reassurance.paddingX * 0.55, y: Math.max(points.at(-1)!.y + 140, reassuranceText.top - config.reassurance.approachLead) },
+    -48,
   );
-  appendFlow(points, { x: reassurancePassX, y: centerY(reassurance) }, 0);
-  appendFlow(
-    points,
-    { x: reassurancePassX, y: Math.min(height - 50, reassurance.bottom + config.reassurance.clearance) },
-    0,
-  );
+  appendReassuranceLoop(points, reassuranceText, config.reassurance.paddingX, config.reassurance.paddingY, config.reassurance.skew);
+  const reassuranceExit = points.at(-1)!;
+  appendFlow(points, { x: reassuranceExit.x + config.reassurance.paddingX * 0.05, y: reassuranceExit.y + config.reassurance.exitRun }, 10);
+
+  const taperStartIndex = points.length - 1;
+  const taperStart = points[taperStartIndex]!;
+  appendFlow(points, { x: taperStart.x + 5, y: Math.min(height - 22, taperStart.y + config.reassurance.taperLength) }, 11);
+  const taperCenterline = points.slice(taperStartIndex);
+  const taper: RibbonTaperGeometry = {
+    startLocalY: taperStart.y,
+    centerlineD: smoothRibbonPath(taperCenterline, 0.72),
+    polygonPoints: buildTaperPolygon(taperCenterline, config.ribbonWidth),
+  };
 
   const stops: Record<JourneyStopId, BuiltJourneyStop> = {
     q1: { localY: centerY(artQ1), revealLocalY: Math.max(openingLocalY, q1.top - 132), bandBias: 0.006 },
     q2: { localY: centerY(q2), revealLocalY: Math.max(0, q2.top - 142), bandBias: -0.004 },
     q3: { localY: centerY(lookBounds), revealLocalY: Math.max(0, q3.top - 136), bandBias: 0.004 },
     reassurance: {
-      localY: centerY(reassurance),
-      revealLocalY: Math.max(0, reassurance.top - config.reassurance.approachLead * 0.62),
+      localY: centerY(reassuranceText),
+      revealLocalY: Math.max(0, reassuranceText.top - config.reassurance.approachLead * 0.68),
       bandBias: config.reassurance.bandBias,
     },
   };
 
-  return {
-    d: smoothRibbonPath(points, 0.84),
-    width,
-    height,
-    openingLocalY,
-    stops,
-    frontClipRects,
-  };
+  return { d: smoothRibbonPath(points, 0.84), width, height, openingLocalY, stops, frontClipRects, taper };
 }
