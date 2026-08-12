@@ -2,117 +2,134 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the old post-EXPLORE first-impression placeholder with a polished, responsive narrative sequence: three scroll-float visitor questions, a particle-assembled reassurance, an Aurora-emphasized Weberaise purpose statement, and a rotating service/GROW ring.
+**Goal:** Replace the obsolete first-impression placeholder after `EXPLORE` with a polished narrative sequence: three scroll-float visitor questions, particle-assembled reassurance, an Aurora-emphasized Weberaise statement, and a rotating services/GROW ring.
 
-**Architecture:** Preserve the existing intro state machine and EXPLORE bottom-fill unchanged. The `main` state continues to reveal the homepage only after `EXPLORE_COMPLETE`; `MainSite` swaps the obsolete `FirstImpression` for a focused `PostExploreNarrative` feature composed of isolated client components. GSAP/ScrollTrigger powers the scroll question choreography, Canvas 2D powers the bounded particle reassurance, CSS powers Aurora and ring rotation, and no new general animation dependency is added.
+**Architecture:** Preserve the existing intro state machine and EXPLORE `bottomFill` unchanged. `MainSite` receives one new `PostExploreNarrative` feature at the position currently occupied by `FirstImpression`. Each motion technique is isolated: GSAP/ScrollTrigger for questions, Canvas 2D for particles, CSS for Aurora and ring rotation. No additional general animation dependency or WebGL context is introduced.
 
-**Tech Stack:** Next.js 16.3.0, React 19.2.8, TypeScript 7.0.2, GSAP 3.15.0 + ScrollTrigger, Canvas 2D, CSS Modules/global design tokens, Node test runner via `tsx`.
+**Tech Stack:** Next.js 16.3.0, React 19.2.8, TypeScript 7.0.2, GSAP 3.15.0 + ScrollTrigger, Canvas 2D, CSS Modules, existing Weberaise design tokens, Node tests through `tsx`.
 
 ## Global Constraints
 
-- Work only on `feature/signature-intro`; do not merge PR #1.
-- Preserve the experience state machine exactly: `boot → loading → loaderCompletion → heroOpening → heroInteractive → heroExiting → main`.
-- Do not redesign or refactor the loader, hero reveal, cursor liquid, EXPLORE button, `bottomFill`, or `exploreTimeline.ts` unless an independently verified regression is found.
-- The existing black EXPLORE `bottomFill` must resolve visually into the black post-Explore narrative with no white frame, route flash, rectangular wipe, or hard-cut appearance.
-- Exact copy/order: `Need a website?` → `Need a redesign?` → `Need to look better online?` → brief black pause → `DONT WORRY. WE GOT YOU` → `We build websites that move businesses forward.` → ring `WEB DEVELOPMENT · SEO · BRANDING ·` with center `GROW`.
-- Only `move businesses forward.` receives Aurora treatment.
-- Do not install `motion/react`; the existing project dependency set remains sufficient.
-- No extra WebGL system for post-Explore text effects.
-- No fake clients, testimonials, metrics, awards, pricing, or social proof.
-- Final Home → Services navbar-detach gateway remains out of scope.
-- Preserve accessible whole-string text for all split/canvas/decorative effects and honor `prefers-reduced-motion`.
-- Mobile must preserve exact narrative order while reducing offsets, particle count, scatter distance, and ring size.
-- Prefer fewer continuous animation loops: particle RAF stops after settling; Aurora and ring use compositor-friendly CSS; ScrollTrigger is scoped and cleaned up.
+- Branch: `feature/signature-intro`; do not merge PR #1.
+- Preserve state flow exactly: `boot → loading → loaderCompletion → heroOpening → heroInteractive → heroExiting → main`.
+- Do not modify loader, hero reveal, cursor liquid, EXPLORE button, `bottomFill`, or `src/experience/motion/exploreTimeline.ts` unless separate regression evidence exists.
+- First post-Explore pixel must be `var(--wr-black)` so the existing liquid fill visually becomes the homepage background with no white flash, blue-black flash, overlay wipe, or hard cut.
+- Exact narrative order:
+  1. `Need a website?`
+  2. `Need a redesign?`
+  3. `Need to look better online?`
+  4. short empty-black breathing beat
+  5. `DONT WORRY. WE GOT YOU`
+  6. `We build websites that move businesses forward.`
+  7. ring `WEB DEVELOPMENT · SEO · BRANDING ·`
+  8. center `GROW`
+- Only `move businesses forward.` receives Aurora styling.
+- Do not install `motion`, `motion/react`, Framer Motion, or another animation library.
+- Do not create another WebGL system.
+- Final Home → Services navbar-detach gateway is out of scope.
+- No fake clients, testimonials, metrics, proof, awards, pricing, or social-media-marketing claims.
+- Every visually split/canvas-rendered phrase must have an accessible whole-string equivalent.
+- `prefers-reduced-motion` must produce a fully readable low-motion version of every scene.
+- Particle RAF must stop after its final settled frame.
+- Mobile keeps the same narrative order while reducing offsets, particle count/scatter, and ring size.
 
-## External Motion References
+## Required external effect references
 
-These links are implementation references, not permission to drop stock components into the project unchanged.
+These are implementation references. Preserve the recognizable behavior, but adapt them to Weberaise and the existing stack rather than copying the demos as isolated widgets.
 
 ### React Bits — Scroll Float
 - Demo/docs: https://reactbits.dev/text-animations/scroll-float
 - TypeScript source: https://github.com/DavidHDev/react-bits/blob/main/src/ts-default/TextAnimations/ScrollFloat/ScrollFloat.tsx
 - CSS source: https://github.com/DavidHDev/react-bits/blob/main/src/ts-default/TextAnimations/ScrollFloat/ScrollFloat.css
-- Preserve the recognizable entrance character: per-character split, initial opacity 0, roughly `yPercent: 120`, `scaleY: 2.3`, `scaleX: 0.7`, scrubbed toward natural geometry with subtle stagger.
-- Weberaise adds an authored hold and exit instead of treating the reference as a complete section.
+- Reference behavior to preserve: per-character split; initial `opacity: 0`, `yPercent: 120`, `scaleY: 2.3`, `scaleX: 0.7`; scrubbed GSAP/ScrollTrigger entrance; restrained character stagger near `0.03`.
+- Weberaise addition: readable hold plus a custom graceful exit.
 
 ### React Bits — Particle Text
 - Demo/docs: https://reactbits.dev/text-animations/particle-text
 - TypeScript source: https://github.com/DavidHDev/react-bits/blob/main/src/ts-default/TextAnimations/ParticleText/ParticleText.tsx
-- Preserve the Canvas 2D model: rasterize target glyphs, sample visible pixels, generate target particle positions, gather particles into readable text.
-- Weberaise adaptation removes pointer repel and meaningful idle drift, bounds the particle budget, uses deterministic sampling, local scatter, capped DPR, and stops RAF after the settled frame.
+- Reference behavior to preserve: Canvas 2D glyph rasterization, alpha sampling, target particle positions, gather animation, DPR cap, resize rebuild.
+- Weberaise adaptation: deterministic sampling, local scatter, no pointer repel, no idle drift, bounded count, no permanent RAF.
 
 ### Magic UI — Aurora Text
 - Demo/docs: https://magicui.design/docs/components/aurora-text
 - Source: https://github.com/magicuidesign/magicui/blob/main/apps/www/registry/magicui/aurora-text.tsx
-- Preserve the animated gradient clipped to text and accessible semantic copy.
-- Use Weberaise colors only: `#F5F7FA → #60A5FA → #3B82F6 → #2563EB → #F5F7FA` with a slow 14–16s cycle.
+- Reference behavior to preserve: animated multi-stop gradient clipped to semantic text.
+- Weberaise palette: `#F5F7FA → #60A5FA → #3B82F6 → #2563EB → #F5F7FA`, one cycle in 15s.
 
 ### React Bits — Circular Text
 - Demo/docs: https://reactbits.dev/text-animations/circular-text
 - TypeScript source: https://github.com/DavidHDev/react-bits/blob/main/src/ts-default/TextAnimations/CircularText/CircularText.tsx
 - CSS source: https://github.com/DavidHDev/react-bits/blob/main/src/ts-default/TextAnimations/CircularText/CircularText.css
-- Preserve circular character placement + slow continuous rotation.
-- Rebuild with React + CSS transforms instead of installing the reference's `motion/react` dependency.
+- Reference behavior to preserve: character placement around a circle and calm continuous rotation.
+- Weberaise adaptation: React + CSS transforms; no `motion/react`; no speed-up/go-bonkers hover mode.
 
 ---
 
-## File Structure
+## File map
 
 ### Create
-- `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.tsx` — server-safe composition wrapper and semantic section ordering.
-- `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css` — all layout, responsive, Aurora, ring, canvas, and question-scene styles for this feature.
-- `src/components/MainSite/PostExploreNarrative/QuestionSequence.tsx` — client component that creates split-character question DOM and owns scoped ScrollTrigger lifecycle.
-- `src/components/MainSite/PostExploreNarrative/questionMotion.ts` — pure timeline constants plus GSAP setup function for entrance/hold/exit windows.
-- `src/components/MainSite/PostExploreNarrative/ParticleReassurance.tsx` — client Canvas 2D particle formation component.
-- `src/components/MainSite/PostExploreNarrative/particleModel.ts` — deterministic pure helpers for particle selection, seeded scatter, viewport caps, and reduced-motion configuration.
-- `src/components/MainSite/PostExploreNarrative/AuroraStatement.tsx` — semantic purpose statement with only the outcome phrase visually aurora-treated.
-- `src/components/MainSite/PostExploreNarrative/GrowthRing.tsx` — semantic service summary + decorative rotating character ring and static `GROW` center.
-- `tests/post-explore-narrative.test.mjs` — source/behavior contracts for content, dependencies, scene structure, reduced motion, and performance caps.
+- `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.tsx` — semantic composition/root.
+- `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css` — scoped layout/motion styling.
+- `src/components/MainSite/PostExploreNarrative/QuestionSequence.tsx` — client question DOM + lifecycle.
+- `src/components/MainSite/PostExploreNarrative/questionMotion.ts` — question timing constants and GSAP setup.
+- `src/components/MainSite/PostExploreNarrative/ParticleReassurance.tsx` — client Canvas 2D reassurance.
+- `src/components/MainSite/PostExploreNarrative/particleModel.ts` — deterministic particle profiles/helpers.
+- `src/components/MainSite/PostExploreNarrative/AuroraStatement.tsx` — semantic statement + selective Aurora span.
+- `src/components/MainSite/PostExploreNarrative/GrowthRing.tsx` — circular services label + stationary `GROW`.
+- `tests/post-explore-narrative.test.mjs` — content, structure, performance, dependency and accessibility contracts.
 
 ### Modify
-- `src/components/MainSite/MainSite.tsx` — replace `FirstImpression` with `PostExploreNarrative`; leave the later placeholder sections untouched for this scope.
-- `src/content/homepage.ts` — replace obsolete `firstImpressionCopy` with exact post-Explore content constants; do not rewrite unrelated downstream placeholder data.
-- `src/app/globals.css` — remove obsolete `.first-impression*` rules only after the old component is removed; do not place the new feature's detailed styles here.
-- `tests/visual-contract.test.mjs` — add only broad integration contracts that belong with existing global visual/state guarantees.
+- `src/components/MainSite/MainSite.tsx` — replace `FirstImpression` with `PostExploreNarrative`.
+- `src/content/homepage.ts` — replace `firstImpressionCopy` with exact `postExploreCopy`.
+- `src/app/globals.css` — remove only obsolete `.first-impression*` rules.
+- `tests/visual-contract.test.mjs` — add broad black-handoff / dependency / integration guarantees.
 
-### Delete after replacement is verified
-- `src/components/MainSite/FirstImpression.tsx` — obsolete placeholder superseded by the approved narrative.
+### Delete
+- `src/components/MainSite/FirstImpression.tsx` after Task 1 replacement passes.
 
 ---
 
-### Task 1: Lock content contract and replace the obsolete first-impression integration
+## Task 1 — Establish a complete static narrative baseline
+
+**Deliverable:** The old First Impression is gone. The exact approved narrative exists in the correct order on a continuous black background, fully semantic and responsive, but without the special effects yet. This is a complete usable state, not placeholder markup.
 
 **Files:**
 - Modify: `src/content/homepage.ts`
 - Modify: `src/components/MainSite/MainSite.tsx`
 - Create: `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.tsx`
+- Create: `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css`
 - Create: `tests/post-explore-narrative.test.mjs`
-- Delete after pass: `src/components/MainSite/FirstImpression.tsx`
+- Modify: `src/app/globals.css`
+- Delete: `src/components/MainSite/FirstImpression.tsx`
 
-**Interfaces:**
-- `postExploreCopy.questions: readonly [string, string, string]`
-- `postExploreCopy.reassurance: string`
-- `postExploreCopy.statementLead: string`
-- `postExploreCopy.statementAurora: string`
-- `postExploreCopy.ring: string`
-- `postExploreCopy.ringCenter: string`
-- `PostExploreNarrative(): JSX.Element`
+**Produces:**
 
-- [ ] **Step 1: Write the failing content/integration test**
+```ts
+export const postExploreCopy: {
+  readonly questions: readonly ['Need a website?', 'Need a redesign?', 'Need to look better online?'];
+  readonly reassurance: 'DONT WORRY. WE GOT YOU';
+  readonly statementLead: 'We build websites that';
+  readonly statementAurora: 'move businesses forward.';
+  readonly ring: 'WEB DEVELOPMENT · SEO · BRANDING ·';
+  readonly ringCenter: 'GROW';
+};
+```
 
-Add `tests/post-explore-narrative.test.mjs` with assertions that:
+- [ ] **Step 1: Write failing source-contract tests**
+
+Create `tests/post-explore-narrative.test.mjs`:
 
 ```js
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
-test('post-explore narrative uses the approved visitor journey copy', () => {
-  const content = read('src/content/homepage.ts');
+test('approved post-explore copy is canonical', () => {
+  const source = read('src/content/homepage.ts');
   for (const phrase of [
     'Need a website?',
     'Need a redesign?',
@@ -122,29 +139,28 @@ test('post-explore narrative uses the approved visitor journey copy', () => {
     'move businesses forward.',
     'WEB DEVELOPMENT · SEO · BRANDING ·',
     'GROW',
-  ]) assert.match(content, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  ]) assert.ok(source.includes(phrase), phrase);
 });
 
-test('MainSite replaces the obsolete FirstImpression with PostExploreNarrative', () => {
+test('MainSite uses PostExploreNarrative instead of FirstImpression', () => {
   const main = read('src/components/MainSite/MainSite.tsx');
   assert.match(main, /PostExploreNarrative/);
   assert.doesNotMatch(main, /FirstImpression/);
+  assert.equal(existsSync(resolve(root, 'src/components/MainSite/FirstImpression.tsx')), false);
 });
 ```
 
-- [ ] **Step 2: Run the targeted test and verify failure**
-
-Run:
+- [ ] **Step 2: Run targeted test and confirm failure**
 
 ```bash
-npm test -- --test-name-pattern="post-explore narrative|MainSite replaces"
+npm test -- --test-name-pattern="post-explore|MainSite uses"
 ```
 
-Expected: FAIL because `postExploreCopy`/`PostExploreNarrative` do not yet exist.
+Expected: FAIL because the new content/component does not exist and `FirstImpression` still does.
 
-- [ ] **Step 3: Add exact copy constants**
+- [ ] **Step 3: Replace content constant**
 
-In `src/content/homepage.ts`, remove `firstImpressionCopy` and add:
+Remove `firstImpressionCopy` and add exactly:
 
 ```ts
 export const postExploreCopy = {
@@ -161,56 +177,82 @@ export const postExploreCopy = {
 } as const;
 ```
 
-Do not modify `selectedWork`, `services`, `principles`, `processSteps`, or `engagementOptions` in this task.
+Do not edit unrelated downstream content arrays.
 
-- [ ] **Step 4: Add the composition shell and wire MainSite**
+- [ ] **Step 4: Create a complete static `PostExploreNarrative`**
 
-Create `PostExploreNarrative.tsx` with stable section landmarks for questions, reassurance, purpose statement, and growth ring. Import it from `MainSite.tsx` and replace `<FirstImpression />` exactly where the old first-impression section currently sits.
-
-The wrapper must render these child slots in order:
+Render semantic sections in exact order using the new copy. Initial markup should be intentionally simple and complete:
 
 ```tsx
-<section id="post-explore" data-post-explore-narrative>
-  <QuestionSequence questions={postExploreCopy.questions} />
-  <ParticleReassurance text={postExploreCopy.reassurance} />
-  <AuroraStatement
-    lead={postExploreCopy.statementLead}
-    aurora={postExploreCopy.statementAurora}
-  />
-  <GrowthRing text={postExploreCopy.ring} center={postExploreCopy.ringCenter} />
-</section>
+import { postExploreCopy } from '@/content/homepage';
+import styles from './PostExploreNarrative.module.css';
+
+export function PostExploreNarrative() {
+  return (
+    <section id="post-explore" className={styles.root} data-post-explore-narrative>
+      <div className={styles.questionsStatic}>
+        {postExploreCopy.questions.map((question) => <h2 key={question}>{question}</h2>)}
+      </div>
+      <section className={styles.reassuranceStatic}><h2>{postExploreCopy.reassurance}</h2></section>
+      <section className={styles.statementStatic}>
+        <h2>{postExploreCopy.statementLead} {postExploreCopy.statementAurora}</h2>
+      </section>
+      <section className={styles.ringStatic} aria-label={`${postExploreCopy.ring} ${postExploreCopy.ringCenter}`}>
+        <p>{postExploreCopy.ring}</p><strong>{postExploreCopy.ringCenter}</strong>
+      </section>
+    </section>
+  );
+}
 ```
 
-Stub child components only long enough to keep TypeScript compiling inside this task; they are replaced by real implementations in Tasks 2–5. Do not ship placeholder visible copy beyond the exact locked text.
+This baseline is deliberately static but visually valid; later tasks replace each block one at a time with the approved effect.
 
-- [ ] **Step 5: Remove obsolete component and styles**
+- [ ] **Step 5: Create baseline CSS**
 
-Delete `FirstImpression.tsx`. Remove only `.first-impression--black`, `.first-impression__body`, and their mobile override from `globals.css`. Keep all unrelated section-shell styles intact.
+Root must paint black immediately:
 
-- [ ] **Step 6: Run tests and typecheck**
+```css
+.root {
+  margin: 0;
+  background: var(--wr-black);
+  color: var(--wr-text);
+  overflow: clip;
+}
+```
+
+Give each static scene enough spacing to visually verify order without introducing three unrelated `100svh` question sections. Use responsive `clamp()` values and `var(--wr-page-pad)`.
+
+- [ ] **Step 6: Wire MainSite and remove old component/styles**
+
+Replace import/render of `FirstImpression` with `PostExploreNarrative`, delete `FirstImpression.tsx`, and remove only `.first-impression--black`, `.first-impression__body`, `.first-impression__body h2`, `.first-impression__body p`, and the corresponding mobile override from `globals.css`.
+
+- [ ] **Step 7: Verify static baseline**
 
 ```bash
-npm test -- --test-name-pattern="post-explore narrative|MainSite replaces"
+npm test -- --test-name-pattern="post-explore|MainSite uses"
 npm run typecheck
 ```
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add src/content/homepage.ts src/components/MainSite/MainSite.tsx src/components/MainSite/PostExploreNarrative tests/post-explore-narrative.test.mjs src/app/globals.css
+git add src/content/homepage.ts src/components/MainSite/MainSite.tsx src/components/MainSite/PostExploreNarrative src/app/globals.css tests/post-explore-narrative.test.mjs
 git rm src/components/MainSite/FirstImpression.tsx
-git commit -m "feat: establish post-explore narrative structure"
+git commit -m "feat: establish post-explore narrative baseline"
 ```
 
 ---
 
-### Task 2: Implement the scroll-float question sequence with authored exits
+## Task 2 — Replace static questions with Scroll Float narrative motion
+
+**Deliverable:** One sticky scroll scene carries the three questions through distinct positions with Scroll Float entrances, readable holds, graceful authored exits, and a short empty-black tail.
 
 **Files:**
 - Create: `src/components/MainSite/PostExploreNarrative/QuestionSequence.tsx`
 - Create: `src/components/MainSite/PostExploreNarrative/questionMotion.ts`
+- Modify: `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.tsx`
 - Modify: `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css`
 - Modify: `tests/post-explore-narrative.test.mjs`
 
@@ -225,108 +267,138 @@ export type QuestionWindow = {
 };
 
 export const QUESTION_WINDOWS: readonly QuestionWindow[];
-
-export function createQuestionTimeline(
-  root: HTMLElement,
-  reducedMotion: boolean,
-): () => void;
+export function createQuestionTimeline(root: HTMLElement, reducedMotion: boolean): () => void;
+export function QuestionSequence(props: { questions: readonly string[] }): JSX.Element;
 ```
 
-`QuestionSequence` consumes `readonly string[]` and owns no homepage state outside its DOM subtree.
+- [ ] **Step 1: Write failing timing and structure tests**
 
-- [ ] **Step 1: Write failing timing/structure tests**
+Add:
 
-Assert that `questionMotion.ts` contains three ordered windows matching the approved timing intent and that `QuestionSequence.tsx` contains accessible whole-string text plus decorative character spans. Also assert use of `gsap/ScrollTrigger`, scoped cleanup, and no new animation package.
+```js
+test('question motion preserves approved windows and Scroll Float geometry', () => {
+  const motion = read('src/components/MainSite/PostExploreNarrative/questionMotion.ts');
+  assert.match(motion, /enterStart:\s*0(?:\.00)?/);
+  assert.match(motion, /enterStart:\s*0\.30/);
+  assert.match(motion, /enterStart:\s*0\.60/);
+  assert.match(motion, /yPercent:\s*120/);
+  assert.match(motion, /scaleY:\s*2\.3/);
+  assert.match(motion, /scaleX:\s*0\.7/);
+  assert.match(motion, /ScrollTrigger/);
+});
 
-At minimum verify these windows numerically through a pure import or source contract:
-
-```ts
-[
-  { enterStart: 0.00, enterEnd: 0.16, holdEnd: 0.25, exitEnd: 0.35 },
-  { enterStart: 0.30, enterEnd: 0.46, holdEnd: 0.55, exitEnd: 0.65 },
-  { enterStart: 0.60, enterEnd: 0.76, holdEnd: 0.86, exitEnd: 0.96 },
-]
+test('question DOM keeps whole-string accessible text', () => {
+  const component = read('src/components/MainSite/PostExploreNarrative/QuestionSequence.tsx');
+  assert.match(component, /sr-only/);
+  assert.match(component, /aria-hidden/);
+  assert.match(component, /data-question-index/);
+});
 ```
 
-- [ ] **Step 2: Verify the new test fails**
+- [ ] **Step 2: Run and confirm failure**
 
 ```bash
 npm test -- --test-name-pattern="question"
 ```
 
-Expected: FAIL because the motion module is absent.
+- [ ] **Step 3: Implement constant timeline windows**
 
-- [ ] **Step 3: Implement accessible split-character markup**
+Use exactly:
 
-For each question render one positioned `<h2>` containing:
-- one `.sr-only` whole-string copy for assistive technology;
-- one `aria-hidden="true"` decorative wrapper whose children are per-character spans;
-- non-breaking spaces for literal spaces so line geometry is stable;
-- `data-question-index` for timeline targeting.
+```ts
+export const QUESTION_WINDOWS = [
+  { enterStart: 0.00, enterEnd: 0.16, holdEnd: 0.25, exitEnd: 0.35 },
+  { enterStart: 0.30, enterEnd: 0.46, holdEnd: 0.55, exitEnd: 0.65 },
+  { enterStart: 0.60, enterEnd: 0.76, holdEnd: 0.86, exitEnd: 0.96 },
+] as const;
+```
 
-Do not mount/unmount questions while scrolling. Keep all three mounted from first render so timeline progress cannot create one-frame flashes.
+The 5% overlap is intentional; only one phrase should remain dominant.
 
-- [ ] **Step 4: Implement the scoped GSAP timeline**
+- [ ] **Step 4: Implement split-character accessible DOM**
 
-Register `ScrollTrigger` only in the client module. Use `useLayoutEffect` so initial decorative transforms are applied before paint.
+All three questions remain mounted. Each heading contains:
+- visually hidden whole phrase for assistive technology;
+- decorative `aria-hidden="true"` character wrapper;
+- one span per character;
+- spaces rendered as `\u00A0`;
+- `data-question-index` on the heading.
 
-Timeline requirements:
-- one ScrollTrigger tied to the narrative scene, `scrub: true`;
-- sticky scene uses CSS for `100svh`; scroll host uses ~`260svh` desktop and ~`280svh` mobile;
-- Q1/Q2/Q3 positions are CSS-controlled, not generated randomly;
-- entrance starts from roughly `opacity: 0`, `yPercent: 120`, `scaleY: 2.3`, `scaleX: 0.7`;
-- resolve to opacity 1 and natural scale with ~`0.03` character stagger;
-- hold state must contain no transform mutation;
-- exit begins with upward movement, then slight `scaleY < 1`, slight `scaleX > 1`, then opacity and restrained blur near the tail;
-- no destructive `display:none` during timeline; opacity/visibility only after useful exit;
-- cleanup kills the timeline/ScrollTrigger on unmount;
-- refresh geometry after meaningful resize/orientation changes, debounced rather than on every pixel resize.
+Do not mount/unmount questions as scroll progress changes.
 
-Use the existing project GSAP dependency; do not add another library.
+- [ ] **Step 5: Implement GSAP/ScrollTrigger motion**
 
-- [ ] **Step 5: Implement graphic placement and responsive safe zones**
+In `useLayoutEffect`, establish initial states before normal paint. Use one scrubbed ScrollTrigger over the scene.
 
-In the CSS module set the three question anchors approximately:
-- Q1: `translate(-8vw, -7vh)` from center;
-- Q2: `translate(7vw, 0)`;
-- Q3: `translate(-2vw, 7vh)`.
+Entrance begins from the React Bits reference geometry:
 
-Clamp type scale and max width so `Need to look better online?` remains a readable phrase. Below tablet width reduce lateral/vertical offsets to roughly one third. On narrow screens prefer optical centering over preserving desktop displacement.
+```ts
+{
+  opacity: 0,
+  yPercent: 120,
+  scaleY: 2.3,
+  scaleX: 0.7,
+  transformOrigin: '50% 0%'
+}
+```
 
-The initial pre-GSAP CSS state must already be hidden to prevent a first-paint flash. `useLayoutEffect` then transfers ownership to GSAP.
+Resolve to natural geometry with restrained stagger about `0.03`.
 
-- [ ] **Step 6: Implement reduced motion**
+Exit sequence per question:
+1. begin upward departure (`yPercent` approximately `-18` to `-28`);
+2. then compress vertically to roughly `0.94–0.97` and expand horizontally to roughly `1.02–1.04`;
+3. only in the final part reduce opacity and introduce a small blur (maximum about `4px`);
+4. end fully invisible before the reassurance begins.
 
-When reduced motion is active:
-- do not apply stretched character geometry;
-- present each question through a simpler scroll progression or stacked readable flow with minimal opacity/translation;
-- preserve exact order and readable dwell;
-- avoid pinned scrub behavior if it creates excessive motion while the user requested reduction.
+The hold window changes no geometry.
 
-- [ ] **Step 7: Run targeted tests and typecheck**
+Return a cleanup function that kills both GSAP timeline and its ScrollTrigger.
+
+- [ ] **Step 6: Implement scene geometry**
+
+- scroll host: `260svh` desktop, `280svh` mobile;
+- sticky stage: `100svh`;
+- Q1 approximately center + `(-8vw, -7vh)`;
+- Q2 approximately center + `(+7vw, 0)`;
+- Q3 approximately center + `(-2vw, +7vh)`;
+- below tablet width reduce offsets to roughly one third;
+- use max widths and `clamp()` typography so Q3 stays phrase-readable;
+- initial CSS hides decorative question layers before GSAP initializes to prevent flash.
+
+- [ ] **Step 7: Reduced motion**
+
+When reduced motion is active, skip scale distortion and blur. Use minimal opacity/translation progression and preserve exact question order and dwell. Do not force the full distorted pinned experience.
+
+- [ ] **Step 8: Replace the static question block**
+
+`PostExploreNarrative` now renders:
+
+```tsx
+<QuestionSequence questions={postExploreCopy.questions} />
+```
+
+All later static scenes remain intact until their own tasks.
+
+- [ ] **Step 9: Verify and commit**
 
 ```bash
 npm test -- --test-name-pattern="question"
 npm run typecheck
-```
-
-Expected: PASS.
-
-- [ ] **Step 8: Commit**
-
-```bash
 git add src/components/MainSite/PostExploreNarrative tests/post-explore-narrative.test.mjs
 git commit -m "feat: add scroll-driven visitor questions"
 ```
 
 ---
 
-### Task 3: Implement deterministic, bounded Particle Text reassurance
+## Task 3 — Replace static reassurance with optimized Particle Text
+
+**Deliverable:** `DONT WORRY. WE GOT YOU` forms from clean local particles into crisp text, then stops consuming animation frames.
 
 **Files:**
 - Create: `src/components/MainSite/PostExploreNarrative/ParticleReassurance.tsx`
 - Create: `src/components/MainSite/PostExploreNarrative/particleModel.ts`
-- Modify: `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css`
+- Modify: `PostExploreNarrative.tsx`
+- Modify: `PostExploreNarrative.module.css`
 - Modify: `tests/post-explore-narrative.test.mjs`
 
 **Interfaces:**
@@ -342,382 +414,338 @@ export type ParticleProfile = {
 
 export function particleProfileForWidth(width: number): ParticleProfile;
 export function deterministicUnit(index: number, salt?: number): number;
+export function ParticleReassurance(props: { text: string }): JSX.Element;
 ```
 
-`ParticleReassurance({ text }: { text: string })` renders one semantic accessible reassurance and one decorative Canvas 2D layer.
-
-- [ ] **Step 1: Write failing pure-helper tests**
-
-Test that:
-- desktop profile never exceeds 2800 particles and DPR 1.5;
-- mobile profile never exceeds 1600 particles;
-- desktop scatter falls inside 70–110 CSS px;
-- mobile scatter falls inside 45–75 CSS px;
-- deterministic seed returns identical values for identical inputs and values remain in `[0, 1)`.
-
-Example:
+- [ ] **Step 1: Write failing pure-model tests**
 
 ```js
-test('particle profile stays within approved budgets', async () => {
-  const { particleProfileForWidth, deterministicUnit } = await import('../src/components/MainSite/PostExploreNarrative/particleModel.ts');
-  const desktop = particleProfileForWidth(1440);
-  const mobile = particleProfileForWidth(390);
+test('particle profiles remain inside the approved performance budget', async () => {
+  const model = await import('../src/components/MainSite/PostExploreNarrative/particleModel.ts');
+  const desktop = model.particleProfileForWidth(1440);
+  const mobile = model.particleProfileForWidth(390);
   assert.ok(desktop.maxParticles <= 2800);
   assert.ok(desktop.dprCap <= 1.5);
+  assert.ok(desktop.scatterMin >= 70 && desktop.scatterMax <= 110);
   assert.ok(mobile.maxParticles <= 1600);
-  assert.equal(deterministicUnit(25, 9), deterministicUnit(25, 9));
+  assert.ok(mobile.scatterMin >= 45 && mobile.scatterMax <= 75);
+  assert.equal(model.deterministicUnit(25, 9), model.deterministicUnit(25, 9));
 });
 ```
 
-- [ ] **Step 2: Verify helper tests fail**
+- [ ] **Step 2: Run and confirm failure**
 
 ```bash
 npm test -- --test-name-pattern="particle"
 ```
 
-Expected: FAIL because `particleModel.ts` does not exist.
+- [ ] **Step 3: Implement deterministic model**
 
-- [ ] **Step 3: Implement deterministic particle profile/model**
-
-Use fixed pure formulas; no `Math.random()` in target selection or scatter. Example deterministic generator:
+Use no `Math.random()`.
 
 ```ts
 export function deterministicUnit(index: number, salt = 0): number {
-  const x = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
-  return x - Math.floor(x);
+  const value = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+export function particleProfileForWidth(width: number): ParticleProfile {
+  return width < 720
+    ? { maxParticles: 1500, dprCap: 1.35, scatterMin: 45, scatterMax: 75, gatherDuration: 1150 }
+    : { maxParticles: 2700, dprCap: 1.5, scatterMin: 70, scatterMax: 110, gatherDuration: 1300 };
 }
 ```
 
-Profiles:
-- `< 720px`: max 1500, DPR 1.35, scatter 45–75, gather about 1150ms;
-- `>= 720px`: max 2700, DPR 1.5, scatter 70–110, gather about 1300ms.
+- [ ] **Step 4: Implement Canvas 2D text sampling**
 
-Keep values inside the approved design ranges.
+Follow the React Bits Particle Text algorithm:
+1. await computed font through `document.fonts.load` / `document.fonts.ready`;
+2. rasterize the exact phrase into an offscreen canvas;
+3. sample alpha-positive glyph pixels;
+4. deterministically downsample to `maxParticles`;
+5. create local scattered start positions around each target;
+6. color mostly `#F5F7FA`, with sparse deterministic accents from `#60A5FA` and `#3B82F6`;
+7. animate to targets with an ease-out curve;
+8. when all particles settle, draw the final frame and `cancelAnimationFrame`/stop scheduling new frames.
 
-- [ ] **Step 4: Implement Canvas 2D target sampling**
+Particles should be roughly `1.2–2px` CSS-space. No large glow, star shapes, spray, confetti, pointer repel, hover interaction, click interaction, or idle drift.
 
-Following the React Bits reference algorithm:
-1. wait for the actual computed font through `document.fonts.load` / `document.fonts.ready`;
-2. measure the container;
-3. rasterize `DONT WORRY. WE GOT YOU` into an offscreen canvas;
-4. sample pixels whose alpha exceeds a fixed threshold;
-5. downsample deterministically to the profile's `maxParticles`;
-6. derive local scattered start positions around each target;
-7. assign primarily `#F5F7FA`, with sparse deterministic `#60A5FA`/`#3B82F6` accents;
-8. animate toward target with an ease-out gather;
-9. after all particles settle, draw one final settled frame and cancel RAF.
+- [ ] **Step 5: Trigger and lifecycle**
 
-Do not implement pointer movement, hover repel, click scatter, idle drift, star shapes, confetti behavior, or screen-wide random scattering.
+Use `IntersectionObserver` to start one formation when the reassurance approaches view after the question scene. Use `ResizeObserver` to rebuild only after a material size change. Remove both observers and cancel RAF on unmount.
 
-- [ ] **Step 5: Trigger formation only when appropriate**
+Do not regenerate a visually different field on ordinary React rerenders.
 
-Use `IntersectionObserver` to begin gathering when the reassurance scene is approaching/entering view after the black breathing beat. Prevent repeated restarts during minor threshold crossings; one formation per page lifecycle is the default.
+- [ ] **Step 6: Accessibility + reduced motion**
 
-If it leaves view mid-gather, cancel/pause unnecessary RAF work. On re-entry, resume or snap coherently rather than regenerating a new random field.
+Render a semantic whole-string reassurance independent of the canvas. Canvas is `aria-hidden="true"` and not focusable.
 
-Use `ResizeObserver` to schedule a rebuild only after material size changes. Preserve deterministic sampling so resize does not visibly reshuffle color/particle character without reason.
+Reduced motion: do not scatter/gather; show the final semantic phrase immediately or with a very short opacity settle.
 
-- [ ] **Step 6: Implement accessible/reduced-motion behavior**
+- [ ] **Step 7: Replace static reassurance and tune breathing beat**
 
-The actual phrase must exist as semantic text independent of the canvas. Hide the semantic copy visually only when the decorative canvas is active; never remove it from accessibility APIs.
+Keep a short fully black interval after Q3. Do not add decorative filler. Reassurance forms close to optical center.
 
-For `prefers-reduced-motion`:
-- skip scattered start positions;
-- render/show the final text immediately or with a very short opacity settle;
-- do not run a full particle gather.
-
-- [ ] **Step 7: Add the breathing-beat composition**
-
-Ensure the question scene ends in fully black negative space before the reassurance becomes visible. The reassurance should assemble around optical center and stay visually stable after formation.
-
-- [ ] **Step 8: Run tests and typecheck**
+- [ ] **Step 8: Verify and commit**
 
 ```bash
 npm test -- --test-name-pattern="particle"
 npm run typecheck
-```
-
-Expected: PASS.
-
-- [ ] **Step 9: Commit**
-
-```bash
 git add src/components/MainSite/PostExploreNarrative tests/post-explore-narrative.test.mjs
 git commit -m "feat: add particle reassurance transition"
 ```
 
 ---
 
-### Task 4: Implement the selective Weberaise Aurora statement
+## Task 4 — Replace static statement with selective Aurora Text
+
+**Deliverable:** `We build websites that` remains stable white typography; only `move businesses forward.` carries a slow Weberaise white/blue Aurora.
 
 **Files:**
-- Create: `src/components/MainSite/PostExploreNarrative/AuroraStatement.tsx`
-- Modify: `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css`
+- Create: `AuroraStatement.tsx`
+- Modify: `PostExploreNarrative.tsx`
+- Modify: `PostExploreNarrative.module.css`
 - Modify: `tests/post-explore-narrative.test.mjs`
 
-**Interfaces:**
+- [ ] **Step 1: Write failing source contract**
 
-```ts
-export function AuroraStatement(props: {
-  lead: string;
-  aurora: string;
-}): JSX.Element;
+```js
+test('Aurora is limited to the business-outcome phrase and Weberaise palette', () => {
+  const component = read('src/components/MainSite/PostExploreNarrative/AuroraStatement.tsx');
+  const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
+  assert.match(component, /statementLead/);
+  assert.match(component, /auroraText/);
+  for (const color of ['#f5f7fa', '#60a5fa', '#3b82f6', '#2563eb']) assert.ok(css.toLowerCase().includes(color));
+  assert.match(css, /15s/);
+});
 ```
 
-- [ ] **Step 1: Add failing Aurora contract test**
-
-Assert that:
-- the lead and outcome are separate spans;
-- Aurora span contains all five approved gradient stops;
-- CSS cycle duration is within 14–16s;
-- only the outcome span receives gradient clipping;
-- a reduced-motion rule disables or freezes the gradient motion.
-
-- [ ] **Step 2: Verify failure**
+- [ ] **Step 2: Run and confirm failure**
 
 ```bash
-npm test -- --test-name-pattern="Aurora|aurora"
+npm test -- --test-name-pattern="Aurora"
 ```
 
-- [ ] **Step 3: Implement semantic statement**
-
-Render one heading with stable text:
+- [ ] **Step 3: Implement semantic component**
 
 ```tsx
-<h2 className={styles.statement}>
-  <span className={styles.statementLead}>{lead}</span>{' '}
-  <span className={styles.auroraText}>{aurora}</span>
-</h2>
+export function AuroraStatement({ lead, aurora }: { lead: string; aurora: string }) {
+  return (
+    <h2 className={styles.statement}>
+      <span className={styles.statementLead}>{lead}</span>{' '}
+      <span className={styles.auroraText}>{aurora}</span>
+    </h2>
+  );
+}
 ```
 
-Prefer a controlled desktop line break between lead and outcome while allowing natural responsive wrapping.
+Desktop may deliberately break before the Aurora phrase; mobile can wrap naturally.
 
-- [ ] **Step 4: Implement Aurora CSS based on Magic UI reference**
-
-Use:
+- [ ] **Step 4: Implement Magic UI-inspired Aurora CSS**
 
 ```css
-background-image: linear-gradient(
-  135deg,
-  #f5f7fa,
-  #60a5fa,
-  #3b82f6,
-  #2563eb,
-  #f5f7fa
-);
-background-size: 200% auto;
-background-clip: text;
--webkit-background-clip: text;
-color: transparent;
-animation: wr-aurora 15s linear infinite;
+.auroraText {
+  background-image: linear-gradient(135deg, #f5f7fa, #60a5fa, #3b82f6, #2563eb, #f5f7fa);
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: wrAurora 15s linear infinite;
+}
 ```
 
-Keep the rest of the sentence normal `var(--wr-text)`/white. No pink, purple, rainbow, glow cloud, or animated background behind the letters.
+Reduced motion: `animation: none` with a fixed gradient position.
 
-Under reduced motion set a static gradient position and `animation: none`.
+No pink/purple, rainbow, glow cloud, or animated element behind the heading.
 
-- [ ] **Step 5: Place it close to reassurance**
+- [ ] **Step 5: Replace static statement and keep it close to reassurance**
 
-Use a short transition distance after the reassurance. Do not insert another 100svh blank spacer. The statement should feel like the verbal answer following `DONT WORRY. WE GOT YOU`.
+Do not insert a blank full viewport between reassurance and statement.
 
-- [ ] **Step 6: Run tests/typecheck**
+- [ ] **Step 6: Verify and commit**
 
 ```bash
-npm test -- --test-name-pattern="Aurora|aurora"
+npm test -- --test-name-pattern="Aurora"
 npm run typecheck
-```
-
-Expected: PASS.
-
-- [ ] **Step 7: Commit**
-
-```bash
 git add src/components/MainSite/PostExploreNarrative tests/post-explore-narrative.test.mjs
 git commit -m "feat: add aurora purpose statement"
 ```
 
 ---
 
-### Task 5: Implement the rotating service ring with static GROW center
+## Task 5 — Replace static service summary with Circular Text / GROW ring
+
+**Deliverable:** `WEB DEVELOPMENT · SEO · BRANDING ·` rotates calmly around a stationary `GROW`, directly below the purpose statement.
 
 **Files:**
-- Create: `src/components/MainSite/PostExploreNarrative/GrowthRing.tsx`
-- Modify: `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css`
+- Create: `GrowthRing.tsx`
+- Modify: `PostExploreNarrative.tsx`
+- Modify: `PostExploreNarrative.module.css`
 - Modify: `tests/post-explore-narrative.test.mjs`
 - Verify: `package.json`
 
-**Interfaces:**
+- [ ] **Step 1: Write failing ring/dependency tests**
 
-```ts
-export function GrowthRing(props: {
-  text: string;
-  center: string;
-}): JSX.Element;
+```js
+test('growth ring is CSS-driven and does not add Motion', () => {
+  const ring = read('src/components/MainSite/PostExploreNarrative/GrowthRing.tsx');
+  const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
+  const pkg = read('package.json');
+  assert.match(ring, /aria-hidden/);
+  assert.match(ring, /GROW|center/);
+  assert.match(css, /22s\s+linear\s+infinite/);
+  assert.doesNotMatch(pkg, /"motion"|"framer-motion"/);
+});
 ```
 
-- [ ] **Step 1: Add failing ring/dependency contract test**
-
-Assert that:
-- exact ring copy and `GROW` are used;
-- decorative ring characters are `aria-hidden`;
-- accessible whole-string service text exists;
-- `GROW` is outside the rotating character wrapper;
-- `package.json` does not contain `motion` or `motion/react`;
-- rotation duration is within 20–24s and linear;
-- reduced-motion rule stops rotation.
-
-- [ ] **Step 2: Verify failure**
+- [ ] **Step 2: Run and confirm failure**
 
 ```bash
-npm test -- --test-name-pattern="ring|GROW|motion"
+npm test -- --test-name-pattern="growth ring"
 ```
 
-- [ ] **Step 3: Implement circular character geometry**
-
-Split the ring string with `Array.from(text)`. For each character calculate a deterministic angle:
+- [ ] **Step 3: Implement circular character placement**
 
 ```ts
+const characters = Array.from(text);
 const angle = (360 / characters.length) * index;
 ```
 
-Pass it as a CSS custom property. Position characters around a circular track with transforms owned by each character; rotate the containing ring as one compositor layer.
+Pass each angle through a CSS custom property and position every decorative character around the circular track. Provide one accessible whole-string service summary separate from decorative characters.
 
-Do not imitate the reference's hover `speedUp`/`goBonkers`; this element is a calm service summary, not a toy.
+`GROW` must live outside the rotating wrapper so it never rotates.
 
 - [ ] **Step 4: Implement dimensions and visual hierarchy**
 
-Desktop diameter: clamp within roughly 230–260px. Mobile: 175–200px. Use compact uppercase tracked type. Keep `GROW` stationary, optically centered, and more visually important than any single ring character but subordinate to the purpose statement above.
+- desktop diameter: `clamp(230px, 18vw, 260px)` or equivalent within 230–260px;
+- mobile diameter: 175–200px;
+- spacing below purpose statement: approximately `clamp(2.5rem, 6vh, 5rem)`;
+- uppercase compact ring copy with careful tracking;
+- no pointer cursor unless later made genuinely interactive.
 
-Use vertical spacing approximately `clamp(2.5rem, 6vh, 5rem)` from the purpose statement.
+- [ ] **Step 5: Implement rotation**
 
-- [ ] **Step 5: Implement performant rotation**
-
-Use CSS:
+Use one compositor-friendly CSS animation:
 
 ```css
-animation: wr-service-ring 22s linear infinite;
-will-change: transform;
+.ringTrack { animation: wrServiceRing 22s linear infinite; }
 ```
 
-This avoids a permanent JS frame loop and avoids installing Motion. Under `prefers-reduced-motion`, set `animation: none`.
+Reduced motion: `animation: none`.
 
-- [ ] **Step 6: Run tests/typecheck**
+Do not implement React Bits hover speed-up/slow-down/go-bonkers behavior.
+
+- [ ] **Step 6: Replace static ring, verify, commit**
 
 ```bash
-npm test -- --test-name-pattern="ring|GROW|motion"
+npm test -- --test-name-pattern="growth ring"
 npm run typecheck
-```
-
-Expected: PASS and dependency list unchanged.
-
-- [ ] **Step 7: Commit**
-
-```bash
 git add src/components/MainSite/PostExploreNarrative tests/post-explore-narrative.test.mjs
 git commit -m "feat: add rotating service growth ring"
 ```
 
 ---
 
-### Task 6: Harden continuity, responsive behavior, accessibility, and cleanup
+## Task 6 — Integration hardening: continuity, responsiveness, accessibility, cleanup
+
+**Deliverable:** The full four-scene narrative behaves as one coherent, responsive, accessible sequence and leaves no leaked observers/timelines/RAF loops.
 
 **Files:**
-- Modify: `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.tsx`
-- Modify: `src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css`
-- Modify: `src/components/MainSite/PostExploreNarrative/QuestionSequence.tsx`
-- Modify: `src/components/MainSite/PostExploreNarrative/ParticleReassurance.tsx`
+- Modify: `PostExploreNarrative.tsx`
+- Modify: `PostExploreNarrative.module.css`
+- Modify: `QuestionSequence.tsx`
+- Modify: `ParticleReassurance.tsx`
 - Modify: `tests/post-explore-narrative.test.mjs`
 - Modify: `tests/visual-contract.test.mjs`
 
-**Interfaces:** No new public interface. This task enforces cross-component contracts.
+- [ ] **Step 1: Add integration contracts**
 
-- [ ] **Step 1: Add failing integration contracts**
+```js
+test('post-explore root owns the seamless black handoff', () => {
+  const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
+  assert.match(css, /\.root\s*\{[^}]*background:\s*var\(--wr-black\)/s);
+});
 
-Add assertions for:
-- root post-Explore section starts with `var(--wr-black)`/black and does not inherit the old `var(--wr-background)` visual at its top;
-- no new dependency was added for Motion;
-- all four visual effects have reduced-motion handling;
-- particle canvas and decorative character wrappers are excluded from focus/accessibility trees as appropriate;
-- old first-impression CSS/component no longer exists;
-- MainSite still preserves later section order after the new narrative.
-
-- [ ] **Step 2: Verify failure where contracts are incomplete**
-
-```bash
-npm test -- --test-name-pattern="post-explore|reduced|continuity"
+test('post-explore effects expose reduced-motion handling', () => {
+  const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
+  assert.match(css, /prefers-reduced-motion:\s*reduce/);
+});
 ```
 
-- [ ] **Step 3: Harden seamless EXPLORE → main visual continuity**
+Also keep package assertion that Motion/Framer Motion are absent.
 
-Do not alter `exploreTimeline.ts`. Instead make the first pixel of `PostExploreNarrative` exactly black (`var(--wr-black)`), remove margins/collapsing gaps at the root, and ensure the `main-stage` does not reveal the darker-blue `--wr-background` before the black narrative fills the viewport.
+- [ ] **Step 2: Verify current integration tests**
 
-Because `ExperienceShell` hides `.main-stage` until state `main`, the first revealed main content must already paint black. Do not add a transition overlay or duplicate bottom-fill.
+```bash
+npm test -- --test-name-pattern="post-explore|reduced|handoff"
+```
 
-- [ ] **Step 4: Responsive pass**
+- [ ] **Step 3: Harden EXPLORE → main continuity without touching `exploreTimeline.ts`**
 
-Verify CSS at minimum around 390×844, 768×1024, 1440×900, and a short desktop viewport such as 1366×768.
+Because `ExperienceShell` only reveals `.main-stage` when state reaches `main`, the new root must already paint `var(--wr-black)` at `y=0`. Remove top margins/collapsing gaps. Do not duplicate the liquid fill and do not animate an extra overlay.
 
-Requirements:
-- Q3 does not become awkward single-word fragments;
-- question offsets stay inside safe gutters;
-- sticky height uses `svh` and does not jump under mobile browser chrome;
-- reassurance particle canvas remains bounded to its own scene;
-- purpose statement retains outcome emphasis;
-- ring remains readable and does not collide with statement.
+- [ ] **Step 4: Responsive QA and fixes**
 
-- [ ] **Step 5: Cleanup lifecycle pass**
+Check at minimum:
+- 390×844;
+- 768×1024;
+- 1366×768;
+- 1440×900.
+
+Acceptance:
+- Q3 stays readable as a phrase;
+- question offsets remain inside safe horizontal gutters;
+- sticky stage uses modern viewport units and does not clip under mobile browser chrome;
+- reassurance canvas remains inside its scene;
+- purpose outcome phrase remains visually contiguous;
+- ring does not collide with statement or viewport edges.
+
+- [ ] **Step 5: Lifecycle cleanup**
+
+Verify in code and runtime:
+- GSAP timeline and ScrollTrigger killed on unmount;
+- resize/orientation listeners removed;
+- `ResizeObserver` disconnected;
+- `IntersectionObserver` disconnected;
+- particle RAF canceled on unmount and stops after settlement;
+- no React state update on every scroll tick/animation frame;
+- particle scene adds no pointer listeners.
+
+- [ ] **Step 6: Accessibility**
 
 Verify:
-- ScrollTrigger/timeline killed on unmount;
-- resize/orientation observers removed;
-- particle RAF cancelled on unmount;
-- `ResizeObserver`, `IntersectionObserver`, media-query listeners removed;
-- no pointer listeners are added by Particle Text;
-- no React `setState` occurs on every animation frame or scroll tick.
+- each question is announced once as a full phrase, not character-by-character;
+- particle canvas is decorative and has a semantic text equivalent;
+- Aurora is a normal semantic heading;
+- ring decorative letters are hidden from AT while service summary remains available;
+- no canvas/ring decoration enters keyboard focus order.
 
-- [ ] **Step 6: Accessibility pass**
-
-Verify with DOM inspection:
-- each question has one assistive whole phrase, not individually announced letters;
-- reassurance has one semantic text equivalent even though the visual is canvas;
-- Aurora statement remains ordinary semantic heading text;
-- ring has an accessible service summary while decorative characters are hidden;
-- no decorative canvas/ring element is keyboard-focusable.
-
-- [ ] **Step 7: Run tests/typecheck**
+- [ ] **Step 7: Run full tests/typecheck and commit**
 
 ```bash
 npm test
 npm run typecheck
-```
-
-Expected: all tests PASS, typecheck PASS.
-
-- [ ] **Step 8: Commit**
-
-```bash
 git add src/components/MainSite/PostExploreNarrative tests/post-explore-narrative.test.mjs tests/visual-contract.test.mjs
 git commit -m "fix: harden post-explore narrative experience"
 ```
 
 ---
 
-### Task 7: Full verification and visual acceptance
+## Task 7 — Full production and visual acceptance
 
-**Files:** No intended source changes unless verification finds a reproducible defect directly within this scope.
+**Deliverable:** Automated verification passes and the real browser experience matches the approved design without regressing the completed intro.
 
-- [ ] **Step 1: Confirm intro regression baseline before judging new section**
+- [ ] **Step 1: Verify intro once before judging downstream work**
 
-Run the site and hard refresh once. Verify the latest loader behavior remains correct:
+Hard refresh and confirm:
 - no final-zero flicker;
-- zero exits below line and disappears;
-- `Need a website for business?` loader tagline appears normally;
-- line rotates/spans full height;
-- hero opens normally;
-- cursor reveal still behaves correctly;
-- EXPLORE bottom-fill reaches full black.
+- zero exits below the line and disappears;
+- loader tagline `Need a website for business?` appears correctly;
+- line rotates/opens hero correctly;
+- viscous cursor reveal still behaves correctly;
+- EXPLORE bottom-fill reaches complete black.
 
-If these pass, do not touch loader/hero code.
+If all six pass, stop touching intro code.
 
 - [ ] **Step 2: Run complete automated verification**
 
@@ -727,82 +755,79 @@ npm run typecheck
 npm run build
 ```
 
-Expected:
-- full Node suite PASS;
-- TypeScript emits no errors;
-- production Next build completes successfully.
+Expected: all tests PASS, TypeScript PASS, production build PASS.
 
-- [ ] **Step 3: Run local development visual QA**
+- [ ] **Step 3: Run local visual QA**
 
 ```bash
 npm run dev
 ```
 
-Hard refresh and inspect the full journey:
-
-1. EXPLORE liquid fill resolves into black with no visual flash.
-2. Q1 appears via readable Scroll Float entrance at upper-left-of-center.
-3. Q1 leaves gracefully as Q2 begins; neither pops or glitches.
-4. Q2 occupies a distinct restrained right-of-center position.
-5. Q3 occupies a lower/near-center position and remains fully readable.
-6. After Q3, there is a short black breathing beat.
+Inspect the full journey:
+1. EXPLORE liquid resolves into black with no flash/cut.
+2. Q1 enters Scroll Float-style from upper-left-of-center.
+3. Q1 exits gracefully while Q2 begins; neither pops or glitches.
+4. Q2 is distinctly right-of-center.
+5. Q3 is lower/near-center and fully readable.
+6. Q3 exit is followed by a short fully black breathing beat.
 7. `DONT WORRY. WE GOT YOU` gathers from clean local particles into crisp text.
-8. Particle motion looks intentional, not confetti/spray/star-field; settled scene stops active motion.
-9. Purpose statement follows nearby; only `move businesses forward.` carries slow white/blue Aurora.
-10. Service ring sits masterfully below statement, rotates slowly, and `GROW` stays perfectly static.
-11. Scrolling back upward does not create flashes, stale canvas garbage, or broken ScrollTrigger positions.
-12. Resize/orientation refresh does not leave text clipped or triggers offset.
+8. Particle field never looks like confetti, spray, stars, smoke, or meaningless random placement.
+9. After settlement, particle motion stops.
+10. Statement follows nearby; only `move businesses forward.` carries the slow white/blue Aurora.
+11. Service ring is visually connected below, turns slowly, and `GROW` remains stationary.
+12. Reverse scrolling creates no stale canvas, flash, or broken question state.
+13. Resize/orientation refresh leaves ScrollTrigger geometry correct.
 
-- [ ] **Step 4: Verify reduced motion manually**
+- [ ] **Step 4: Verify reduced motion**
 
-Enable reduced motion in the browser/OS and reload:
+Reload with reduced motion enabled:
 - questions remain readable with minimal motion;
-- particle reassurance does not scatter/gather thousands of particles;
+- reassurance does not perform full scattered gather;
 - Aurora is static;
 - ring is static;
-- user still receives the complete exact narrative.
+- complete narrative remains present.
 
-- [ ] **Step 5: Verify performance behavior**
+- [ ] **Step 5: Verify runtime cost**
 
-Using browser performance tools or lightweight instrumentation:
-- no permanent Particle Text RAF after settlement;
-- no runaway ScrollTrigger instances after resize/navigation;
-- no continuous React rerenders during scroll animation;
-- no added Motion dependency in the bundle;
-- no new WebGL context beyond the existing hero reveal.
+Confirm in browser performance tooling:
+- no Particle Text RAF remains after settlement;
+- no duplicate ScrollTrigger instances after resize/re-entry;
+- no continuous React rerender loop during scroll;
+- no new Motion dependency;
+- no new WebGL context.
 
-- [ ] **Step 6: Final scope check**
+- [ ] **Step 6: Scope audit**
 
-Confirm no implementation of:
+Confirm no code was added for:
 - final `Visit our services` CTA;
 - Services navbar detachment/drift;
 - Services/Work/Contact page redesign;
 - fake proof/content;
 - unrelated intro refactor.
 
-- [ ] **Step 7: Commit only if verification required a scoped fix**
+- [ ] **Step 7: Final commit rule**
 
-If a defect was found and fixed, rerun all verification first, then commit with a specific message describing the actual fix. If no fixes were needed, do not create an empty verification commit.
+If Task 7 reveals a scoped defect, fix only that reproducible defect, rerun `npm test`, `npm run typecheck`, and `npm run build`, then commit with a specific message naming the actual fix. If Task 7 requires no source change, create no empty verification commit.
 
 ---
 
-## Final Acceptance Matrix
+## Final acceptance matrix
 
-Implementation is complete only when all of the following are true:
+Implementation is complete only when all are true:
 
 - EXPLORE bottom-fill and first homepage pixel read as one continuous black transition.
 - Questions appear exactly in approved order and at intentionally different placements.
-- Question entrance visibly retains Scroll Float character; exit is custom, graceful, and readable.
-- No question appears from nowhere, glitches, clips, or becomes illegible.
+- Question entrance retains recognizable Scroll Float behavior; exit is custom, smooth, readable, and authored.
+- No text appears from nowhere, glitches, clips, or becomes unreadable.
 - Reassurance forms from bounded deterministic particles and settles completely.
-- Particle scene has no pointer repel, idle particle soup, screen-wide scatter, or perpetual RAF after settlement.
-- Purpose statement uses exact copy and Aurora only on `move businesses forward.`.
-- Aurora stays within Weberaise white/blue palette and moves slowly.
-- Circular text reads `WEB DEVELOPMENT · SEO · BRANDING ·`; center reads `GROW`.
-- Ring rotates slowly while center remains stationary.
-- No `motion/react` dependency is added.
-- Reduced-motion users receive complete readable static/minimal-motion equivalents.
-- Mobile, tablet, normal desktop, and short desktop layouts preserve hierarchy and legibility.
+- Particle scene has no pointer repel, idle particle soup, giant scatter, or permanent RAF.
+- Statement copy is exact and only `move businesses forward.` receives Aurora.
+- Aurora remains within Weberaise white/blue palette and cycles in 15s.
+- Ring reads `WEB DEVELOPMENT · SEO · BRANDING ·`; center reads `GROW`.
+- Ring rotates in 22s while center remains stationary.
+- No `motion/react`/Framer Motion dependency is added.
+- Reduced-motion version remains complete and readable.
+- Mobile/tablet/desktop/short-desktop layouts preserve hierarchy and legibility.
 - `npm test`, `npm run typecheck`, and `npm run build` pass.
-- Existing loader, hero, viscous reveal, and EXPLORE transition remain visually unchanged except for the intended handoff into the new narrative.
-- Final Services navbar-detach/footer concept remains untouched.
+- Existing loader, hero, viscous reveal, and EXPLORE transition remain unchanged except for the intended seamless handoff.
+- Final Services navbar-detach concept remains untouched.
