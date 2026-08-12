@@ -5,7 +5,7 @@ import gsap from 'gsap';
 import { CenterNavCluster } from './CenterNavCluster';
 import { GooeyTalkButton } from './GooeyTalkButton';
 import { type NavigationMode } from './navigationModel';
-import { useNavigationTheme } from './useNavigationTheme';
+import { useNavigationThemes } from './useNavigationTheme';
 import styles from './Navigation.module.css';
 
 type SiteNavigationProps = {
@@ -20,7 +20,7 @@ export function SiteNavigation({
   onNavigate,
 }: SiteNavigationProps) {
   const rootRef = useRef<HTMLElement>(null);
-  const theme = useNavigationTheme(mode === 'main');
+  const themes = useNavigationThemes(mode === 'main', rootRef);
 
   useLayoutEffect(() => {
     if (mode !== 'hero' || !rootRef.current) return undefined;
@@ -59,21 +59,32 @@ export function SiteNavigation({
       data-site-navigation
       data-navigation-mode={mode}
       data-navigation-disabled={interactive ? 'false' : 'true'}
-      data-nav-theme={mode === 'main' ? theme : undefined}
       aria-label="Primary"
       inert={!interactive ? true : undefined}
     >
-      <div className={styles.logoZone} data-nav-zone="logo">
+      <div
+        className={styles.logoZone}
+        data-nav-zone="logo"
+        data-nav-theme={mode === 'main' ? themes.logo : undefined}
+      >
         <a className={`${styles.pill} ${styles.logoPill}`} href="/" aria-label="Weberaise home">
           <span className={styles.logoMark} aria-hidden="true" />
         </a>
       </div>
 
-      <div className={styles.centerZone} data-nav-zone="center">
+      <div
+        className={styles.centerZone}
+        data-nav-zone="center"
+        data-nav-theme={mode === 'main' ? themes.center : undefined}
+      >
         <CenterNavCluster onNavigate={interactive ? onNavigate : undefined} />
       </div>
 
-      <div className={styles.talkZone} data-nav-zone="talk">
+      <div
+        className={styles.talkZone}
+        data-nav-zone="talk"
+        data-nav-theme={mode === 'main' ? themes.talk : undefined}
+      >
         <GooeyTalkButton onNavigate={interactive ? onNavigate : undefined} />
       </div>
     </nav>
