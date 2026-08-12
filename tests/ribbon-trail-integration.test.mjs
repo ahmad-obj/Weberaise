@@ -23,12 +23,6 @@ test('document-space ribbon journey files replace the sticky trail controller', 
 });
 
 test('ribbon auto-draw still waits until the experience reaches main', () => {
-  assert.equal(
-    existsSync(resolve(root, featureDir, 'JourneyNarrative.tsx')),
-    true,
-    'JourneyNarrative.tsx must exist before lifecycle behavior can be checked',
-  );
-
   const component = read(`${featureDir}/JourneyNarrative.tsx`);
   assert.match(component, /data-experience-state/);
   assert.match(component, /MutationObserver/);
@@ -36,12 +30,6 @@ test('ribbon auto-draw still waits until the experience reaches main', () => {
 });
 
 test('ribbon controller owns the soft center band and never scroll-jacks', () => {
-  assert.equal(
-    existsSync(resolve(root, featureDir, 'ribbonController.ts')),
-    true,
-    'ribbonController.ts must exist before controller behavior can be checked',
-  );
-
   const controller = read(`${featureDir}/ribbonController.ts`);
   assert.match(controller, /HEAD_BAND_MIN\s*=\s*0\.45/);
   assert.match(controller, /HEAD_BAND_MAX\s*=\s*0\.58/);
@@ -49,6 +37,14 @@ test('ribbon controller owns the soft center band and never scroll-jacks', () =>
   assert.match(controller, /resolveLengthForDocumentY/);
   assert.match(controller, /revealedStops/);
   assert.match(controller, /strokeDashoffset/);
-  assert.match(controller, /Math\.max\([^\n]*opening/);
   assert.doesNotMatch(controller, /preventDefault\(/);
+});
+
+test('controller resolves once and applies the same length to every visible copy', () => {
+  const controller = read(`${featureDir}/ribbonController.ts`);
+  assert.match(controller, /measurementPath/);
+  assert.match(controller, /drawPaths/);
+  assert.match(controller, /for \(const .* of drawPaths\)/);
+  assert.match(controller, /openingLocalY/);
+  assert.doesNotMatch(controller, /openingLength:\s*number/);
 });
