@@ -6,13 +6,13 @@
   isolation: isolate;
 }
 
-.questionScroll {
+.trailScroll {
   position: relative;
-  height: 520svh;
+  height: 500svh;
   background: var(--wr-black);
 }
 
-.questionStage {
+.trailStage {
   position: sticky;
   top: 0;
   height: 100svh;
@@ -20,82 +20,120 @@
   background: var(--wr-black);
 }
 
-.question {
+.trailSvg {
   position: absolute;
-  width: min(76vw, 1120px);
-  margin: 0;
-  color: var(--wr-text);
-  font-family: var(--font-hero), Arial, sans-serif;
-  font-size: clamp(48px, 6.5vw, 112px);
-  font-weight: 790;
-  line-height: 0.92;
-  letter-spacing: -0.055em;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
   pointer-events: none;
 }
 
-.question[data-question-index='0'] {
-  left: max(var(--wr-page-pad), 6vw);
-  top: 15svh;
+.trailSvgMobile {
+  display: none;
+}
+
+.trailPath {
+  fill: none;
+  stroke: #3b82f6;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  will-change: stroke-dashoffset;
+}
+
+.trailQuestions {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 360ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 360ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.trailQuestion {
+  position: absolute;
+  width: min(58vw, 940px);
+  margin: 0;
+  color: var(--wr-text);
+  font-family: var(--font-hero), Arial, sans-serif;
+  font-size: clamp(46px, 6.1vw, 104px);
+  font-weight: 790;
+  line-height: 0.92;
+  letter-spacing: -0.055em;
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 520ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.trailQuestion[data-visited='true'] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.trailQuestionOne {
+  left: clamp(28px, 5vw, 84px);
+  top: clamp(72px, 12svh, 132px);
   text-align: left;
 }
 
-.question[data-question-index='1'] {
-  right: max(var(--wr-page-pad), 6vw);
-  top: 50%;
-  transform: translateY(-50%);
+.trailQuestionTwo {
+  right: clamp(28px, 5vw, 84px);
+  top: 44%;
   text-align: right;
 }
 
-.question[data-question-index='2'] {
-  left: max(var(--wr-page-pad), 8vw);
-  bottom: 11svh;
+.trailQuestionThree {
+  left: clamp(28px, 7vw, 118px);
+  top: 67%;
   text-align: left;
 }
 
-.questionVisual {
-  display: inline-block;
-  visibility: visible;
-  will-change: opacity, transform, filter;
-}
-
-.questionWord {
-  display: inline-block;
-  white-space: nowrap;
-}
-
-.questionGap {
-  display: inline-block;
-  width: 0.3em;
-}
-
-.questionChar {
-  display: inline-block;
+.trailScroll[data-trail-questions-faded='true'] .trailQuestions {
   opacity: 0;
-  transform: translateY(120%) scaleX(0.7) scaleY(2.3);
-  transform-origin: 50% 0%;
-  will-change: transform, opacity;
+  transform: translateY(-8px);
 }
 
 .reassuranceSection {
-  min-height: 72svh;
-  display: grid;
-  place-items: center;
-  padding: clamp(64px, 9svh, 112px) var(--wr-page-pad) clamp(48px, 7svh, 88px);
-  background: var(--wr-black);
+  position: absolute;
+  left: 50%;
+  top: 68%;
+  z-index: 3;
+  width: min(98vw, 1700px);
+  height: clamp(300px, 36vw, 560px);
+  transform: translate(-50%, -50%) scale(0.985);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 360ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 460ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.root[data-reassurance-active='true'] .reassuranceSection {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
 }
 
 .particleTextFrame {
   position: relative;
-  width: min(94vw, 1440px);
-  height: clamp(190px, 27vw, 380px);
+  width: 100%;
+  height: 100%;
   display: grid;
   place-items: center;
   isolation: isolate;
   font-family: var(--font-hero), Arial, sans-serif;
-  font-size: clamp(48px, 7.7vw, 132px);
+  font-size: clamp(96px, 15vw, 240px);
   font-weight: 800;
-  line-height: 0.88;
-  letter-spacing: -0.06em;
+  line-height: 0.86;
+  letter-spacing: -0.065em;
   text-align: center;
 }
 
@@ -223,67 +261,72 @@
 }
 
 @media (max-width: 900px) {
-  .question {
-    width: min(82vw, 820px);
-    font-size: clamp(42px, 7.8vw, 82px);
+  .trailQuestion {
+    width: min(66vw, 720px);
+    font-size: clamp(40px, 7.4vw, 78px);
   }
 
-  .question[data-question-index='0'] {
-    left: max(var(--wr-page-pad), 4vw);
-    top: 16svh;
+  .trailQuestionOne {
+    top: clamp(70px, 13svh, 118px);
   }
 
-  .question[data-question-index='1'] {
-    right: max(var(--wr-page-pad), 4vw);
+  .trailQuestionTwo {
+    top: 43%;
   }
 
-  .question[data-question-index='2'] {
-    left: max(var(--wr-page-pad), 5vw);
-    bottom: 12svh;
+  .trailQuestionThree {
+    top: 67%;
   }
 }
 
 @media (max-width: 720px) {
-  .questionScroll {
-    height: 560svh;
+  .trailScroll {
+    height: 520svh;
   }
 
-  .question {
-    width: calc(100vw - (2 * var(--wr-page-pad)));
-    font-size: clamp(34px, 9.8vw, 58px);
+  .trailSvgDesktop {
+    display: none;
+  }
+
+  .trailSvgMobile {
+    display: block;
+  }
+
+  .trailPath {
+    stroke-width: 3;
+  }
+
+  .trailQuestion {
+    width: min(76vw, 520px);
+    font-size: clamp(32px, 9.2vw, 54px);
     line-height: 0.95;
     letter-spacing: -0.048em;
   }
 
-  .question[data-question-index='0'] {
+  .trailQuestionOne {
     left: var(--wr-page-pad);
-    top: 15svh;
+    top: 13svh;
   }
 
-  .question[data-question-index='1'] {
+  .trailQuestionTwo {
     right: var(--wr-page-pad);
-    top: 50%;
+    top: 42%;
   }
 
-  .question[data-question-index='2'] {
+  .trailQuestionThree {
     left: var(--wr-page-pad);
-    bottom: 11svh;
-  }
-
-  .questionGap {
-    width: 0.25em;
+    top: 66%;
   }
 
   .reassuranceSection {
-    min-height: 64svh;
-    padding-top: clamp(48px, 7svh, 72px);
+    top: 67%;
+    width: 100vw;
+    height: clamp(260px, 70vw, 380px);
   }
 
   .particleTextFrame {
-    width: 94vw;
-    height: clamp(176px, 45vw, 260px);
-    font-size: clamp(40px, 11.2vw, 76px);
-    line-height: 0.9;
+    font-size: clamp(72px, 22vw, 132px);
+    line-height: 0.88;
   }
 
   .purposeSection {
@@ -314,9 +357,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .questionChar,
-  .questionVisual {
-    will-change: opacity;
+  .trailQuestion,
+  .trailQuestions,
+  .reassuranceSection {
+    transition: none;
+  }
+
+  .trailQuestion {
+    transform: none;
   }
 
   .particleCanvas {

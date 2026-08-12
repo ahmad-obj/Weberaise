@@ -14,14 +14,14 @@ export function deterministicUnit(index: number, salt = 0): number {
 export function particleProfileForWidth(width: number): ParticleProfile {
   return width < 720
     ? {
-        maxParticles: 1500,
+        maxParticles: 2200,
         dprCap: 1.35,
         scatterMin: 45,
         scatterMax: 75,
         gatherDuration: 1150,
       }
     : {
-        maxParticles: 2700,
+        maxParticles: 4000,
         dprCap: 1.5,
         scatterMin: 70,
         scatterMax: 110,

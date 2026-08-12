@@ -1,6 +1,6 @@
 'use client';
 
-// Algorithm basis: https://reactbits.dev/text-animations/particle-text
+// Interaction basis: https://reactbits.dev/text-animations/particle-text
 // Source: https://github.com/DavidHDev/react-bits/blob/main/src/ts-default/TextAnimations/ParticleText/ParticleText.tsx
 
 import { useEffect, useRef } from 'react';
@@ -19,7 +19,6 @@ type Particle = {
   targetX: number;
   targetY: number;
   size: number;
-  color: string;
   seed: number;
   depth: number;
   delay: number;
@@ -32,11 +31,9 @@ type Target = {
 };
 
 const WHITE = '#F5F7FA';
-const GLOW_BLUE = '#60A5FA';
-const ACCENT_BLUE = '#3B82F6';
-const pointerRepel = 42;
-const repelRadius = 120;
-const idleDrift = 0.55;
+const pointerRepel = 44;
+const repelRadius = 128;
+const idleDrift = 0.5;
 
 function materialSizeChange(previous: DOMRectReadOnly | null, next: DOMRectReadOnly) {
   if (!previous) return true;
@@ -95,7 +92,7 @@ export function ParticleReassurance({ text }: { text: string }) {
     };
 
     const drawParticle = (particle: Particle, x = particle.x, y = particle.y) => {
-      context.fillStyle = particle.color;
+      context.fillStyle = WHITE;
       context.fillRect(x - particle.size / 2, y - particle.size / 2, particle.size, particle.size);
     };
 
@@ -205,8 +202,8 @@ export function ParticleReassurance({ text }: { text: string }) {
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       const computed = window.getComputedStyle(frame);
-      const baseFontSize = Number.parseFloat(computed.fontSize) || 96;
-      const baseLineHeight = Number.parseFloat(computed.lineHeight) || baseFontSize * 0.9;
+      const baseFontSize = Number.parseFloat(computed.fontSize) || 160;
+      const baseLineHeight = Number.parseFloat(computed.lineHeight) || baseFontSize * 0.86;
       let resolvedFontSize = baseFontSize;
       const fontWeight = computed.fontWeight;
       const fontFamily = computed.fontFamily;
@@ -231,9 +228,9 @@ export function ParticleReassurance({ text }: { text: string }) {
 
       let lineMetrics = measureLines();
       let maxLineWidth = Math.max(1, ...lineMetrics.map((metrics) => metrics.width));
-      const maxTextWidth = width * 0.88;
+      const maxTextWidth = width * 0.92;
       if (maxLineWidth > maxTextWidth) {
-        resolvedFontSize = Math.max(24, resolvedFontSize * (maxTextWidth / maxLineWidth));
+        resolvedFontSize = Math.max(36, resolvedFontSize * (maxTextWidth / maxLineWidth));
         font = `${fontWeight} ${resolvedFontSize}px ${fontFamily}`;
         try {
           await document.fonts.load(font, text);
@@ -253,7 +250,7 @@ export function ParticleReassurance({ text }: { text: string }) {
       );
       const lineBox = ascent + descent;
       const baselineStep = baseLineHeight * (resolvedFontSize / baseFontSize);
-      const padding = Math.max(12, Math.ceil(resolvedFontSize * 0.1));
+      const padding = Math.max(14, Math.ceil(resolvedFontSize * 0.08));
       const textHeight = lineBox + Math.max(0, displayLines.length - 1) * baselineStep;
 
       offscreen.width = Math.ceil(maxLineWidth) + padding * 2;
@@ -270,12 +267,12 @@ export function ParticleReassurance({ text }: { text: string }) {
 
       const imageData = offscreenContext.getImageData(0, 0, offscreen.width, offscreen.height);
       const candidates: Target[] = [];
-      const step = 3;
+      const step = 2;
 
       for (let y = 0; y < offscreen.height; y += step) {
         for (let x = 0; x < offscreen.width; x += step) {
           const alpha = imageData.data[(y * offscreen.width + x) * 4 + 3] ?? 0;
-          if (alpha > 52) {
+          if (alpha > 48) {
             candidates.push({
               x: width / 2 - offscreen.width / 2 + x,
               y: height / 2 - offscreen.height / 2 + y,
@@ -295,9 +292,7 @@ export function ParticleReassurance({ text }: { text: string }) {
         const scatter =
           profile.scatterMin +
           (profile.scatterMax - profile.scatterMin) * deterministicUnit(index, 4);
-        const colorChoice = deterministicUnit(index, 5);
-        const color = colorChoice > 0.955 ? GLOW_BLUE : colorChoice > 0.91 ? ACCENT_BLUE : WHITE;
-        const size = 1.2 + target.alpha * 0.65 + deterministicUnit(index, 6) * 0.12;
+        const size = 1.45 + target.alpha * 0.85 + deterministicUnit(index, 5) * 0.16;
         const startX = scatterInitial ? target.x + Math.cos(angle) * scatter : target.x;
         const startY = scatterInitial ? target.y + Math.sin(angle) * scatter : target.y;
 
@@ -309,10 +304,9 @@ export function ParticleReassurance({ text }: { text: string }) {
           targetX: target.x,
           targetY: target.y,
           size,
-          color,
           seed,
           depth,
-          delay: deterministicUnit(index, 7) * 150,
+          delay: deterministicUnit(index, 6) * 150,
         };
       });
 
@@ -358,7 +352,7 @@ export function ParticleReassurance({ text }: { text: string }) {
           pause();
         }
       },
-      { rootMargin: '10% 0px', threshold: 0.2 },
+      { rootMargin: '10% 0px', threshold: 0.15 },
     );
 
     const resizeObserver = new ResizeObserver((entries) => {
