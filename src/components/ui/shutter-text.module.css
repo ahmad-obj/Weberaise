@@ -1,0 +1,59 @@
+.root {
+  position: relative;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  color: #F5F7FA;
+  font: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.character {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  padding-inline: 0.1vw;
+}
+
+.mainCharacter,
+.staticCharacter,
+.slice {
+  display: inline-block;
+  font: inherit;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.mainCharacter,
+.staticCharacter {
+  color: #F5F7FA;
+}
+
+.slice {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sliceBright {
+  color: #60A5FA;
+}
+
+.sliceMiddle {
+  color: #DCEBFF;
+}
+
+.placeholder {
+  visibility: hidden;
+}
