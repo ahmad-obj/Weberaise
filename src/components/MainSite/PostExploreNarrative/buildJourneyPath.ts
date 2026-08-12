@@ -6,6 +6,7 @@ import {
   appendGlyphPairLoops,
   appendLooseOvalLoop,
   appendReassuranceLoop,
+  appendTangentFlow,
   buildTaperPolygon,
   smoothRibbonPath,
   type RibbonPoint,
@@ -69,7 +70,16 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   };
   appendLooseOvalLoop(points, openingCenter, config.opening.loopRadiusX, config.opening.loopRadiusY, 0.06);
   const openingExit = points.at(-1)!;
-  appendFlow(points, { x: clamp(width * 0.34, config.edgeInset, width - config.edgeInset), y: openingExit.y + config.opening.exitRun }, 20);
+  const openingDepartureX = clamp(
+    Math.max(width * 0.34, openingExit.x + Math.max(18, config.opening.loopRadiusX * 0.42)),
+    config.edgeInset,
+    width - config.edgeInset,
+  );
+  appendTangentFlow(
+    points,
+    { x: openingDepartureX, y: openingExit.y + config.opening.exitRun },
+    Math.min(38, config.opening.loopRadiusX * 0.42),
+  );
   const openingLocalY = points.at(-1)!.y;
 
   const wrapRect: RibbonRect = config.q1.wrapScale === 1 ? artQ1 : {

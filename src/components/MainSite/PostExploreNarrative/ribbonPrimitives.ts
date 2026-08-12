@@ -77,6 +77,25 @@ export function appendLooseOvalLoop(points: RibbonPoint[], center: RibbonPoint, 
   push(points, center.x + rx + Math.max(12, rx * 0.12), center.y - ry);
 }
 
+export function appendTangentFlow(points: RibbonPoint[], target: RibbonPoint, forwardRun = 32) {
+  const from = points.at(-1);
+  if (!from) return void points.push(target);
+
+  const dx = target.x - from.x;
+  const dy = target.y - from.y;
+  const direction = dx >= 0 ? 1 : -1;
+  const run = Math.min(Math.max(14, Math.min(48, Math.abs(forwardRun))), Math.max(8, Math.abs(dx) * 0.72));
+  const tangentEndX = from.x + direction * run;
+  const remainingDx = target.x - tangentEndX;
+  const finalSettle = direction * Math.min(5, Math.abs(remainingDx) * 0.12);
+
+  push(points, tangentEndX, from.y);
+  push(points, tangentEndX + remainingDx * 0.55, from.y + dy * 0.15);
+  push(points, tangentEndX + remainingDx * 0.82, from.y + dy * 0.42);
+  push(points, target.x - finalSettle, from.y + dy * 0.72);
+  push(points, target.x, target.y);
+}
+
 export function appendArtworkWrap(points: RibbonPoint[], rect: RibbonRect, side: 'left' | 'right', clearance: number): RibbonWrapMarkers {
   const sign = side === 'right' ? 1 : -1;
   const center = {
@@ -155,6 +174,7 @@ export function appendGlyphPairLoops(
 ) {
   const firstCenter = { x: firstRect.left + firstRect.width * 0.5, y: firstRect.top + firstRect.height * 0.5 };
   const secondCenter = { x: secondRect.left + secondRect.width * 0.5, y: secondRect.top + secondRect.height * 0.5 };
+  const centerY = (firstCenter.y + secondCenter.y) * 0.5;
   const centerGap = Math.max(1, secondCenter.x - firstCenter.x);
   const desiredFirstRx = Math.max(6, firstRect.width * 0.5 * scaleX);
   const desiredSecondRx = Math.max(6, secondRect.width * 0.5 * scaleX);
@@ -163,19 +183,35 @@ export function appendGlyphPairLoops(
   const secondRx = desiredSecondRx * pairScale;
   const firstRy = Math.max(10, firstRect.height * 0.5 * scaleY);
   const secondRy = Math.max(10, secondRect.height * 0.5 * scaleY);
+  const seam = { x: firstCenter.x + firstRx, y: centerY };
+  const approachLift = Math.max(14, Math.min(firstRy, secondRy) * 0.7);
 
-  appendCleanOvalLoop(points, firstCenter, firstRx, firstRy, 0);
-  appendCleanOvalLoop(points, secondCenter, secondRx, secondRy, 0);
+  appendFlow(points, { x: seam.x, y: seam.y - approachLift }, 0);
+  push(points, seam.x, seam.y);
 
-  const secondTopY = secondCenter.y - secondRy;
-  push(points, secondCenter.x + secondRx + 14, secondTopY);
+  const steps = 24;
+  for (let index = 1; index <= steps; index += 1) {
+    const angle = (Math.PI * 2 * index) / steps;
+    const point = ellipsePoint({ x: firstCenter.x, y: centerY }, firstRx, firstRy, angle, 0);
+    push(points, point.x, point.y);
+  }
+
+  push(points, seam.x, seam.y);
+  for (let index = 1; index <= steps; index += 1) {
+    const angle = Math.PI - (Math.PI * 2 * index) / steps;
+    const point = ellipsePoint({ x: secondCenter.x, y: centerY }, secondRx, secondRy, angle, 0);
+    push(points, point.x, point.y);
+  }
+
+  const clearBelow = centerY + Math.max(firstRy, secondRy) + 12;
+  push(points, seam.x, clearBelow);
   appendFlow(
     points,
     {
       x: secondRect.right + Math.max(14, secondRect.width * 0.55),
-      y: secondCenter.y + Math.max(8, secondRy * 0.18),
+      y: clearBelow + Math.max(28, secondRy * 0.72),
     },
-    Math.min(8, centerGap * 0.06),
+    Math.min(14, centerGap * 0.16),
   );
 }
 
