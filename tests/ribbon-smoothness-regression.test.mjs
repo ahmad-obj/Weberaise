@@ -47,6 +47,20 @@ test('Q1 wrap stays smooth around artwork', async () => {
   assert.ok(maxTurn(points) < 1.55, `wrap max turn ${maxTurn(points)}`);
 });
 
+test('Q2 bend is one calm monotonic sweep instead of an S-curve', async () => {
+  const { appendGentleBend } = await import(modulePath);
+  const points = [{ x: 1260, y: 1160 }];
+  appendGentleBend(points, 'right', { x: 720, y: 1600 }, 440);
+
+  for (let index = 1; index < points.length; index += 1) {
+    assert.ok(
+      points[index].x <= points[index - 1].x + 0.01,
+      `Q2 bend reversed horizontal direction at point ${index}`,
+    );
+  }
+  assert.ok(maxTurn(points) < 0.55, `Q2 bend max turn ${maxTurn(points)}`);
+});
+
 test('glyph loop reads as a clean oval trace', async () => {
   const { appendGlyphLoop } = await import(modulePath);
   const points = [{ x: 300, y: 900 }];
