@@ -57,10 +57,20 @@ export function appendArtworkWrap(points: RibbonPoint[], rect: RibbonRect, side:
 
   appendCleanOvalLoop(points, center, rx, ry, sign * 0.035);
 
+  const frontExitY = rect.bottom + Math.max(48, clearance * 0.55);
+  appendFlow(
+    points,
+    {
+      x: center.x + sign * (rx - clearance * 0.28),
+      y: frontExitY + Math.max(46, rect.height * 0.14),
+    },
+    sign * Math.min(22, clearance * 0.22),
+  );
+
   return {
     frontEntryY: rect.top + rect.height * 0.05,
     backY: rect.top + rect.height * 0.66,
-    frontExitY: rect.bottom + Math.max(48, clearance * 0.55),
+    frontExitY,
   };
 }
 
@@ -79,6 +89,11 @@ export function appendGlyphLoop(points: RibbonPoint[], rect: RibbonRect, scaleX:
   const rx = Math.max(12, rect.width * 0.5 * scaleX);
   const ry = Math.max(14, rect.height * 0.5 * scaleY);
   appendCleanOvalLoop(points, center, rx, ry, 0);
+  appendFlow(
+    points,
+    { x: center.x + rx * 1.08, y: center.y + ry * 0.22 },
+    Math.min(10, rx * 0.12),
+  );
 }
 
 export function appendReassuranceLoop(points: RibbonPoint[], rect: RibbonRect, paddingX: number, paddingY: number, skew = 0.12) {
