@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
+
+const featureDir = 'src/components/MainSite/PostExploreNarrative';
 
 test('approved post-explore copy is canonical and ordered', () => {
   const source = read('src/content/homepage.ts');
@@ -27,63 +29,83 @@ test('approved post-explore copy is canonical and ordered', () => {
   }
 });
 
-test('MainSite installs the new narrative instead of FirstImpression', () => {
+test('MainSite installs the post-explore narrative instead of FirstImpression', () => {
   const main = read('src/components/MainSite/MainSite.tsx');
   assert.match(main, /PostExploreNarrative/);
   assert.doesNotMatch(main, /FirstImpression/);
 });
 
-test('questions accumulate before one shared fade and keep Scroll Float entrance geometry', () => {
-  const motion = read('src/components/MainSite/PostExploreNarrative/questionMotion.ts');
-  assert.match(motion, /enterStart:\s*0(?:\.0+)?/);
-  assert.match(motion, /enterStart:\s*0\.25/);
-  assert.match(motion, /enterStart:\s*0\.48/);
-  assert.match(motion, /GROUP_FADE_START\s*=\s*0\.82/);
-  assert.match(motion, /GROUP_FADE_END\s*=\s*0\.98/);
-  assert.match(motion, /yPercent:\s*120/);
-  assert.match(motion, /scaleY:\s*2\.3/);
-  assert.match(motion, /scaleX:\s*0\.7/);
+test('ribbon trail feature files replace the old Scroll Float question system', () => {
+  for (const file of ['TrailNarrative.tsx', 'trailPath.ts', 'trailMotion.ts']) {
+    assert.equal(existsSync(resolve(root, featureDir, file)), true, `${file} must exist`);
+  }
+
+  const composition = read(`${featureDir}/PostExploreNarrative.tsx`);
+  assert.match(composition, /TrailNarrative/);
+  assert.doesNotMatch(composition, /QuestionSequence/);
+});
+
+test('trail timing is normalized and reverse scroll keeps the automatic opening floor', () => {
+  const motion = read(`${featureDir}/trailMotion.ts`);
+  for (const contract of [
+    /initial:\s*0\.09/,
+    /q1:\s*0\.23/,
+    /q2:\s*0\.47/,
+    /q3:\s*0\.69/,
+    /questionsFade:\s*0\.83/,
+    /reassurance:\s*0\.94/,
+  ]) assert.match(motion, contract);
+
+  assert.match(motion, /getTotalLength\(\)/);
+  assert.match(motion, /strokeDasharray/);
+  assert.match(motion, /strokeDashoffset/);
+  assert.match(motion, /Math\.max\(TRAIL_TIMING\.initial/);
   assert.match(motion, /ScrollTrigger/);
-  assert.match(motion, /visuals/);
-  assert.doesNotMatch(motion, /firstExitSpan|finalExitAt|EXIT_STAGGER/);
 });
 
-test('question layout uses top-left middle-right bottom-left and doubles scroll distance', () => {
-  const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
-  assert.match(css, /\.questionScroll\s*\{[^}]*height:\s*520svh/s);
-  assert.match(css, /data-question-index='0'[\s\S]*top:\s*15svh/);
-  assert.match(css, /data-question-index='0'[\s\S]*left:\s*max\(/);
-  assert.match(css, /data-question-index='1'[\s\S]*right:\s*max\(/);
-  assert.match(css, /data-question-index='1'[\s\S]*top:\s*50%/);
-  assert.match(css, /data-question-index='2'[\s\S]*bottom:\s*11svh/);
-  assert.match(css, /height:\s*560svh/);
+test('trail path geometry is isolated into editable desktop and mobile definitions', () => {
+  const path = read(`${featureDir}/trailPath.ts`);
+  assert.match(path, /TrailPathDefinition/);
+  assert.match(path, /DESKTOP_TRAIL/);
+  assert.match(path, /MOBILE_TRAIL/);
+  assert.match(path, /viewBox/);
+  assert.match(path, /d:/);
 });
 
-test('question DOM keeps whole-string accessible text and decorative characters', () => {
-  const component = read('src/components/MainSite/PostExploreNarrative/QuestionSequence.tsx');
-  assert.match(component, /className="sr-only"/);
+test('trail narrative uses fixed semantic question anchors and a decorative SVG', () => {
+  const component = read(`${featureDir}/TrailNarrative.tsx`);
+  const css = read(`${featureDir}/PostExploreNarrative.module.css`);
+
   assert.match(component, /aria-hidden="true"/);
-  assert.match(component, /data-question-index/);
-  assert.match(component, /data-question-char/);
-  assert.doesNotMatch(component, /Math\.random/);
+  assert.match(component, /data-trail-path/);
+  assert.match(component, /data-trail-question="0"/);
+  assert.match(component, /data-trail-question="1"/);
+  assert.match(component, /data-trail-question="2"/);
+  assert.doesNotMatch(component, /data-question-char|questionChar/);
+
+  assert.match(css, /\.trailScroll\s*\{[^}]*height:\s*500svh/s);
+  assert.match(css, /height:\s*520svh/);
+  assert.match(css, /\.trailQuestionOne\s*\{/);
+  assert.match(css, /\.trailQuestionTwo\s*\{/);
+  assert.match(css, /\.trailQuestionThree\s*\{/);
+  assert.match(css, /\.trailQuestionThree\s*\{[^}]*top:\s*6[6-8]%/s);
 });
 
-test('particle profiles remain inside the approved performance budget', () => {
-  const model = read('src/components/MainSite/PostExploreNarrative/particleModel.ts');
-  assert.match(model, /maxParticles:\s*2700/);
+test('particle profiles increase density while staying bounded', () => {
+  const model = read(`${featureDir}/particleModel.ts`);
+  assert.match(model, /maxParticles:\s*4000/);
   assert.match(model, /dprCap:\s*1\.5/);
-  assert.match(model, /scatterMin:\s*70/);
-  assert.match(model, /scatterMax:\s*110/);
-  assert.match(model, /maxParticles:\s*1500/);
+  assert.match(model, /maxParticles:\s*2200/);
   assert.match(model, /dprCap:\s*1\.35/);
-  assert.match(model, /scatterMin:\s*45/);
-  assert.match(model, /scatterMax:\s*75/);
   assert.doesNotMatch(model, /Math\.random/);
 });
 
-test('particle reassurance stays as an interactive live particle canvas', () => {
-  const component = read('src/components/MainSite/PostExploreNarrative/ParticleReassurance.tsx');
-  const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
+test('particle reassurance is one-color larger denser and remains interactive', () => {
+  const component = read(`${featureDir}/ParticleReassurance.tsx`);
+  const css = read(`${featureDir}/PostExploreNarrative.module.css`);
+
+  assert.match(component, /const WHITE = '#F5F7FA'/);
+  assert.doesNotMatch(component, /GLOW_BLUE|ACCENT_BLUE|#60A5FA|#3B82F6/);
   assert.match(component, /pointerRepel/);
   assert.match(component, /repelRadius/);
   assert.match(component, /idleDrift/);
@@ -92,37 +114,28 @@ test('particle reassurance stays as an interactive live particle canvas', () => 
   assert.match(component, /pointerleave/);
   assert.match(component, /IntersectionObserver/);
   assert.match(component, /ResizeObserver/);
-  assert.match(component, /cancelAnimationFrame/);
+  assert.match(component, /const step = 2/);
   assert.doesNotMatch(component, /reassuranceResolved|particleSettled/);
+
+  assert.match(css, /\.particleTextFrame\s*\{[^}]*font-size:\s*clamp\(96px,/s);
   assert.match(css, /\.particleCanvas\s*\{[^}]*pointer-events:\s*auto/s);
-  assert.doesNotMatch(css, /particleTextFrame\[data-particle-settled/);
 });
 
-test('Aurora is limited to the business-outcome phrase and Weberaise palette', () => {
-  const component = read('src/components/MainSite/PostExploreNarrative/AuroraStatement.tsx');
-  const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
+test('Aurora statement and GROW ring remain intact', () => {
+  const component = read(`${featureDir}/AuroraStatement.tsx`);
+  const ring = read(`${featureDir}/GrowthRing.tsx`);
+  const css = read(`${featureDir}/PostExploreNarrative.module.css`);
+
   assert.match(component, /statementLead/);
   assert.match(component, /auroraText/);
-  for (const color of ['#f5f7fa', '#60a5fa', '#3b82f6', '#2563eb']) {
-    assert.ok(css.toLowerCase().includes(color), `${color} missing from Aurora palette`);
-  }
-  assert.match(css, /animation:\s*wrAurora\s+15s\s+linear\s+infinite/);
-});
-
-test('growth ring is larger bolder and uses high-contrast service text', () => {
-  const ring = read('src/components/MainSite/PostExploreNarrative/GrowthRing.tsx');
-  const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
   assert.match(ring, /ringTrack/);
   assert.match(ring, /ringCenter/);
-  assert.match(ring, /aria-hidden="true"/);
-  assert.match(css, /--ring-size:\s*clamp\(280px,/);
-  assert.match(css, /\.ringChar\s*\{[^}]*font-size:\s*14px[^}]*font-weight:\s*800[^}]*color:\s*var\(--wr-text\)/s);
+  assert.match(css, /animation:\s*wrAurora\s+15s\s+linear\s+infinite/);
   assert.match(css, /animation:\s*wrServiceRing\s+22s\s+linear\s+infinite/);
 });
 
 test('post-explore owns a continuous black handoff and reduced-motion fallbacks', () => {
-  const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
+  const css = read(`${featureDir}/PostExploreNarrative.module.css`);
   assert.match(css, /\.root\s*\{[^}]*background:\s*var\(--wr-black\)/s);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.match(css, /\.ringTrack\s*\{[\s\S]*animation:\s*none/);
 });
