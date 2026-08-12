@@ -108,3 +108,14 @@ test('main navigation theme changes through css variables rather than blend mode
   assert.match(hook, /requestAnimationFrame/);
   assert.doesNotMatch(css, /data-navigation-mode='main'[\s\S]{0,300}mix-blend-mode:\s*difference/);
 });
+
+test('hero and main navigation share geometry and main mode does not replay entrance motion', () => {
+  const component = read(`${navDir}/SiteNavigation.tsx`);
+  const css = read(`${navDir}/Navigation.module.css`);
+
+  assert.match(component, /data-navigation-mode=\{mode\}/);
+  assert.match(component, /mode !== 'hero'/);
+  assert.match(css, /--nav-pill-height/);
+  assert.match(css, /--nav-pill-radius/);
+  assert.doesNotMatch(component, /mode === 'main'[\s\S]{0,240}gsap\.fromTo/);
+});
