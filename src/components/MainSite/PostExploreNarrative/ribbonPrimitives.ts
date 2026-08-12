@@ -128,7 +128,7 @@ export function appendGlyphLoop(
       centerY + Math.sin(angle) * ry * (1 + Math.cos(angle) * 0.035),
     );
   }
-  push(points, centerX + rx * 0.48, rect.bottom + ry * 0.48);
+  push(points, centerX + rx * 0.58, centerY + ry * 0.26);
 }
 
 export function smoothRibbonPath(points: readonly RibbonPoint[], tension = 0.88) {
