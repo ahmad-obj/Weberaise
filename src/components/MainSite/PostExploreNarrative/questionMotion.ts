@@ -9,19 +9,19 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 export type QuestionWindow = {
   enterStart: number;
   enterEnd: number;
-  holdEnd: number;
-  exitEnd: number;
 };
 
 export const QUESTION_WINDOWS: readonly QuestionWindow[] = [
-  { enterStart: 0.0, enterEnd: 0.16, holdEnd: 0.25, exitEnd: 0.35 },
-  { enterStart: 0.3, enterEnd: 0.46, holdEnd: 0.55, exitEnd: 0.65 },
-  { enterStart: 0.6, enterEnd: 0.76, holdEnd: 0.86, exitEnd: 0.96 },
+  { enterStart: 0.0, enterEnd: 0.18 },
+  { enterStart: 0.25, enterEnd: 0.43 },
+  { enterStart: 0.48, enterEnd: 0.66 },
 ] as const;
+
+export const GROUP_FADE_START = 0.82;
+export const GROUP_FADE_END = 0.98;
 
 const TIMELINE_UNITS = 10;
 const ENTER_STAGGER = 0.03;
-const EXIT_STAGGER = 0.012;
 
 function tweenDurationForWindow(span: number, itemCount: number, stagger: number, floor: number) {
   return Math.max(floor, span - Math.max(0, itemCount - 1) * stagger);
@@ -33,7 +33,11 @@ export function createQuestionTimeline(root: HTMLElement, reducedMotion: boolean
   gsap.registerPlugin(ScrollTrigger);
 
   const headings = Array.from(root.querySelectorAll<HTMLElement>('[data-question-index]'));
+  const visuals = headings
+    .map((heading) => heading.querySelector<HTMLElement>('[data-question-visual]'))
+    .filter((visual): visual is HTMLElement => Boolean(visual));
   const clock = { value: 0 };
+
   const timeline = gsap.timeline({
     defaults: { overwrite: 'auto' },
     scrollTrigger: {
@@ -45,21 +49,18 @@ export function createQuestionTimeline(root: HTMLElement, reducedMotion: boolean
     },
   });
 
-  // Establish a stable normalized 0..10 timeline even though the final visual event ends at 9.6.
   timeline.to(clock, { value: 1, duration: TIMELINE_UNITS, ease: 'none' }, 0);
+  gsap.set(visuals, { opacity: 1, yPercent: 0, filter: 'blur(0px)' });
 
   headings.forEach((heading, index) => {
     const window = QUESTION_WINDOWS[index];
     if (!window) return;
 
-    const visual = heading.querySelector<HTMLElement>('[data-question-visual]');
     const characters = Array.from(heading.querySelectorAll<HTMLElement>('[data-question-char]'));
-    if (!visual || characters.length === 0) return;
+    if (characters.length === 0) return;
 
     const enterAt = window.enterStart * TIMELINE_UNITS;
     const enterSpan = (window.enterEnd - window.enterStart) * TIMELINE_UNITS;
-    const exitAt = window.holdEnd * TIMELINE_UNITS;
-    const exitSpan = (window.exitEnd - window.holdEnd) * TIMELINE_UNITS;
 
     if (reducedMotion) {
       gsap.set(characters, {
@@ -79,15 +80,6 @@ export function createQuestionTimeline(root: HTMLElement, reducedMotion: boolean
         },
         enterAt,
       );
-      timeline.to(
-        characters,
-        {
-          opacity: 0,
-          duration: exitSpan,
-          ease: 'power1.in',
-        },
-        exitAt,
-      );
       return;
     }
 
@@ -95,22 +87,7 @@ export function createQuestionTimeline(root: HTMLElement, reducedMotion: boolean
       enterSpan,
       characters.length,
       ENTER_STAGGER,
-      0.45,
-    );
-    const firstExitSpan = exitSpan * 0.58;
-    const finalExitAt = exitAt + exitSpan * 0.45;
-    const finalExitSpan = exitSpan * 0.55;
-    const firstExitDuration = tweenDurationForWindow(
-      firstExitSpan,
-      characters.length,
-      EXIT_STAGGER,
-      0.24,
-    );
-    const finalExitDuration = tweenDurationForWindow(
-      finalExitSpan,
-      characters.length,
-      EXIT_STAGGER,
-      0.2,
+      0.52,
     );
 
     timeline.fromTo(
@@ -135,33 +112,28 @@ export function createQuestionTimeline(root: HTMLElement, reducedMotion: boolean
       },
       enterAt,
     );
-
-    timeline.to(
-      characters,
-      {
-        yPercent: -24,
-        scaleY: 0.96,
-        scaleX: 1.03,
-        duration: firstExitDuration,
-        stagger: EXIT_STAGGER,
-        ease: 'power2.in',
-      },
-      exitAt,
-    );
-
-    timeline.to(
-      characters,
-      {
-        opacity: 0,
-        yPercent: -34,
-        filter: 'blur(3px)',
-        duration: finalExitDuration,
-        stagger: EXIT_STAGGER,
-        ease: 'power2.in',
-      },
-      finalExitAt,
-    );
   });
+
+  const fadeAt = GROUP_FADE_START * TIMELINE_UNITS;
+  const fadeDuration = (GROUP_FADE_END - GROUP_FADE_START) * TIMELINE_UNITS;
+
+  timeline.to(
+    visuals,
+    reducedMotion
+      ? {
+          opacity: 0,
+          duration: fadeDuration,
+          ease: 'power1.inOut',
+        }
+      : {
+          opacity: 0,
+          yPercent: -8,
+          filter: 'blur(2px)',
+          duration: fadeDuration,
+          ease: 'power2.inOut',
+        },
+    fadeAt,
+  );
 
   let refreshTimer = 0;
   const scheduleRefresh = () => {
