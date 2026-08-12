@@ -14,9 +14,11 @@ test('art-directed journey owns artwork and primitive modules', () => {
 
 test('journey exposes all artwork and actual look glyph targets', () => {
   const source = read(`${feature}/JourneyNarrative.tsx`);
+  const artwork = read(`${feature}/JourneyArtwork.tsx`);
   for (const id of ['q1', 'q2', 'q3']) {
-    assert.match(source, new RegExp(`data-ribbon-artwork[=\\{\"']+${id}`));
+    assert.match(source, new RegExp(`JourneyArtwork\\s+id=[\"']${id}[\"']`));
   }
+  assert.match(artwork, /data-ribbon-artwork=\{id\}/);
   assert.match(source, /data-ribbon-glyph="look-o-1"/);
   assert.match(source, /data-ribbon-glyph="look-o-2"/);
 });
