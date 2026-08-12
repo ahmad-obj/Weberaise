@@ -75,13 +75,25 @@ export function appendArtworkWrap(points: RibbonPoint[], rect: RibbonRect, side:
 }
 
 export function appendGentleBend(points: RibbonPoint[], fromSide: 'left' | 'right', center: RibbonPoint, width: number) {
+  const from = points.at(-1);
+  if (!from) return;
   const sign = fromSide === 'right' ? 1 : -1;
   const half = Math.max(76, width * 0.5);
-  appendFlow(points, { x: center.x + sign * half, y: center.y - 132 }, -sign * half * 0.08);
-  push(points, center.x + sign * half * 0.74, center.y - 68);
-  push(points, center.x + sign * half * 0.26, center.y - 4);
-  push(points, center.x - sign * half * 0.22, center.y + 68);
-  push(points, center.x - sign * half * 0.58, center.y + 148);
+  const target = {
+    x: center.x - sign * half * 0.48,
+    y: center.y + 130,
+  };
+  const steps = 9;
+
+  for (let index = 1; index <= steps; index += 1) {
+    const progress = index / steps;
+    const eased = progress * progress * (3 - 2 * progress);
+    push(
+      points,
+      from.x + (target.x - from.x) * eased,
+      from.y + (target.y - from.y) * progress,
+    );
+  }
 }
 
 export function appendGlyphLoop(points: RibbonPoint[], rect: RibbonRect, scaleX: number, scaleY: number) {
