@@ -53,3 +53,36 @@ test('glyph loop returns near the glyph baseline with slight forward drop', asyn
   assert.ok(exit.y < rect.bottom + rect.height * 0.35);
   assert.ok(exit.x > rect.left + rect.width * 0.5);
 });
+
+test('reassurance loop frames a rect imperfectly and exits below it', async () => {
+  const { appendReassuranceLoop } = await import(modulePath);
+  const points = [{ x: 280, y: 2400 }];
+  const rect = { left: 260, top: 2700, right: 1180, bottom: 2880, width: 920, height: 180 };
+  const before = points.length;
+  appendReassuranceLoop(points, rect, 86, 58, 0.12);
+  assert.ok(points.length >= before + 9);
+  const exit = points.at(-1);
+  assert.ok(exit.y > rect.bottom);
+  const loopPoints = points.slice(before);
+  const xs = loopPoints.map((point) => point.x);
+  const ys = loopPoints.map((point) => point.y);
+  assert.ok(Math.max(...xs) - Math.min(...xs) > Math.max(...ys) - Math.min(...ys));
+});
+
+test('taper polygon narrows from full width to a shared zero-width endpoint', async () => {
+  const { buildTaperPolygon } = await import(modulePath);
+  const centerline = [
+    { x: 620, y: 3050 },
+    { x: 628, y: 3090 },
+    { x: 624, y: 3140 },
+    { x: 626, y: 3190 },
+  ];
+  const polygon = buildTaperPolygon(centerline, 5.2);
+  assert.equal(polygon.length, centerline.length * 2);
+  const firstLeft = polygon[0];
+  const firstRight = polygon.at(-1);
+  assert.ok(Math.hypot(firstLeft.x - firstRight.x, firstLeft.y - firstRight.y) > 4.5);
+  const lastLeft = polygon[centerline.length - 1];
+  const lastRight = polygon[centerline.length];
+  assert.ok(Math.hypot(lastLeft.x - lastRight.x, lastLeft.y - lastRight.y) < 0.05);
+});
