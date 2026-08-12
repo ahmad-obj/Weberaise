@@ -8,6 +8,9 @@ export type PathLookup = {
   samples: readonly PathSample[];
 };
 
+const MIN_TRAVEL_FACTOR = 0.05;
+const MIN_DOCUMENT_ADVANCE = 0.02;
+
 export function buildPathLookup(
   path: SVGPathElement,
   svg: SVGSVGElement,
@@ -17,23 +20,35 @@ export function buildPathLookup(
   const totalLength = path.getTotalLength();
   const svgRect = svg.getBoundingClientRect();
   const viewBox = svg.viewBox.baseVal;
+  const scaleX = viewBox.width > 0 ? svgRect.width / viewBox.width : 1;
   const scaleY = viewBox.height > 0 ? svgRect.height / viewBox.height : 1;
   const sampleCount = Math.max(2, Math.ceil(totalLength / Math.max(4, sampleSpacing)) + 1);
   const samples: PathSample[] = [];
+
+  let previousPoint: DOMPoint | SVGPoint | null = null;
   let lastDocumentY = Number.NEGATIVE_INFINITY;
 
   for (let index = 0; index < sampleCount; index += 1) {
     const length = Math.min(totalLength, (index / (sampleCount - 1)) * totalLength);
     const point = path.getPointAtLength(length);
-    const documentY = Math.max(
-      lastDocumentY,
-      journeyTop + (point.y - viewBox.y) * scaleY,
-    );
+    const actualDocumentY = journeyTop + (point.y - viewBox.y) * scaleY;
 
-    if (documentY > lastDocumentY || index === 0 || index === sampleCount - 1) {
-      samples.push({ length, documentY });
-      lastDocumentY = documentY;
+    if (!previousPoint) {
+      samples.push({ length, documentY: actualDocumentY });
+      previousPoint = point;
+      lastDocumentY = actualDocumentY;
+      continue;
     }
+
+    const dx = (point.x - previousPoint.x) * scaleX;
+    const dy = (point.y - previousPoint.y) * scaleY;
+    const screenTravel = Math.hypot(dx, dy);
+    const minimumAdvance = Math.max(MIN_DOCUMENT_ADVANCE, screenTravel * MIN_TRAVEL_FACTOR);
+    const documentY = Math.max(actualDocumentY, lastDocumentY + minimumAdvance);
+
+    samples.push({ length, documentY });
+    previousPoint = point;
+    lastDocumentY = documentY;
   }
 
   return { totalLength, samples };
