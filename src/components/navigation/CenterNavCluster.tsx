@@ -27,6 +27,7 @@ export function CenterNavCluster() {
           className={styles.navItemSlot}
           data-nav-item={item.key}
           data-nav-label={item.label}
+          data-nav-detach-anchor={item.key === 'services' ? '' : undefined}
           key={item.key}
         >
           <a
