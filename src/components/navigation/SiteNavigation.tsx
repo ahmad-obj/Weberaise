@@ -8,7 +8,17 @@ import { type NavigationMode } from './navigationModel';
 import { useNavigationTheme } from './useNavigationTheme';
 import styles from './Navigation.module.css';
 
-export function SiteNavigation({ mode }: { mode: NavigationMode }) {
+type SiteNavigationProps = {
+  mode: NavigationMode;
+  interactive?: boolean;
+  onNavigate?: (href: string) => void;
+};
+
+export function SiteNavigation({
+  mode,
+  interactive = true,
+  onNavigate,
+}: SiteNavigationProps) {
   const rootRef = useRef<HTMLElement>(null);
   const theme = useNavigationTheme(mode === 'main');
 
@@ -48,6 +58,7 @@ export function SiteNavigation({ mode }: { mode: NavigationMode }) {
       className={styles.navRoot}
       data-site-navigation
       data-navigation-mode={mode}
+      data-navigation-disabled={interactive ? 'false' : 'true'}
       data-nav-theme={mode === 'main' ? theme : undefined}
       aria-label="Primary"
     >
@@ -58,11 +69,11 @@ export function SiteNavigation({ mode }: { mode: NavigationMode }) {
       </div>
 
       <div className={styles.centerZone} data-nav-zone="center">
-        <CenterNavCluster />
+        <CenterNavCluster onNavigate={interactive ? onNavigate : undefined} />
       </div>
 
       <div className={styles.talkZone} data-nav-zone="talk">
-        <GooeyTalkButton />
+        <GooeyTalkButton onNavigate={interactive ? onNavigate : undefined} />
       </div>
     </nav>
   );
