@@ -13,7 +13,11 @@ function particleStyle(particle: (typeof GOOEY_PARTICLES)[number]): CSSPropertie
   } as CSSProperties;
 }
 
-export function GooeyTalkButton() {
+type GooeyTalkButtonProps = {
+  onNavigate?: (href: string) => void;
+};
+
+export function GooeyTalkButton({ onNavigate }: GooeyTalkButtonProps) {
   const [pointerActive, setPointerActive] = useState(false);
   const [focusActive, setFocusActive] = useState(false);
   const [burstEpoch, setBurstEpoch] = useState(0);
@@ -37,6 +41,12 @@ export function GooeyTalkButton() {
         restartBurst();
       }}
       onBlur={() => setFocusActive(false)}
+      onClick={onNavigate
+        ? (event) => {
+            event.preventDefault();
+            onNavigate('#contact');
+          }
+        : undefined}
     >
       <span className={styles.talkBaseLabel}>LET&apos;S TALK</span>
 
