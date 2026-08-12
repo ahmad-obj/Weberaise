@@ -1,10 +1,22 @@
 # Weberaise Implementation Status
 
-**Milestone:** Signature intro + Explore handoff foundation  
-**Branch:** `feature/signature-intro`  
-**Date:** 2026-08-11
+**Milestone:** Signature intro + Explore handoff + floating navigation baseline  
+**Branch:** `feature/floating-navigation`  
+**Date:** 2026-08-12
 
 ## Implemented
+
+### Floating navigation baseline
+- barless fixed three-zone navigation: Weberaise mark left, `SERVICES / WORK / ABOUT` centered, `LET'S TALK` right;
+- every visible control is an independent rounded-rectangle pill with bold Weberaise typography;
+- hero navigation renders below the existing WebGL difference compositor, so the viscous reveal can invert pill pixels at the exact liquid boundary rather than switching whole controls;
+- center navigation uses one measured inverse inner plate that glides and resizes between separate pills using GSAP, live DOM rectangles, `ResizeObserver`, and equivalent keyboard focus behavior;
+- `LET'S TALK` uses a deterministic monochrome Gooey Nav-inspired hover/focus burst with a bounded inverse core and ten same-color blobs;
+- main navigation uses explicit `data-nav-theme="dark|light"` section metadata and a requestAnimationFrame-coalesced probe instead of blend-mode guessing;
+- hero and main instances share the same geometry so the EXPLORE handoff does not replay the entrance or require a layout swap;
+- mobile keeps logo and CTA on the first row and the center trio on a second centered row; coarse pointers and reduced motion remove decorative hover travel without removing destinations;
+- `SERVICES` exposes `data-nav-detach-anchor` on its own transform-free, unclipped slot so a later footer milestone can promote that exact pill into a detached fixed/portal layer;
+- footer-triggered Services detachment/drift is intentionally **not implemented** in this milestone.
 
 ### Experience flow
 - one-route experience reducer;
@@ -105,6 +117,20 @@ Reference:
 
 ## Verification evidence
 
+### Floating navigation structural verification
+The dependency-free navigation contract suite covers:
+- canonical three-zone order and no visible enclosing bar;
+- hero navigation rendered below `HeroRevealCanvas`;
+- measured GSAP center hover plate with live rectangles and `ResizeObserver`;
+- transform/clip-free center item slots;
+- deterministic monochrome `LET'S TALK` goo system;
+- main-state-only navigation and explicit section theme metadata;
+- shared hero/main geometry and no main entrance replay;
+- mobile, coarse-pointer, keyboard-focus and reduced-motion contracts;
+- Services future-detachment seam without implementing footer behavior.
+
+Current focused result: **12/12 PASS** in the dependency-free structural harness used for this branch.
+
 ### Latest loader/inertia correction
 A focused pre-change reproduction confirmed the loader digit animation duration was longer than the early countdown cadence, explaining the repeated restart/jumpy feel.
 
@@ -133,6 +159,14 @@ npm run dev
 ```
 
 Then visually check:
+- navigation appears only once the hero reaches `heroInteractive`;
+- black hero pills invert locally and partially wherever the viscous reveal crosses them;
+- center inverse plate glides and resizes cleanly across Services, Work, and About without visually joining their outer pills;
+- `LET'S TALK` goo remains monochrome, bounded, retriggerable, and does not obscure focus handling;
+- EXPLORE switches to main navigation with no flash, duplicate entrance, or geometry jump;
+- dark main sections show white pills/black text and a temporary light section correctly flips to black pills/white text;
+- mobile two-row navigation does not collide with hero typography;
+- Services exposes a stable detach anchor and remains in normal navigation flow;
 - EXPLORE is black on the untouched white hero and white only inside the liquid reveal;
 - horizontal loader line sits closer to the zero/tagline;
 - tagline never flashes before its intended entrance;
@@ -150,6 +184,12 @@ npm run probe:nothin
 ```
 
 ## Visual acceptance checklist
+- no visible enclosing navigation bar;
+- five independent pill controls in the locked sequence;
+- no magnetic attraction;
+- center hover remains an inverse inner plate, not a conjoined nav background;
+- goo CTA remains monochrome and restrained;
+- hero liquid and navigation inversion share the exact compositor boundary;
 - no smoke/fog tail;
 - no broad translucent residue;
 - proper rounded terminal blob;
@@ -168,4 +208,4 @@ npm run probe:nothin
 
 ## Next design phase
 
-Once this intro refinement is accepted, continue with **First Impression** art direction/copy/entrance, then Selected Work. Navigation remains intentionally undecided.
+The floating navigation baseline is implemented. The next navigation-specific milestone is the **footer-triggered Services detachment/drift and Services transition**, after footer art direction and final destination behavior are approved. Continue the homepage art direction separately without rewriting the navigation baseline.
