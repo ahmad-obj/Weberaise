@@ -29,17 +29,38 @@
 
 .ribbonPath {
   fill: none;
-  stroke-width: var(--ribbon-width);
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 5px rgb(59 130 246 / 0.16));
   will-change: stroke-dashoffset;
+}
+
+.ribbonPathBase {
+  stroke-width: var(--ribbon-width);
+  filter: drop-shadow(0 0 7px rgb(59 130 246 / .22));
+}
+
+.ribbonPathHighlight {
+  stroke-width: max(1.15px, calc(var(--ribbon-width) * .28));
+  opacity: .62;
+  filter: drop-shadow(0 0 2px rgb(219 234 254 / .28));
 }
 
 .ribbonTaper {
   pointer-events: none;
-  filter: drop-shadow(0 0 5px rgb(59 130 246 / 0.12));
+}
+
+.ribbonTaperBase {
+  filter: drop-shadow(0 0 7px rgb(59 130 246 / .18));
+}
+
+.ribbonTaperHighlight {
+  pointer-events: none;
+  stroke-width: max(1.15px, calc(var(--ribbon-width) * .28));
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .62;
+  filter: drop-shadow(0 0 2px rgb(219 234 254 / .24));
 }
 
 .journeyContent {
@@ -383,6 +404,16 @@
     min-height: 455svh;
   }
   .journeyLead { height: 52svh; }
+  .ribbonPathBase,
+  .ribbonTaperBase { filter: drop-shadow(0 0 4px rgb(59 130 246 / .18)); }
+  .ribbonPathHighlight {
+    opacity: .52;
+    filter: drop-shadow(0 0 1px rgb(219 234 254 / .22));
+  }
+  .ribbonTaperHighlight {
+    opacity: .52;
+    filter: drop-shadow(0 0 1px rgb(219 234 254 / .22));
+  }
   .journeyStop {
     min-height: 100svh;
     padding: clamp(46px, 7svh, 74px) var(--wr-page-pad);

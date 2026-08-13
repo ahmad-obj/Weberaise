@@ -42,11 +42,16 @@ test('ribbon controller owns the soft center band and never scroll-jacks', () =>
 
 test('controller resolves once and applies the same length to every visible copy', () => {
   const controller = read(`${featureDir}/ribbonController.ts`);
+  const narrative = read(`${featureDir}/JourneyNarrative.tsx`);
   assert.match(controller, /measurementPath/);
   assert.match(controller, /drawPaths/);
   assert.match(controller, /for \(const .* of drawPaths\)/);
   assert.match(controller, /openingLocalY/);
   assert.doesNotMatch(controller, /openingLength:\s*number/);
+  for (const ref of ['backBasePathRef', 'backHighlightPathRef', 'frontBasePathRef', 'frontHighlightPathRef']) {
+    assert.match(narrative, new RegExp(ref));
+  }
+  assert.match(narrative, /drawPaths:\s*\[\s*backBasePath,\s*backHighlightPath,\s*frontBasePath,\s*frontHighlightPath\s*\]/s);
 });
 
 test('reveals use each stop viewport ratio instead of the animated ribbon head', () => {

@@ -28,8 +28,10 @@ function LookQuestion() {
 export function JourneyNarrative({ questions, reassurance }: { questions: readonly string[]; reassurance: string }) {
   const rootRef = useRef<HTMLElement>(null);
   const backSvgRef = useRef<SVGSVGElement>(null);
-  const backPathRef = useRef<SVGPathElement>(null);
-  const frontPathRef = useRef<SVGPathElement>(null);
+  const backBasePathRef = useRef<SVGPathElement>(null);
+  const backHighlightPathRef = useRef<SVGPathElement>(null);
+  const frontBasePathRef = useRef<SVGPathElement>(null);
+  const frontHighlightPathRef = useRef<SVGPathElement>(null);
   const taperRevealPathRef = useRef<SVGPathElement>(null);
   const [geometry, setGeometry] = useState<JourneyGeometry | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -100,17 +102,19 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
   useLayoutEffect(() => {
     const root = rootRef.current;
     const svg = backSvgRef.current;
-    const measurementPath = backPathRef.current;
-    const frontPath = frontPathRef.current;
+    const backBasePath = backBasePathRef.current;
+    const backHighlightPath = backHighlightPathRef.current;
+    const frontBasePath = frontBasePathRef.current;
+    const frontHighlightPath = frontHighlightPathRef.current;
     const taperRevealPath = taperRevealPathRef.current;
-    if (!root || !svg || !measurementPath || !frontPath || !taperRevealPath || !geometry?.d) return undefined;
+    if (!root || !svg || !backBasePath || !backHighlightPath || !frontBasePath || !frontHighlightPath || !taperRevealPath || !geometry?.d) return undefined;
     let cleanupController: () => void = () => undefined;
     const frame = window.requestAnimationFrame(() => {
       cleanupController = createRibbonController({
         root,
         svg,
-        measurementPath,
-        drawPaths: [measurementPath, frontPath],
+        measurementPath: backBasePath,
+        drawPaths: [backBasePath, backHighlightPath, frontBasePath, frontHighlightPath],
         openingLocalY: geometry.openingLocalY,
         sampleSpacing: geometry.sampleSpacing,
         stops: geometry.stops,
@@ -140,7 +144,7 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
 
   return (
     <section ref={rootRef} className={styles.journey} data-journey>
-      <RibbonBackLayer d={pathD} width={width} height={height} svgRef={backSvgRef} backPathRef={backPathRef} taperRevealPathRef={taperRevealPathRef} taper={taper} />
+      <RibbonBackLayer d={pathD} width={width} height={height} svgRef={backSvgRef} backBasePathRef={backBasePathRef} backHighlightPathRef={backHighlightPathRef} taperRevealPathRef={taperRevealPathRef} taper={taper} />
       <div className={styles.journeyContent}>
         <div className={styles.journeyLead} aria-hidden="true" />
         <JourneyStop id="q1" align="left"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft} ${styles.journeyBeatQ1}`}><h2 className={styles.journeyQuestion} data-journey-question>{questions[0]}</h2><JourneyArtwork id="q1" label="Website concept artwork placeholder" /></div></JourneyStop>
@@ -148,7 +152,7 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
         <JourneyStop id="q3" align="center"><div className={styles.journeyBeatQ3}><h2 className={`${styles.journeyQuestion} ${styles.journeyQuestionQ3}`} data-journey-question><LookQuestion /></h2></div></JourneyStop>
         <JourneyStop id="reassurance" align="center"><h2 className={styles.reassuranceHeading} data-reassurance-text aria-label={reassurance}><ShutterText lines={['DONT WORRY.', 'WE GOT YOU']} active={reassuranceActive} /></h2></JourneyStop>
       </div>
-      <RibbonFrontLayer d={pathD} width={width} height={height} frontPathRef={frontPathRef} frontClipRects={frontClipRects} />
+      <RibbonFrontLayer d={pathD} width={width} height={height} frontBasePathRef={frontBasePathRef} frontHighlightPathRef={frontHighlightPathRef} frontClipRects={frontClipRects} />
     </section>
   );
 }

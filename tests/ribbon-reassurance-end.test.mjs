@@ -35,6 +35,9 @@ test('back ribbon layer owns tapered end without opacity fade or a third SVG rou
   assert.match(source, /taperRevealMask/);
   assert.match(source, /taper\.polygonPoints/);
   assert.match(source, /ribbonBackClip/);
+  assert.match(source, /ribbonTaperHighlight/);
+  assert.match(source, /taperShapeClip/);
+  assert.match(source, /clipPath={`url\(#\$\{taperShapeClip\}\)`}/);
   assert.doesNotMatch(source, /opacity.*taper|taper.*opacity/i);
   assert.equal((source.match(/<svg/g) ?? []).length, 2);
 });
@@ -43,6 +46,7 @@ test('controller synchronizes taper reveal with reversible canonical visible len
   const source = read(`${feature}/ribbonController.ts`);
   assert.match(source, /taperStartLength/);
   assert.match(source, /taperTotalLength/);
+  assert.match(source, /lookup\.totalLength\s*-\s*taperTotalLength/);
   assert.match(source, /taperVisible/);
   assert.match(source, /taper\.revealPath/);
   assert.match(source, /strokeDashoffset/);

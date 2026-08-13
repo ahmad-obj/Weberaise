@@ -43,6 +43,17 @@ function measure(root: HTMLElement, rootRect: DOMRect, selector: string): Ribbon
   if (!element) throw new Error(`Missing journey geometry target: ${selector}`);
   return localRect(rootRect, element.getBoundingClientRect());
 }
+function measureOptional(root: HTMLElement, rootRect: DOMRect, selector: string, fallback: RibbonRect): RibbonRect {
+  const element = root.querySelector<HTMLElement>(selector);
+  return element ? localRect(rootRect, element.getBoundingClientRect()) : fallback;
+}
+function relativeRect(parent: RibbonRect, left: number, top: number, width: number, height: number): RibbonRect {
+  const x = parent.left + parent.width * left;
+  const y = parent.top + parent.height * top;
+  const resolvedWidth = parent.width * width;
+  const resolvedHeight = parent.height * height;
+  return { left: x, top: y, right: x + resolvedWidth, bottom: y + resolvedHeight, width: resolvedWidth, height: resolvedHeight };
+}
 function expand(rect: RibbonRect, x: number, y = x): RibbonClipRect {
   return { x: rect.left - x, y: rect.top - y, width: rect.width + x * 2, height: rect.height + y * 2 };
 }
@@ -83,6 +94,13 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   const q3 = measure(root, rootRect, '[data-journey-stop="q3"]');
   const artQ1 = measure(root, rootRect, '[data-ribbon-artwork="q1"]');
   const artQ2 = measure(root, rootRect, '[data-ribbon-artwork="q2"]');
+  const q1Island = measureOptional(root, rootRect, '[data-artwork-layer="island"]', relativeRect(artQ1, 0.08, 0.48, 0.84, 0.68));
+  const q1Storefront = measureOptional(root, rootRect, '[data-artwork-layer="storefront"]', relativeRect(artQ1, 0.29, 0.25, 0.45, 0.41));
+  const q1Nav = measureOptional(root, rootRect, '[data-artwork-layer="nav"]', relativeRect(artQ1, 0.04, 0.04, 0.43, 0.34));
+  const q1ImageCard = measureOptional(root, rootRect, '[data-artwork-layer="image-card"]', relativeRect(artQ1, 0.04, 0.22, 0.41, 0.37));
+  const q1Cta = measureOptional(root, rootRect, '[data-artwork-layer="cta"]', relativeRect(artQ1, 0.05, 0.54, 0.2, 0.2));
+  const q1BrowserLarge = measureOptional(root, rootRect, '[data-artwork-layer="browser-large"]', relativeRect(artQ1, 0.42, 0.04, 0.39, 0.39));
+  const q1BrowserSmall = measureOptional(root, rootRect, '[data-artwork-layer="browser-small"]', relativeRect(artQ1, 0.59, 0.4, 0.24, 0.2));
   const q2Text = measure(root, rootRect, '[data-ribbon-question="q2"]');
   const o1 = measure(root, rootRect, '[data-ribbon-glyph="look-o-1"]');
   const o2 = measure(root, rootRect, '[data-ribbon-glyph="look-o-2"]');
@@ -148,10 +166,27 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
     tangentHandle(q1LowerEnd, lowerExitDirection, -Math.max(72, wrapRect.height * 0.22)),
     q1LowerEnd,
   );
-  frontClipRects.push(
-    { x: artQ1.left - 34, y: artQ1.top - 48, width: artQ1.width * 0.58, height: artQ1.height * 0.34 },
-    { x: artQ1.left + artQ1.width * 0.06, y: artQ1.bottom - artQ1.height * 0.2, width: artQ1.width + q1Clearance, height: artQ1.height * 0.34 + q1Clearance },
-  );
+  const q1UpperFrontClipX = Math.min(q1Nav.left, q1ImageCard.left) - 64;
+  const q1UpperFrontClipY = Math.min(q1Nav.top, q1BrowserLarge.top) - 72;
+  const q1UpperFrontClipRight = q1Storefront.left + q1Storefront.width * 0.55;
+  const q1UpperFrontClipBottom = Math.min(q1Storefront.top, q1ImageCard.top) + 28;
+  const q1UpperFrontClip: RibbonClipRect = {
+    x: q1UpperFrontClipX,
+    y: q1UpperFrontClipY,
+    width: Math.max(1, q1UpperFrontClipRight - q1UpperFrontClipX),
+    height: Math.max(1, q1UpperFrontClipBottom - q1UpperFrontClipY),
+  };
+  const q1LowerFrontClipX = Math.min(q1Island.left, q1Cta.left) - 18;
+  const q1LowerFrontClipY = q1Island.top + q1Island.height * 0.48;
+  const q1LowerFrontClipRight = Math.max(q1Island.right, q1BrowserSmall.right) + q1Clearance * 1.2;
+  const q1LowerFrontClipBottom = q1Island.bottom + q1Clearance;
+  const q1LowerFrontClip: RibbonClipRect = {
+    x: q1LowerFrontClipX,
+    y: q1LowerFrontClipY,
+    width: Math.max(1, q1LowerFrontClipRight - q1LowerFrontClipX),
+    height: Math.max(1, q1LowerFrontClipBottom - q1LowerFrontClipY),
+  };
+  frontClipRects.push(q1UpperFrontClip, q1LowerFrontClip);
 
   // Resolve the paired-O seam first so Q1 and Q2 can travel monotonically toward it.
   const q3ScaleX = config.q3.glyphScaleX;

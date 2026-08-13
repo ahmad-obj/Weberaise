@@ -50,10 +50,10 @@ export function createRibbonController({
   const pacingAnchors = buildRibbonPacingAnchors({ lookup, markers, stops, viewportHeight: Math.max(1, window.innerHeight) });
   const openingFloor = pacingAnchors.find((anchor) => anchor.id === 'openingExit')?.pathLength
     ?? Math.min(lookup.totalLength, resolveLengthForDocumentY(lookup, rootDocumentTop + openingLocalY));
-  const taperStartLength = taper
-    ? resolveLengthForDocumentY(lookup, rootDocumentTop + taper.startLocalY)
-    : lookup.totalLength;
   const taperTotalLength = taper?.revealPath.getTotalLength() ?? 0;
+  const taperStartLength = taper
+    ? Math.max(0, lookup.totalLength - taperTotalLength)
+    : lookup.totalLength;
   const canonicalTaperLength = Math.max(0.0001, lookup.totalLength - taperStartLength);
   const initialScrollY = window.scrollY;
   const openingPlayed = root.dataset.ribbonOpened === 'true';
