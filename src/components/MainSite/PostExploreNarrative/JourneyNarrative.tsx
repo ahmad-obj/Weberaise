@@ -68,7 +68,6 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
     const startJourney = () => {
       if (started || (shell && shell.dataset.experienceState !== 'main')) return;
       started = true;
-      rebuild();
       resizeObserver = new ResizeObserver((entries) => {
         const entry = entries[0];
         if (!entry) return;
@@ -76,6 +75,7 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
       });
       resizeObserver.observe(root);
       window.addEventListener('orientationchange', scheduleRebuild, { passive: true });
+      scheduleRebuild();
     };
     if (shell && shell.dataset.experienceState !== 'main') {
       experienceObserver = new MutationObserver(() => {

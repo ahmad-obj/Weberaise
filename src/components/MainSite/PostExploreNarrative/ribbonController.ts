@@ -5,6 +5,7 @@ import type { BuiltJourneyPath } from './buildJourneyPath';
 import type { JourneyStopId } from './journeyRoute';
 import { buildPathLookup, resolveLengthForDocumentY } from './pathLookup';
 import { buildRibbonPacingAnchors, resolvePacedLength } from './ribbonPacing';
+import { normalizeRibbonProgress, restoreRibbonLength } from './ribbonProgress';
 
 export const HEAD_BAND_MIN = 0.45;
 export const HEAD_BAND_MAX = 0.58;
@@ -56,6 +57,12 @@ export function createRibbonController({
     : lookup.totalLength;
   const canonicalTaperLength = Math.max(0.0001, lookup.totalLength - taperStartLength);
   const openingPlayed = root.dataset.ribbonOpened === 'true';
+  const restoredVisibleLength = restoreRibbonLength(
+    root.dataset.ribbonVisibleProgress,
+    lookup.totalLength,
+    openingFloor,
+    openingPlayed,
+  );
   const revealedStops = new Set<JourneyStopId>();
 
   for (const id of Object.keys(stops) as JourneyStopId[]) {
@@ -72,6 +79,8 @@ export function createRibbonController({
   const setVisibleLength = (length: number) => {
     const clampedLength = clamp(length, 0, lookup.totalLength);
     for (const drawPath of drawPaths) drawPath.style.strokeDashoffset = `${lookup.totalLength - clampedLength}`;
+    root.dataset.ribbonVisibleProgress = normalizeRibbonProgress(clampedLength, lookup.totalLength).toString();
+    if (clampedLength >= openingFloor - 0.01) root.dataset.ribbonOpened = 'true';
 
     if (taper) {
       const taperProgress = clamp((clampedLength - taperStartLength) / canonicalTaperLength, 0, 1);
@@ -82,25 +91,20 @@ export function createRibbonController({
 
   let latestResolvedLength = 0;
   let raf = 0;
-  const introState = { opening: openingPlayed || reducedMotion ? openingFloor : 0 };
-  const drawState = { visibleLength: openingPlayed || reducedMotion ? openingFloor : 0 };
+  const drawState = { visibleLength: restoredVisibleLength };
   const scrubSeconds = window.innerWidth <= 720 ? 0.14 : 0.18;
   let scrubTween: gsap.core.Tween | null = null;
 
-  const applyVisibleLength = (length: number) => {
-    drawState.visibleLength = length;
-    setVisibleLength(length);
-  };
-
-  const scrubTo = (targetLength: number) => {
+  const scrubTo = (targetLength: number, duration = scrubSeconds) => {
     scrubTween?.kill();
     if (reducedMotion) {
-      applyVisibleLength(targetLength);
+      drawState.visibleLength = targetLength;
+      setVisibleLength(targetLength);
       return;
     }
     scrubTween = gsap.to(drawState, {
       visibleLength: targetLength,
-      duration: scrubSeconds,
+      duration,
       ease: 'power1.out',
       overwrite: true,
       onUpdate: () => setVisibleLength(drawState.visibleLength),
@@ -123,8 +127,7 @@ export function createRibbonController({
     const viewportHeight = Math.max(1, window.innerHeight);
     const scrollLocalY = Math.max(0, window.scrollY - rootDocumentTop);
     latestResolvedLength = scrollLocalY > 1 ? resolvePacedLength(pacingAnchors, scrollLocalY) : 0;
-    const opening = root.dataset.ribbonOpened === 'true' ? openingFloor : introState.opening;
-    scrubTo(Math.max(opening, latestResolvedLength));
+    scrubTo(Math.max(openingFloor, latestResolvedLength));
     revealReachedStops(viewportHeight);
   };
 
@@ -134,29 +137,23 @@ export function createRibbonController({
   const handleScroll = () => queueRender();
   window.addEventListener('scroll', handleScroll, { passive: true });
 
-  let introTween: gsap.core.Tween | null = null;
+  setVisibleLength(restoredVisibleLength);
   if (openingPlayed || reducedMotion) {
     root.dataset.ribbonOpened = 'true';
     renderFromScroll();
   } else {
-    setVisibleLength(0);
-    introTween = gsap.to(introState, {
-      opening: openingFloor,
-      duration: 0.82,
-      ease: 'power2.out',
-      onUpdate: () => applyVisibleLength(Math.max(introState.opening, latestResolvedLength)),
-      onComplete: () => {
-        root.dataset.ribbonOpened = 'true';
-        queueRender();
-      },
-    });
-    queueRender();
+    const remainingOpening = clamp(
+      (openingFloor - restoredVisibleLength) / Math.max(0.001, openingFloor),
+      0,
+      1,
+    );
+    scrubTo(openingFloor, 0.82 * remainingOpening);
+    revealReachedStops(Math.max(1, window.innerHeight));
   }
 
   return () => {
     window.removeEventListener('scroll', handleScroll);
     if (raf) window.cancelAnimationFrame(raf);
     scrubTween?.kill();
-    introTween?.kill();
   };
 }

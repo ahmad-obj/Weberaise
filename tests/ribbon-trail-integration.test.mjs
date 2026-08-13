@@ -79,6 +79,25 @@ test('controller restores document-relative progress and reveals after a geometr
   assert.match(controller, /resolvePacedLength\(pacingAnchors,\s*scrollLocalY\)/);
   assert.doesNotMatch(controller, /initialScrollY/);
   assert.doesNotMatch(controller, /travel\s*>\s*1/);
-  assert.match(controller, /scrubTo\(Math\.max\(opening,\s*latestResolvedLength\)\);\s*revealReachedStops\(viewportHeight\);/s);
+  assert.match(controller, /scrubTo\(Math\.max\(openingFloor,\s*latestResolvedLength\)\);\s*revealReachedStops\(viewportHeight\);/s);
   assert.match(controller, /if \(openingPlayed \|\| reducedMotion\)[\s\S]*renderFromScroll\(\)/);
+});
+
+test('opening and scroll share one draw tween and persist rebuild progress', () => {
+  const controller = read(`${featureDir}/ribbonController.ts`);
+  assert.match(controller, /ribbonVisibleProgress/);
+  assert.match(controller, /restoreRibbonLength/);
+  assert.match(controller, /normalizeRibbonProgress/);
+  assert.doesNotMatch(controller, /introTween|introState/);
+  assert.equal((controller.match(/gsap\.to\(/g) ?? []).length, 1);
+});
+
+test('first geometry waits for the settled rebuild scheduler', () => {
+  const narrative = read(`${featureDir}/JourneyNarrative.tsx`);
+  const startJourney = narrative.slice(
+    narrative.indexOf('const startJourney'),
+    narrative.indexOf("if (shell && shell.dataset.experienceState"),
+  );
+  assert.match(startJourney, /scheduleRebuild\(\)/);
+  assert.doesNotMatch(startJourney, /\brebuild\(\)/);
 });
