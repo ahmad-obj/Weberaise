@@ -1,5 +1,7 @@
 # Services Menu-to-Grid Fidelity Implementation Plan
 
+> **Superseded visual direction:** Tasks 3 onward are replaced by `2026-08-13-services-centered-inversion.md`. Tasks 1–2 remain completed foundation work.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Rebuild the `/services` opening and menu-to-grid choreography so the same `SERVICES` word visibly becomes the page label and the service index, hover, takeover, 4×2 preview, and close sequences retain the live Codrops interaction language in Weberaise's visual system.
