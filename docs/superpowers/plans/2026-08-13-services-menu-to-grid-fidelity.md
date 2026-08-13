@@ -48,7 +48,7 @@
 - Produces: `getSupplementalStartDelay(primaryCount: number): number`.
 - Preserves: `ServiceEntry`, `SERVICES`, `primary`, and `secondary` consumed by `ServicesPage.tsx`.
 
-- [ ] **Step 1: Add imported behavior tests before creating the motion module**
+- [x] **Step 1: Add imported behavior tests before creating the motion module**
 
 At the top of `tests/services-page.test.mjs`, import `pathToFileURL`, then load the TypeScript modules through the existing `node --import=tsx` test command:
 
@@ -102,7 +102,7 @@ test('motion blueprint preserves Codrops hover, takeover, and title-direction be
 });
 ```
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
 Run:
 
@@ -112,7 +112,7 @@ node --import=tsx --test tests/services-page.test.mjs
 
 Expected: FAIL because `servicesMotion.ts` does not exist and Landing Pages still uses the old secondary labels.
 
-- [ ] **Step 3: Create the minimal motion module**
+- [x] **Step 3: Create the minimal motion module**
 
 Create `servicesMotion.ts` with the exact tested public shape:
 
@@ -147,7 +147,7 @@ export function getSupplementalStartDelay(primaryCount: number): number {
 }
 ```
 
-- [ ] **Step 4: Update only the Landing Pages supplemental labels**
+- [x] **Step 4: Update only the Landing Pages supplemental labels**
 
 Replace its `secondary` array with:
 
@@ -157,11 +157,11 @@ secondary: ['Copy Direction', 'Responsive Build', 'Analytics & Tracking', 'Campa
 
 Do not change the five group titles or IDs.
 
-- [ ] **Step 5: Run the focused test and verify GREEN**
+- [x] **Step 5: Run the focused test and verify GREEN**
 
 Run the same focused command. Expected: all services tests PASS before production choreography changes.
 
-- [ ] **Step 6: Commit the behavior blueprint batch**
+- [x] **Step 6: Commit the behavior blueprint batch**
 
 Stage only `servicesMotion.ts`, `servicesModel.ts`, and `tests/services-page.test.mjs` with commit message:
 

@@ -2,10 +2,52 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const root = path.resolve(process.cwd());
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
 const sourceExists = (relativePath) => fs.existsSync(path.join(root, relativePath));
+const moduleUrl = (relativePath) => pathToFileURL(path.join(root, relativePath)).href;
+const { SERVICES } = await import(moduleUrl('src/components/ServicesPage/servicesModel.ts'));
+const motionModuleUrl = moduleUrl('src/components/ServicesPage/servicesMotion.ts');
+
+test('service model stays five-group and composes three transferred plus five supplemental pieces', () => {
+  assert.equal(SERVICES.length, 5);
+  for (const service of SERVICES) {
+    assert.equal(service.primary.length, 3, service.id);
+    assert.equal(service.secondary.length, 5, service.id);
+    assert.equal(new Set([...service.primary, ...service.secondary]).size, 8, service.id);
+  }
+
+  const landing = SERVICES.find((service) => service.id === 'landing-pages');
+  assert.deepEqual(landing?.secondary, [
+    'Copy Direction',
+    'Responsive Build',
+    'Analytics & Tracking',
+    'Campaign Support',
+    'Iteration',
+  ]);
+});
+
+test('motion blueprint preserves Codrops hover, takeover, and title-direction behavior', async () => {
+  const { SERVICES_MOTION, getSupplementalStartDelay, getTitleExitY } = await import(motionModuleUrl);
+  assert.deepEqual(SERVICES_MOTION.hover.blocksIn, {
+    duration: 0.4,
+    ease: 'power3',
+    scale: 0.8,
+    xPercent: 20,
+    stagger: -0.035,
+  });
+  assert.equal(SERVICES_MOTION.hover.titleOut.duration, 0.1);
+  assert.equal(SERVICES_MOTION.hover.titleIn.duration, 0.5);
+  assert.equal(SERVICES_MOTION.takeover.duration, 0.9);
+  assert.equal(SERVICES_MOTION.takeover.ease, 'power4.inOut');
+  assert.equal(SERVICES_MOTION.close.titleStagger, 0.03);
+  assert.equal(getTitleExitY(99, 100), -100);
+  assert.equal(getTitleExitY(100, 100), -100);
+  assert.equal(getTitleExitY(101, 100), 100);
+  assert.equal(getSupplementalStartDelay(3), 0.12);
+});
 
 test('services page establishes the dedicated route and locked service model', () => {
   assert.equal(sourceExists('src/app/services/page.tsx'), true);

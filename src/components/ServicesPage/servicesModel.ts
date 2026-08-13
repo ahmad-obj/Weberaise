@@ -26,7 +26,7 @@ export const SERVICES = [
     index: '03',
     title: 'LANDING PAGES',
     primary: ['Message & Hierarchy', 'Conversion UX', 'Rapid Build'],
-    secondary: ['Analytics', 'A/B-ready Structure', 'Campaign Integrations', 'Forms & Tracking', 'Performance QA'],
+    secondary: ['Copy Direction', 'Responsive Build', 'Analytics & Tracking', 'Campaign Support', 'Iteration'],
   },
   {
     id: 'ecommerce-business-systems',
