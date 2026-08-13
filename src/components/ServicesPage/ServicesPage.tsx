@@ -17,7 +17,7 @@ export function ServicesPage() {
   const servicesLabelSlotRef = useRef<HTMLDivElement | null>(null);
   const indexStageRef = useRef<HTMLElement | null>(null);
   const coverRef = useRef<HTMLDivElement | null>(null);
-  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const closeButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const rowRefs = useRef<Array<HTMLDivElement | null>>([]);
   const rowButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const rowTitleRefs = useRef<Array<HTMLSpanElement | null>>([]);
@@ -30,6 +30,7 @@ export function ServicesPage() {
   const currentIndexRef = useRef(-1);
   const animationLockRef = useRef(false);
   const reducedMotionRef = useRef(false);
+  const finePointerRef = useRef(false);
   const introTimelineRef = useRef<ReturnType<typeof gsap.timeline> | null>(null);
   const handoffTimelineRef = useRef<ReturnType<typeof gsap.timeline> | null>(null);
   const handoffFlipRef = useRef<ReturnType<typeof Flip.from> | null>(null);
@@ -51,75 +52,100 @@ export function ServicesPage() {
     setRowsFocusable(true);
   };
 
-  const showRowPreview = (index: number) => {
-    if (currentIndexRef.current !== -1 || reducedMotionRef.current) return;
+  const showRowPreview = (index: number, source: 'pointer' | 'focus') => {
+    if (currentIndexRef.current !== -1 || (source === 'pointer' && !finePointerRef.current)) return;
+    const row = rowRefs.current[index];
     const title = rowTitleRefs.current[index];
     const blocksWrap = rowBlocksRefs.current[index];
-    if (!title || !blocksWrap) return;
+    if (!row || !title || !blocksWrap) return;
+
+    row.dataset.rowActive = 'true';
 
     const blocks = Array.from(blocksWrap.querySelectorAll<HTMLElement>('[data-primary-block]'));
     gsap.killTweensOf([blocks, title]);
     hoverTimelineRefs.current[index]?.kill();
 
+    if (reducedMotionRef.current) {
+      title.dataset.switched = 'true';
+      gsap.set(title, { yPercent: 0, rotation: 0 });
+      gsap.set(blocks, { opacity: 1, scale: 1, xPercent: 0 });
+      return;
+    }
+
+    const blocksIn = SERVICES_MOTION.hover.blocksIn;
+    const { titleIn, titleOut } = SERVICES_MOTION.hover;
+
     const timeline = gsap.timeline();
     hoverTimelineRefs.current[index] = timeline;
     timeline
       .to(blocks, {
-        duration: 0.4,
-        ease: 'power3',
-        startAt: { scale: 0.8, xPercent: 20 },
+        duration: blocksIn.duration,
+        ease: blocksIn.ease,
+        startAt: { scale: blocksIn.scale, xPercent: blocksIn.xPercent },
         scale: 1,
         xPercent: 0,
         opacity: 1,
-        stagger: -0.035,
+        stagger: blocksIn.stagger,
       }, 0)
       .to(title, {
-        duration: 0.1,
-        ease: 'power1.in',
+        duration: titleOut.duration,
+        ease: titleOut.ease,
         yPercent: -100,
         onComplete: () => { title.dataset.switched = 'true'; },
       }, 0)
       .to(title, {
-        duration: 0.5,
-        ease: 'expo',
-        startAt: { yPercent: 100, rotation: 15 },
+        duration: titleIn.duration,
+        ease: titleIn.ease,
+        startAt: { yPercent: 100, rotation: titleIn.rotation },
         yPercent: 0,
         rotation: 0,
-      }, 0.1);
+      }, titleOut.duration);
   };
 
-  const hideRowPreview = (index: number) => {
-    if (currentIndexRef.current !== -1 || reducedMotionRef.current) return;
+  const hideRowPreview = (index: number, source: 'pointer' | 'focus') => {
+    if (currentIndexRef.current !== -1 || (source === 'pointer' && !finePointerRef.current)) return;
+    const row = rowRefs.current[index];
     const title = rowTitleRefs.current[index];
     const blocksWrap = rowBlocksRefs.current[index];
-    if (!title || !blocksWrap) return;
+    if (!row || !title || !blocksWrap) return;
+
+    delete row.dataset.rowActive;
 
     const blocks = Array.from(blocksWrap.querySelectorAll<HTMLElement>('[data-primary-block]'));
     gsap.killTweensOf([blocks, title]);
     hoverTimelineRefs.current[index]?.kill();
 
+    if (reducedMotionRef.current) {
+      delete title.dataset.switched;
+      gsap.set(title, { yPercent: 0, rotation: 0 });
+      gsap.set(blocks, { opacity: 0, scale: 1, xPercent: 0 });
+      return;
+    }
+
+    const { blocksOut, titleIn, titleOut } = SERVICES_MOTION.hover;
+
     const timeline = gsap.timeline();
     hoverTimelineRefs.current[index] = timeline;
     timeline
       .to(blocks, {
-        duration: 0.4,
-        ease: 'power4',
+        duration: blocksOut.duration,
+        ease: blocksOut.ease,
         opacity: 0,
-        scale: 0.8,
+        scale: blocksOut.scale,
       }, 0)
       .to(title, {
-        duration: 0.1,
-        ease: 'power1.in',
+        duration: titleOut.duration,
+        ease: titleOut.ease,
         yPercent: -100,
         onComplete: () => { delete title.dataset.switched; },
       }, 0)
       .to(title, {
-        duration: 0.5,
-        ease: 'expo',
-        startAt: { yPercent: 100, rotation: 15 },
+        duration: titleIn.duration,
+        ease: titleIn.ease,
+        startAt: { yPercent: 100, rotation: titleIn.rotation },
         yPercent: 0,
         rotation: 0,
-      }, 0.1);
+      }, titleOut.duration);
   };
 
   useLayoutEffect(() => {
@@ -132,6 +158,7 @@ export function ServicesPage() {
     if (!page || !intro || !introServicesSlot || !servicesWord || !servicesLabelSlot || !indexStage) return;
 
     reducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    finePointerRef.current = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     setRowsFocusable(false);
     indexStage.setAttribute('aria-hidden', 'true');
 
@@ -140,6 +167,7 @@ export function ServicesPage() {
     const rightExit = intro.querySelector<HTMLElement>("[data-intro-exit='right']");
     if (!leftExit || !rightExit) return;
     const rowTitles = rowTitleRefs.current.filter((value): value is HTMLSpanElement => Boolean(value));
+    const rowNumbers = Array.from(indexStage.querySelectorAll<HTMLElement>('[data-service-index]'));
     const introMotion = SERVICES_MOTION.intro;
     const leftExitX = getIntroExitX(window.innerWidth, leftExit.getBoundingClientRect().width, 'left');
     const rightExitX = getIntroExitX(window.innerWidth, rightExit.getBoundingClientRect().width, 'right');
@@ -147,12 +175,15 @@ export function ServicesPage() {
     const context = gsap.context(() => {
       gsap.set(introLineInners, { yPercent: 112 });
       gsap.set(rowTitles, { yPercent: 112 });
+      gsap.set(rowNumbers, { autoAlpha: 0, y: 10 });
 
       if (reducedMotionRef.current) {
         servicesLabelSlot.appendChild(servicesWord);
         servicesWord.dataset.docked = 'true';
         page.dataset.indexReady = 'true';
+        gsap.set(servicesWord, { yPercent: 0 });
         gsap.set(rowTitles, { yPercent: 0 });
+        gsap.set(rowNumbers, { autoAlpha: 1, y: 0 });
         gsap.set(intro, { display: 'none' });
         revealIndexForInteraction();
         return;
@@ -178,7 +209,6 @@ export function ServicesPage() {
           page.dataset.indexReady = 'true';
           servicesLabelSlot.appendChild(servicesWord);
           servicesWord.dataset.docked = 'true';
-          gsap.set(servicesWord, { color: 'var(--wr-text)' });
 
           const flip = Flip.from(flipState, {
             duration: introMotion.handoffDuration,
@@ -191,9 +221,10 @@ export function ServicesPage() {
           const handoff = gsap.timeline({
             onComplete: () => {
               gsap.set(intro, { display: 'none' });
-              gsap.set(servicesWord, { clearProps: 'color' });
-              delete page.dataset.handoffActive;
               revealIndexForInteraction();
+              requestAnimationFrame(() => {
+                delete page.dataset.handoffActive;
+              });
             },
           });
           handoffTimelineRef.current = handoff;
@@ -202,13 +233,21 @@ export function ServicesPage() {
               yPercent: 0,
               duration: introMotion.rowRevealDuration,
               ease: 'power4.out',
-              stagger: introMotion.rowRevealStagger,
-            }, 0.08)
-            .to(servicesWord, {
-              color: 'var(--wr-blue)',
-              duration: 0.34,
-              ease: 'power2.out',
-            }, 0.52)
+              stagger: {
+                each: introMotion.rowRevealStagger,
+                from: 'end',
+              },
+            }, 0.12)
+            .to(rowNumbers, {
+              autoAlpha: 1,
+              y: 0,
+              duration: 0.32,
+              ease: 'power3.out',
+              stagger: {
+                each: introMotion.rowRevealStagger,
+                from: 'end',
+              },
+            }, 0.12)
             .to(intro, {
               autoAlpha: 0,
               duration: 0.22,
@@ -239,12 +278,15 @@ export function ServicesPage() {
     const previewTitle = previewTitleRefs.current[index];
     const previewGrid = previewGridRefs.current[index];
     const cover = coverRef.current;
-    const closeButton = closeButtonRef.current;
+    const closeButton = closeButtonRefs.current[index];
     const indexStage = indexStageRef.current;
     if (!row || !button || !title || !originBlocks || !preview || !previewTitle || !previewGrid || !cover || !closeButton || !indexStage) return;
 
     const primaryBlocks = Array.from(originBlocks.querySelectorAll<HTMLElement>('[data-primary-block]'));
     const secondaryBlocks = Array.from(previewGrid.querySelectorAll<HTMLElement>('[data-secondary-block]'));
+    const allNumbers = rowRefs.current
+      .map((serviceRow) => serviceRow?.querySelector<HTMLElement>('[data-service-index]') ?? null)
+      .filter((value): value is HTMLElement => Boolean(value));
     const allTitles = rowTitleRefs.current.filter((value): value is HTMLSpanElement => Boolean(value));
     if (primaryBlocks.length === 0) return;
 
@@ -256,6 +298,7 @@ export function ServicesPage() {
 
     previousBodyOverflowRef.current = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    row.dataset.rowActive = 'true';
     row.dataset.current = 'true';
     preview.dataset.active = 'true';
     preview.setAttribute('aria-hidden', 'false');
@@ -275,6 +318,7 @@ export function ServicesPage() {
     if (reducedMotionRef.current) {
       previewGrid.prepend(...primaryBlocks);
       gsap.set([...primaryBlocks, ...secondaryBlocks], { opacity: 1, scale: 1, xPercent: 0, yPercent: 0 });
+      gsap.set(allNumbers, { opacity: 0 });
       gsap.set(cover, { height: window.innerHeight, top: 0 });
       gsap.set(previewTitle, { yPercent: 0, rotation: 0 });
       gsap.set(closeButton, { opacity: 1 });
@@ -313,6 +357,11 @@ export function ServicesPage() {
           return targetRow && targetRow.getBoundingClientRect().top > rowRect.top ? 100 : -100;
         },
         rotation: 0,
+      }, 'start')
+      .to(allNumbers, {
+        duration: 0.25,
+        ease: 'power2.out',
+        opacity: 0,
       }, 'start')
       .add(() => {
         const flipState = Flip.getState(primaryBlocks, { simple: true });
@@ -356,7 +405,7 @@ export function ServicesPage() {
     const previewTitle = previewTitleRefs.current[index];
     const previewGrid = previewGridRefs.current[index];
     const cover = coverRef.current;
-    const closeButton = closeButtonRef.current;
+    const closeButton = closeButtonRefs.current[index];
     const indexStage = indexStageRef.current;
     if (!row || !button || !originBlocks || !preview || !previewTitle || !previewGrid || !cover || !closeButton || !indexStage) return;
 
@@ -364,6 +413,9 @@ export function ServicesPage() {
     const secondaryBlocks = Array.from(previewGrid.querySelectorAll<HTMLElement>('[data-secondary-block]'));
     const gridItems = [...primaryBlocks, ...secondaryBlocks];
     const allTitles = rowTitleRefs.current.filter((value): value is HTMLSpanElement => Boolean(value));
+    const allNumbers = rowRefs.current
+      .map((serviceRow) => serviceRow?.querySelector<HTMLElement>('[data-service-index]') ?? null)
+      .filter((value): value is HTMLElement => Boolean(value));
     const rowRect = row.getBoundingClientRect();
 
     animationLockRef.current = true;
@@ -372,6 +424,7 @@ export function ServicesPage() {
       preview.dataset.active = 'false';
       preview.setAttribute('aria-hidden', 'true');
       row.dataset.current = 'false';
+      delete row.dataset.rowActive;
       button.setAttribute('aria-expanded', 'false');
       closeButton.dataset.visible = 'false';
       closeButton.tabIndex = -1;
@@ -389,6 +442,7 @@ export function ServicesPage() {
       gsap.set(secondaryBlocks, { opacity: 0, scale: 1, yPercent: 0 });
       gsap.set(cover, { height: 0, opacity: 0 });
       gsap.set(allTitles, { yPercent: 0 });
+      gsap.set(allNumbers, { opacity: 1 });
       finishClose();
       return;
     }
@@ -427,7 +481,17 @@ export function ServicesPage() {
           each: 0.03,
           from: index,
         },
-      }, 'start+=0.4');
+      }, 'start+=0.4')
+      .to(allNumbers, {
+        opacity: 1,
+        stagger: {
+          each: SERVICES_MOTION.close.titleStagger,
+          from: index,
+        },
+      }, 'start+=0.4')
+      .add(() => {
+        delete row.dataset.rowActive;
+      }, 'start+=0.7');
   };
 
   useEffect(() => {
@@ -444,6 +508,9 @@ export function ServicesPage() {
     handoffFlipRef.current?.kill();
     detailTimelineRef.current?.kill();
     hoverTimelineRefs.current.forEach((timeline) => timeline?.kill());
+    rowRefs.current.forEach((row) => {
+      if (row) delete row.dataset.rowActive;
+    });
     const index = currentIndexRef.current;
     if (index >= 0) {
       const originBlocks = rowBlocksRefs.current[index];
@@ -487,9 +554,10 @@ export function ServicesPage() {
               ref={(element: HTMLDivElement | null) => { rowRefs.current[index] = element; }}
               className={styles.row}
               data-current="false"
+              data-long-title={service.title.length > 26 ? 'true' : undefined}
               data-service-row
-              onMouseEnter={() => showRowPreview(index)}
-              onMouseLeave={() => hideRowPreview(index)}
+              onMouseEnter={() => showRowPreview(index, 'pointer')}
+              onMouseLeave={() => hideRowPreview(index, 'pointer')}
             >
               <button
                 ref={(element: HTMLButtonElement | null) => { rowButtonRefs.current[index] = element; }}
@@ -499,12 +567,17 @@ export function ServicesPage() {
                 aria-expanded="false"
                 aria-controls={`service-preview-${service.id}`}
                 tabIndex={-1}
-                onFocus={() => showRowPreview(index)}
-                onBlur={() => hideRowPreview(index)}
+                onFocus={(event) => {
+                  if (event.currentTarget.matches(':focus-visible')) showRowPreview(index, 'focus');
+                }}
+                onBlur={() => hideRowPreview(index, 'focus')}
                 onClick={() => openService(index)}
               />
 
-              <div className={`${styles.cell} ${styles.cellText}`}>
+              <div className={`${styles.cell} ${styles.cellText} ${styles.rowIdentity}`}>
+                <span className={styles.rowNumber} data-service-index aria-hidden="true">
+                  {service.index}
+                </span>
                 <h2 className={styles.titleClip}>
                   <span
                     ref={(element: HTMLSpanElement | null) => { rowTitleRefs.current[index] = element; }}
@@ -521,30 +594,29 @@ export function ServicesPage() {
                 aria-hidden="true"
                 data-service-blocks
               >
-                {service.primary.map((item) => (
-                  <div key={item} className={`${styles.tile} ${styles.rowTile}`} data-primary-block>
-                    <div className={styles.tileInner}><span>{item}</span></div>
+                {service.primary.map((item, blockIndex) => (
+                  <div
+                    key={item}
+                    className={`${styles.tile} ${styles.rowTile}`}
+                    data-grid-index={blockIndex}
+                    data-primary-block
+                  >
+                    <div className={styles.tileInner}>
+                      <span className={styles.tileOrdinal}>{service.index}.{String(blockIndex + 1).padStart(2, '0')}</span>
+                      <span className={styles.tileLabel}>{item}</span>
+                      <span className={styles.tileSignal} aria-hidden="true" />
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           ))}
         </div>
+
+        <div className={styles.futureRunway} aria-hidden="true" />
       </section>
 
       <section className={styles.previewLayer} aria-label="Service details">
-        <button
-          ref={closeButtonRef}
-          type="button"
-          className={styles.closeButton}
-          data-visible="false"
-          tabIndex={-1}
-          onClick={closeService}
-          aria-label="Close service details"
-        >
-          ×
-        </button>
-
         {SERVICES.map((service, index) => (
           <article
             key={service.id}
@@ -558,6 +630,18 @@ export function ServicesPage() {
             data-active="false"
             data-service-preview
           >
+            <button
+              ref={(element: HTMLButtonElement | null) => { closeButtonRefs.current[index] = element; }}
+              type="button"
+              className={styles.closeButton}
+              data-visible="false"
+              tabIndex={-1}
+              onClick={closeService}
+              aria-label="Close service details"
+            >
+              ×
+            </button>
+
             <h2 className={styles.previewTitleClip}>
               <span
                 ref={(element: HTMLSpanElement | null) => { previewTitleRefs.current[index] = element; }}
@@ -574,9 +658,20 @@ export function ServicesPage() {
               className={styles.previewGrid}
               data-service-grid
             >
-              {service.secondary.map((item) => (
-                <div key={item} className={`${styles.tile} ${styles.previewTile}`} data-secondary-block>
-                  <div className={styles.tileInner}><span>{item}</span></div>
+              {service.secondary.map((item, blockIndex) => (
+                <div
+                  key={item}
+                  className={`${styles.tile} ${styles.previewTile}`}
+                  data-grid-index={service.primary.length + blockIndex}
+                  data-secondary-block
+                >
+                  <div className={styles.tileInner}>
+                    <span className={styles.tileOrdinal}>
+                      {service.index}.{String(service.primary.length + blockIndex + 1).padStart(2, '0')}
+                    </span>
+                    <span className={styles.tileLabel}>{item}</span>
+                    <span className={styles.tileSignal} aria-hidden="true" />
+                  </div>
                 </div>
               ))}
             </div>

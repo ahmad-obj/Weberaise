@@ -34,75 +34,77 @@
 
 ## Task 1: Lock the revised visual/state contracts before implementation
 
-- [ ] Add a focused test requiring `.page` and `.intro` to use `var(--wr-black)` and forbidding `var(--wr-background)` in those rules.
-- [ ] Require docked `SERVICES` to stay `var(--wr-white)`, retain `var(--font-hero)`, use a large `clamp(...)` size, and forbid the former blue handoff tween.
-- [ ] Require `.indexHeader`/`.servicesLabelSlot` to center the destination and reserve menu-bar top space.
-- [ ] Require inline row markup containing number and title in the same reading unit; remove the obsolete absolutely positioned micro-index contract.
-- [ ] Require a row inversion state with white background and black number/title plus a neutral focus-visible treatment.
-- [ ] Require `data-row-active` (or equivalent) to be controlled by hover/focus methods and established before opening.
-- [ ] Require a monochrome white cover and black preview pieces.
-- [ ] Require an empty `aria-hidden` runway after the index with a responsive `min-height`.
-- [ ] Run `node --import=tsx --test tests/services-page.test.mjs` and confirm the new assertions fail for the expected old styling/markup.
+- [x] Add a focused test requiring `.page` and `.intro` to use `var(--wr-black)` and forbidding `var(--wr-background)` in those rules.
+- [x] Require docked `SERVICES` to stay `var(--wr-white)`, retain `var(--font-hero)`, use a large `clamp(...)` size, and forbid the former blue handoff tween.
+- [x] Require `.indexHeader`/`.servicesLabelSlot` to center the destination and reserve menu-bar top space.
+- [x] Require inline row markup containing number and title in the same reading unit; remove the obsolete absolutely positioned micro-index contract.
+- [x] Require a row inversion state with white background and black number/title plus a neutral focus-visible treatment.
+- [x] Require `data-row-active` (or equivalent) to be controlled by hover/focus methods and established before opening.
+- [x] Require a monochrome white cover and black preview pieces.
+- [x] Require an empty `aria-hidden` runway after the index with a responsive `min-height`.
+- [x] Run `node --import=tsx --test tests/services-page.test.mjs` and confirm the new assertions fail for the expected old styling/markup.
 
 ## Task 2: Recompose the same-node handoff into the centered masthead
 
-- [ ] Remove the GSAP tween to `var(--wr-blue)` and all compact utility-label font overrides.
-- [ ] Keep `servicesWord` on `var(--font-hero)` with the intro's weight, tracking, line-height, casing, and white color in both source/destination states.
-- [ ] Build a full-width centered destination slot below a responsive menu-bar reserve; tune the docked size to a modest reduction only.
-- [ ] Preserve `Flip.getState`, physical append, `Flip.from({ scale: true })`, handoff stacking, and concurrent row reveal.
-- [ ] Adjust the index header height so the masthead and first row breathe without pushing the five-row index beyond a useful desktop first view.
-- [ ] Verify intermediate frames at desktop and mobile: no left drift, blue flash, font switch, ghost, or premature row settle.
+- [x] Remove the GSAP tween to `var(--wr-blue)` and all compact utility-label font overrides.
+- [x] Keep `servicesWord` on `var(--font-hero)` with the intro's weight, tracking, line-height, casing, and white color in both source/destination states.
+- [x] Build a full-width centered destination slot below a responsive menu-bar reserve; tune the docked size to a modest reduction only.
+- [x] Preserve `Flip.getState`, physical append, `Flip.from({ scale: true })`, handoff stacking, and concurrent row reveal.
+- [x] Adjust the index header height so the masthead and first row breathe without pushing the five-row index beyond a useful desktop first view.
+- [x] Verify intermediate frames at desktop and mobile: no left drift, blue flash, font switch, ghost, or premature row settle.
 
 ## Task 3: Rebuild row typography and inline numbering
 
-- [ ] Change the left row cell to a number/title grid: compact number column, fluid clipped title, aligned optical baseline.
-- [ ] Set normal titles in Inter Tight at a refined medium weight and responsive 30–46px desktop scale.
-- [ ] Remove the tiny number positioned above the title; use a readable 12–15px inline number.
-- [ ] Preserve controlled desktop single-line behavior and allow the commerce title to wrap at deliberate laptop/mobile breakpoints.
-- [ ] Replace blue-tinted borders/backgrounds with low-opacity neutral white rules on black.
-- [ ] Keep origin preview pieces absent at rest and ensure the entire row remains a semantic clickable/focusable target.
-- [ ] Add the empty black runway below the content without copy or decoration.
-- [ ] Capture 1440×900, laptop, tablet, and 390×844 resting states; reject generic heavy type, uneven number alignment, and overflow.
+- [x] Change the left row cell to a number/title grid: compact number column, fluid clipped title, aligned optical baseline.
+- [x] Set normal titles in Inter Tight at a refined medium weight and responsive 30–46px desktop scale.
+- [x] Remove the tiny number positioned above the title; use a readable 12–15px inline number.
+- [x] Preserve controlled desktop single-line behavior and allow the commerce title to wrap at deliberate laptop/mobile breakpoints.
+- [x] Replace blue-tinted borders/backgrounds with low-opacity neutral white rules on black.
+- [x] Keep origin preview pieces absent at rest and ensure the entire row remains a semantic clickable/focusable target.
+- [x] Add the empty black runway below the content without copy or decoration.
+- [x] Capture 1440×900, laptop, tablet, and 390×844 resting states; reject generic heavy type, uneven number alignment, and overflow.
 
 ## Task 4: Synchronize full-row inversion with Codrops hover/focus motion
 
-- [ ] Add a stable `data-row-active` visual state when fine-pointer hover or keyboard focus starts; remove it only on the matching exit when no preview is open.
-- [ ] Transition row background and foreground with `var(--wr-ease-premium)` over roughly 0.45s.
-- [ ] Make number and title black under inversion, including while the clipped title switches to Geist Mono.
-- [ ] Restyle row preview pieces as black flat objects with white type/rules on the white row.
-- [ ] Preserve reference block entrance (`scale .8`, `xPercent 20`, `.4s`, negative stagger) and exit.
-- [ ] Preserve clipped title exit/switch/entrance; ensure the alternate is visibly different without becoming decorative.
-- [ ] Apply the same inversion to keyboard focus-visible with a restrained neutral inset outline.
-- [ ] On coarse pointer, keep pieces absent at rest and bypass desktop hover while retaining click.
-- [ ] Hover every row in Chromium and inspect early/mid/settled inversion frames for flashes, seam artifacts, title clipping, long-title overlap, and preview readability.
+- [x] Add a stable `data-row-active` visual state when fine-pointer hover or keyboard focus starts; remove it only on the matching exit when no preview is open.
+- [x] Transition row background and foreground with `var(--wr-ease-premium)` over roughly 0.45s.
+- [x] Make number and title black under inversion, including while the clipped title switches to Geist Mono.
+- [x] Restyle row preview pieces as black flat objects with white type/rules on the white row.
+- [x] Preserve reference block entrance (`scale .8`, `xPercent 20`, `.4s`, negative stagger) and exit.
+- [x] Preserve clipped title exit/switch/entrance; ensure the alternate is visibly different without becoming decorative.
+- [x] Apply the same inversion to keyboard focus-visible with a restrained neutral inset outline.
+- [x] On coarse pointer, keep pieces absent at rest and bypass desktop hover while retaining click.
+- [x] Hover every row in Chromium and inspect early/mid/settled inversion frames for flashes, seam artifacts, title clipping, long-title overlap, and preview readability.
 
 ## Task 5: Translate takeover and fullscreen grid to the monochrome field
 
-- [ ] On click, establish the selected row's white/black state before measuring/starting the cover expansion.
-- [ ] Keep selected row at z-index 11 and cover at z-index 10; use a white cover starting at exact row top/height.
-- [ ] Preserve directional exits for titles above/below the selection.
-- [ ] Capture the same three visible preview blocks, physically prepend them into the active grid, and run `Flip.from` with centralized Codrops values.
-- [ ] Style all eight fullscreen pieces as flat black geometry with white labels and subtle neutral micro-details; remove blue borders/glow/rounded card language.
-- [ ] Use black preview title and close control proportionate to the grid.
-- [ ] Keep desktop 4×2 and mobile 2×4 geometry.
-- [ ] Verify first, middle, and last opens at mid-cover and settled frames; reject cover-origin mismatch, row/cover seam, Flip jumps, and dashboard-card appearance.
+- [x] On click, establish the selected row's white/black state before measuring/starting the cover expansion.
+- [x] Keep selected row at z-index 11 and cover at z-index 10; use a white cover starting at exact row top/height.
+- [x] Preserve directional exits for titles above/below the selection.
+- [x] Capture the same three visible preview blocks, physically prepend them into the active grid, and run `Flip.from` with centralized Codrops values.
+- [x] Style all eight fullscreen pieces as flat black geometry with white labels and subtle neutral micro-details; remove blue borders/glow/rounded card language.
+- [x] Use black preview title and close control proportionate to the grid.
+- [x] Keep desktop 4×2 and mobile 2×4 geometry.
+- [x] Verify first, middle, and last opens at mid-cover and settled frames; reject cover-origin mismatch, row/cover seam, Flip jumps, and dashboard-card appearance.
 
 ## Task 6: Preserve and retune close, repeated-state, and accessibility behavior
 
-- [ ] Shrink/fade all grid pieces, return primary nodes to the selected row origin, exit title/close, and collapse the white cover back toward the row.
-- [ ] Remove row-active/current state only when collapse restores the black menu, preventing a white flash before the cover reaches its source.
-- [ ] Restore row titles, menu accessibility, tab stops, body overflow, and focus origin.
-- [ ] Verify close button and Escape, first/middle/last rows, repeated open/close cycles, resize after close, and focus restoration.
-- [ ] Verify inactive dialog content remains hidden from assistive technology and hidden menu controls are not focusable during preview.
+- [x] Shrink/fade all grid pieces, return primary nodes to the selected row origin, exit title/close, and collapse the white cover back toward the row.
+- [x] Remove row-active/current state only when collapse restores the black menu, preventing a white flash before the cover reaches its source.
+- [x] Restore row titles, menu accessibility, tab stops, body overflow, and focus origin.
+- [x] Verify close button and Escape, first/middle/last rows, repeated open/close cycles, resize after close, and focus restoration.
+- [x] Verify inactive dialog content remains hidden from assistive technology and hidden menu controls are not focusable during preview.
 
 ## Task 7: Responsive, reduced-motion, and automated verification
 
-- [ ] Desktop 1440×900: intro, centered handoff frames, all row hovers, first/middle/last open, close mid-frame, repeated cycles.
-- [ ] Laptop and tablet: masthead/menu proportions, long-title wrap, right preview-piece fit, fullscreen grid.
-- [ ] Mobile 390×844/coarse pointer: centered masthead, inline number, no resting pieces, tap open, 2×4 grid, reachable close, no horizontal overflow.
-- [ ] Reduced motion: same node relocation, information/state preservation, immediate inversion/focus, correct open/close DOM state.
-- [ ] Run focused Services tests, `npm test`, `npm run typecheck`, and `npm run build`.
-- [ ] Distinguish any pre-existing unrelated suite failures from regressions with exact test evidence; do not edit protected homepage code to satisfy stale tests.
+- [x] Desktop 1440×900: intro, centered handoff frames, all row hovers, first/middle/last open, close mid-frame, repeated cycles.
+- [x] Laptop and tablet: masthead/menu proportions, long-title wrap, right preview-piece fit, fullscreen grid.
+- [x] Mobile 390×844/coarse pointer: centered masthead, inline number, no resting pieces, tap open, 2×4 grid, reachable close, no horizontal overflow.
+- [x] Reduced motion: same node relocation, information/state preservation, immediate inversion/focus, correct open/close DOM state.
+- [x] Run focused Services tests, `npm test`, `npm run typecheck`, and `npm run build`.
+- [x] Distinguish any pre-existing unrelated suite failures from regressions with exact test evidence; do not edit protected homepage code to satisfy stale tests.
+
+Verification note: the focused Services suite, typecheck, and production build pass. The full suite retains three baseline homepage-only failures in `experience.test.mjs`, `interaction-polish.test.mjs`, and `visual-contract.test.mjs`; their assertions reference legacy/missing homepage structures or reject the pre-existing Framer Motion dependency and are outside this branch's protected scope.
 
 ## Task 8: Requested adversarial graphic-design review and final refinement
 

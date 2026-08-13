@@ -6,8 +6,8 @@ export const SERVICES_MOTION = {
     outerExitDuration: 0.72,
     servicesBeat: 0.18,
     handoffDuration: 0.96,
-    rowRevealDuration: 0.72,
-    rowRevealStagger: 0.065,
+    rowRevealDuration: 0.42,
+    rowRevealStagger: 0.1,
   },
   hover: {
     blocksIn: {
