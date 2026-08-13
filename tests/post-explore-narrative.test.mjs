@@ -24,6 +24,14 @@ test('MainSite installs the post-explore narrative instead of FirstImpression', 
   assert.doesNotMatch(main, /FirstImpression/);
 });
 
+test('MainSite ends after the finished post-explore narrative', () => {
+  const main = read('src/components/MainSite/MainSite.tsx');
+  assert.match(main, /<PostExploreNarrative\s*\/>/);
+  for (const placeholder of ['selectedWork', 'services', 'principles', 'processSteps', 'engagementOptions', 'section-shell', 'TODO /']) {
+    assert.doesNotMatch(main, new RegExp(placeholder));
+  }
+});
+
 test('document-space art-directed journey files are canonical', () => {
   for (const file of ['JourneyNarrative.tsx', 'JourneyStop.tsx', 'JourneyArtwork.tsx', 'RibbonTrail.tsx', 'ribbonPrimitives.ts', 'journeyRoute.ts', 'buildJourneyPath.ts', 'pathLookup.ts', 'ribbonController.ts', 'questionReveal.ts']) {
     assert.equal(existsSync(resolve(root, featureDir, file)), true, `${file} must exist`);
