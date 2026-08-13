@@ -181,7 +181,7 @@ test: lock services menu-grid choreography
 - Produces DOM state: `data-handoff-active="true|false"` on the page only during the word/index overlap.
 - Preserves refs: `servicesWordRef`, `introServicesSlotRef`, `servicesLabelSlotRef`.
 
-- [ ] **Step 1: Add failing same-node visibility contracts**
+- [x] **Step 1: Add failing same-node visibility contracts**
 
 Extend the opening test to require the temporary stacking state and cleanup:
 
@@ -194,11 +194,11 @@ assert.match(component, /SERVICES_MOTION\.intro/);
 
 Retain the existing checks for `Flip.getState(servicesWord)`, `appendChild(servicesWord)`, and `Flip.from`.
 
-- [ ] **Step 2: Run focused test and verify RED**
+- [x] **Step 2: Run focused test and verify RED**
 
 Expected: FAIL because the current reparented word remains beneath `.intro` at z-index 300 and no handoff state exists.
 
-- [ ] **Step 3: Refactor the intro timeline to use a nested handoff timeline**
+- [x] **Step 3: Refactor the intro timeline to use a nested handoff timeline**
 
 Import `SERVICES_MOTION`. Keep entrance, hold, outer exits, and beat on the master timeline. At the handoff callback:
 
@@ -237,7 +237,7 @@ handoff
 
 Store and kill the nested handoff timeline on cleanup. In reduced motion, still append the exact same node before exposing the index.
 
-- [ ] **Step 4: Add the temporary stacking rule**
+- [x] **Step 4: Add the temporary stacking rule**
 
 Keep `.intro` at z-index 300 and normal `.indexStage` at z-index 1. Add:
 
@@ -249,7 +249,7 @@ Keep `.intro` at z-index 300 and normal `.indexStage` at z-index 1. Add:
 
 This lets the reparented word and revealing rows remain visible over the still-opaque intro without changing later cover/preview stacking.
 
-- [ ] **Step 5: Run focused tests and typecheck**
+- [x] **Step 5: Run focused tests and typecheck**
 
 Run:
 
@@ -260,7 +260,7 @@ npm run typecheck
 
 Expected: PASS.
 
-- [ ] **Step 6: Browser checkpoint — opening and handoff**
+- [x] **Step 6: Browser checkpoint — opening and handoff**
 
 At 1440×900, capture and inspect:
 
@@ -271,7 +271,7 @@ At 1440×900, capture and inspect:
 
 Reject the milestone if the word disappears, jumps, crossfades, leaves a ghost, or arrives before the rows. Repeat at 390×844 and with reduced motion.
 
-- [ ] **Step 7: Commit the intro geometry batch**
+- [x] **Step 7: Commit the intro geometry batch**
 
 Stage only the component, CSS, and updated test with commit message:
 

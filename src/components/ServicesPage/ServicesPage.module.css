@@ -69,6 +69,14 @@
   pointer-events: none;
 }
 
+.page[data-handoff-active='true'] .indexStage {
+  z-index: 310;
+}
+
+.page[data-handoff-active='true'] .servicesWord {
+  z-index: 320;
+}
+
 .page[data-index-ready='true'] .indexStage {
   opacity: 1;
 }

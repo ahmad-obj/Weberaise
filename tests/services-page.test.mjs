@@ -30,7 +30,12 @@ test('service model stays five-group and composes three transferred plus five su
 });
 
 test('motion blueprint preserves Codrops hover, takeover, and title-direction behavior', async () => {
-  const { SERVICES_MOTION, getSupplementalStartDelay, getTitleExitY } = await import(motionModuleUrl);
+  const {
+    SERVICES_MOTION,
+    getIntroExitX,
+    getSupplementalStartDelay,
+    getTitleExitY,
+  } = await import(motionModuleUrl);
   assert.deepEqual(SERVICES_MOTION.hover.blocksIn, {
     duration: 0.4,
     ease: 'power3',
@@ -47,6 +52,8 @@ test('motion blueprint preserves Codrops hover, takeover, and title-direction be
   assert.equal(getTitleExitY(100, 100), -100);
   assert.equal(getTitleExitY(101, 100), 100);
   assert.equal(getSupplementalStartDelay(3), 0.12);
+  assert.equal(getIntroExitX(1440, 600, 'left'), -1044);
+  assert.equal(getIntroExitX(1440, 900, 'right'), 1194);
 });
 
 test('services page establishes the dedicated route and locked service model', () => {
@@ -67,12 +74,21 @@ test('services page establishes the dedicated route and locked service model', (
 
 test('opening preserves the SERVICES word as the same DOM node', () => {
   const component = read('src/components/ServicesPage/ServicesPage.tsx');
+  const css = read('src/components/ServicesPage/ServicesPage.module.css');
   assert.match(component, /SO, WHAT/);
   assert.match(component, /SERVICES/);
   assert.match(component, /DO WE PROVIDE\?/);
   assert.match(component, /Flip\.getState\(servicesWord/);
   assert.match(component, /servicesLabelSlot\.appendChild\(servicesWord\)/);
   assert.match(component, /Flip\.from\(flipState/);
+  assert.match(component, /Flip\.from\(flipState,\s*\{[\s\S]*?scale:\s*true/);
+  assert.doesNotMatch(component, /Flip\.from\(flipState,\s*\{[\s\S]*?paused:\s*true/);
+  assert.match(component, /dataset\.handoffActive\s*=\s*'true'/);
+  assert.match(component, /delete page\.dataset\.handoffActive/);
+  assert.match(component, /SERVICES_MOTION\.intro/);
+  assert.match(component, /\.to\(servicesWord,\s*\{[\s\S]*?color:\s*'var\(--wr-blue\)'/);
+  assert.match(css, /\.page\[data-handoff-active='true'\]\s+\.indexStage\s*\{[\s\S]*z-index:\s*310/);
+  assert.match(css, /\.page\[data-handoff-active='true'\]\s+\.servicesWord\s*\{[\s\S]*z-index:\s*320/);
 });
 
 test('service index mirrors the Codrops menu-row geometry instead of a custom editorial dashboard', () => {

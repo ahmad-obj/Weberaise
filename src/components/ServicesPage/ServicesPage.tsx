@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { Flip } from 'gsap/Flip';
 import { SERVICES } from './servicesModel';
+import { getIntroExitX, SERVICES_MOTION } from './servicesMotion';
 import styles from './ServicesPage.module.css';
 
 gsap.registerPlugin(Flip);
@@ -30,6 +31,8 @@ export function ServicesPage() {
   const animationLockRef = useRef(false);
   const reducedMotionRef = useRef(false);
   const introTimelineRef = useRef<ReturnType<typeof gsap.timeline> | null>(null);
+  const handoffTimelineRef = useRef<ReturnType<typeof gsap.timeline> | null>(null);
+  const handoffFlipRef = useRef<ReturnType<typeof Flip.from> | null>(null);
   const detailTimelineRef = useRef<ReturnType<typeof gsap.timeline> | null>(null);
   const previousBodyOverflowRef = useRef('');
 
@@ -135,7 +138,11 @@ export function ServicesPage() {
     const introLineInners = Array.from(intro.querySelectorAll<HTMLElement>('[data-intro-line-inner]'));
     const leftExit = intro.querySelector<HTMLElement>("[data-intro-exit='left']");
     const rightExit = intro.querySelector<HTMLElement>("[data-intro-exit='right']");
+    if (!leftExit || !rightExit) return;
     const rowTitles = rowTitleRefs.current.filter((value): value is HTMLSpanElement => Boolean(value));
+    const introMotion = SERVICES_MOTION.intro;
+    const leftExitX = getIntroExitX(window.innerWidth, leftExit.getBoundingClientRect().width, 'left');
+    const rightExitX = getIntroExitX(window.innerWidth, rightExit.getBoundingClientRect().width, 'right');
 
     const context = gsap.context(() => {
       gsap.set(introLineInners, { yPercent: 112 });
@@ -156,49 +163,68 @@ export function ServicesPage() {
       timeline
         .to(introLineInners, {
           yPercent: 0,
-          duration: 0.92,
+          duration: introMotion.lineDuration,
           ease: 'power4.out',
-          stagger: 0.075,
+          stagger: introMotion.lineStagger,
         })
-        .to({}, { duration: 1.8 })
+        .to({}, { duration: introMotion.readingHold })
         .addLabel('questionExit')
-        .to(leftExit, { xPercent: -118, duration: 0.72, ease: 'power4.inOut' }, 'questionExit')
-        .to(rightExit, { xPercent: 118, duration: 0.72, ease: 'power4.inOut' }, 'questionExit')
-        .to({}, { duration: 0.18 })
+        .to(leftExit, { x: leftExitX, duration: introMotion.outerExitDuration, ease: 'power4.inOut' }, 'questionExit')
+        .to(rightExit, { x: rightExitX, duration: introMotion.outerExitDuration, ease: 'power4.inOut' }, 'questionExit')
+        .to({}, { duration: introMotion.servicesBeat })
         .add(() => {
           const flipState = Flip.getState(servicesWord, { simple: true });
+          page.dataset.handoffActive = 'true';
           page.dataset.indexReady = 'true';
-          indexStage.removeAttribute('aria-hidden');
           servicesLabelSlot.appendChild(servicesWord);
           servicesWord.dataset.docked = 'true';
+          gsap.set(servicesWord, { color: 'var(--wr-text)' });
 
-          Flip.from(flipState, {
-            duration: 0.96,
+          const flip = Flip.from(flipState, {
+            duration: introMotion.handoffDuration,
             ease: 'power4.inOut',
             absolute: true,
+            scale: true,
           });
+          handoffFlipRef.current = flip;
 
-          gsap.to(rowTitles, {
-            yPercent: 0,
-            duration: 0.72,
-            ease: 'power4.out',
-            stagger: 0.065,
-            onComplete: revealIndexForInteraction,
+          const handoff = gsap.timeline({
+            onComplete: () => {
+              gsap.set(intro, { display: 'none' });
+              gsap.set(servicesWord, { clearProps: 'color' });
+              delete page.dataset.handoffActive;
+              revealIndexForInteraction();
+            },
           });
-        })
-        .to(intro, {
-          autoAlpha: 0,
-          duration: 0.28,
-          ease: 'power2.out',
-          onComplete: () => { gsap.set(intro, { display: 'none' }); },
-        }, '+=0.72');
+          handoffTimelineRef.current = handoff;
+          handoff
+            .to(rowTitles, {
+              yPercent: 0,
+              duration: introMotion.rowRevealDuration,
+              ease: 'power4.out',
+              stagger: introMotion.rowRevealStagger,
+            }, 0.08)
+            .to(servicesWord, {
+              color: 'var(--wr-blue)',
+              duration: 0.34,
+              ease: 'power2.out',
+            }, 0.52)
+            .to(intro, {
+              autoAlpha: 0,
+              duration: 0.22,
+              ease: 'power2.out',
+            }, 0.74);
+        });
     }, page);
 
     return () => {
       introTimelineRef.current?.kill();
+      handoffTimelineRef.current?.kill();
+      handoffFlipRef.current?.kill();
       context.revert();
       if (servicesWord.parentElement !== introServicesSlot) introServicesSlot.appendChild(servicesWord);
       delete servicesWord.dataset.docked;
+      delete page.dataset.handoffActive;
     };
   }, []);
 
@@ -414,6 +440,8 @@ export function ServicesPage() {
 
   useEffect(() => () => {
     introTimelineRef.current?.kill();
+    handoffTimelineRef.current?.kill();
+    handoffFlipRef.current?.kill();
     detailTimelineRef.current?.kill();
     hoverTimelineRefs.current.forEach((timeline) => timeline?.kill());
     const index = currentIndexRef.current;

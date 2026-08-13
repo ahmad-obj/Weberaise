@@ -48,6 +48,15 @@ export function getTitleExitY(targetTop: number, selectedTop: number): -100 | 10
   return targetTop > selectedTop ? 100 : -100;
 }
 
+export function getIntroExitX(
+  viewportWidth: number,
+  elementWidth: number,
+  direction: 'left' | 'right',
+): number {
+  const distance = viewportWidth / 2 + elementWidth / 2 + 24;
+  return direction === 'left' ? -distance : distance;
+}
+
 export function getSupplementalStartDelay(primaryCount: number): number {
   return SERVICES_MOTION.takeover.itemStagger * primaryCount;
 }
