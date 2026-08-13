@@ -142,24 +142,68 @@
   filter: drop-shadow(0 18px 18px rgb(0 0 0 / 0.2));
 }
 
+.q1Scene .artworkLayer,
+.q2Scene .artworkLayer:not(.q2BrowserShell),
+.q3Character,
+.q3Shadow,
+.q3WebsiteCard,
+.q3ProfileCard,
+.q3BrandTile,
+.q3SecondaryTile {
+  transition-property: transform, opacity;
+  transition-duration: 1.05s;
+  transition-timing-function: cubic-bezier(.22, .61, .36, 1);
+}
+
 /* Q1 — established business surrounded by disconnected digital pieces. */
-.q1Island { z-index: 2; left: 17%; top: 43%; width: 66%; }
-.q1Storefront { z-index: 4; left: 31%; top: 26%; width: 39%; }
-.q1Nav { z-index: 5; left: 4%; top: 4%; width: 38%; transform: rotate(-4deg); }
-.q1ImageCard { z-index: 5; left: 1%; top: 25%; width: 31%; transform: rotate(-2deg); }
-.q1Cta { z-index: 6; left: 8%; top: 58%; width: 17%; transform: rotate(-7deg); }
-.q1BrowserLarge { z-index: 5; right: 1%; top: 8%; width: 33%; transform: rotate(2deg); }
-.q1BrowserSmall { z-index: 5; right: 2%; top: 47%; width: 24%; transform: rotate(3deg); }
+.q1Island { z-index: 2; left: 17%; top: 43%; width: 66%; opacity: 0; transform: translateY(18px) scale(.97); }
+.q1Storefront { z-index: 4; left: 31%; top: 26%; width: 39%; opacity: 0; transform: translateY(16px) scale(.97); }
+.q1Nav { z-index: 5; left: 4%; top: 4%; width: 38%; opacity: 0; transform: translate(-18px, -12px) rotate(-4deg); }
+.q1ImageCard { z-index: 5; left: 1%; top: 25%; width: 31%; opacity: 0; transform: translateX(-20px) rotate(-2deg); }
+.q1Cta { z-index: 6; left: 8%; top: 58%; width: 17%; opacity: 0; transform: translate(-14px, 14px) rotate(-7deg); }
+.q1BrowserLarge { z-index: 5; right: 1%; top: 8%; width: 33%; opacity: 0; transform: translate(20px, -12px) rotate(2deg); }
+.q1BrowserSmall { z-index: 5; right: 2%; top: 47%; width: 24%; opacity: 0; transform: translateX(18px) rotate(3deg); }
+
+.journeyStopAnchor[data-journey-stop='q1'][data-revealed='true'] .q1Island {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition-delay: 40ms;
+}
+.journeyStopAnchor[data-journey-stop='q1'][data-revealed='true'] .q1Storefront {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition-delay: 150ms;
+}
+.journeyStopAnchor[data-journey-stop='q1'][data-revealed='true'] .q1Nav,
+.journeyStopAnchor[data-journey-stop='q1'][data-revealed='true'] .q1ImageCard,
+.journeyStopAnchor[data-journey-stop='q1'][data-revealed='true'] .q1Cta,
+.journeyStopAnchor[data-journey-stop='q1'][data-revealed='true'] .q1BrowserLarge,
+.journeyStopAnchor[data-journey-stop='q1'][data-revealed='true'] .q1BrowserSmall {
+  opacity: 1;
+}
+.journeyStopAnchor[data-journey-stop='q1'][data-revealed='true'] .q1Nav { transform: translate(0, 0) rotate(-4deg); transition-delay: 220ms; }
+.journeyStopAnchor[data-journey-stop='q1'][data-revealed='true'] .q1ImageCard { transform: translateX(0) rotate(-2deg); transition-delay: 290ms; }
+.journeyStopAnchor[data-journey-stop='q1'][data-revealed='true'] .q1BrowserLarge { transform: translate(0, 0) rotate(2deg); transition-delay: 340ms; }
+.journeyStopAnchor[data-journey-stop='q1'][data-revealed='true'] .q1Cta { transform: translate(0, 0) rotate(-7deg); transition-delay: 390ms; }
+.journeyStopAnchor[data-journey-stop='q1'][data-revealed='true'] .q1BrowserSmall { transform: translateX(0) rotate(3deg); transition-delay: 440ms; }
 
 /* Q2 — stable browser plane with a perceptually clean final arrangement. */
 .q2BrowserShell { z-index: 1; left: 10%; top: 14%; width: 78%; }
-.q2Nav { z-index: 3; left: 9%; top: 11%; width: 64%; transform: rotate(0deg); }
-.q2Media { z-index: 4; left: 21%; top: 34%; width: 29%; transform: rotate(0deg); }
-.q2TextCluster { z-index: 3; left: 49%; top: 30%; width: 31%; transform: rotate(0deg); }
-.q2Cta { z-index: 4; left: 47%; top: 63%; width: 34%; transform: scale(0.82); }
-.q2ProfileA { z-index: 5; right: 0; top: 14%; width: 22%; transform: rotate(1deg); }
-.q2ProfileB { z-index: 5; left: 0; top: 57%; width: 22%; transform: rotate(-1deg); }
-.q2Search { z-index: 5; right: -1%; top: 48%; width: 24%; transform: rotate(-1deg); }
+.q2Nav { z-index: 3; left: 9%; top: 11%; width: 64%; transform: translate(-13px, -9px) rotate(-4deg); }
+.q2Media { z-index: 4; left: 21%; top: 34%; width: 29%; transform: translate(-15px, 10px) rotate(-7deg); }
+.q2TextCluster { z-index: 3; left: 49%; top: 30%; width: 31%; transform: translate(16px, -8px) rotate(3deg); }
+.q2Cta { z-index: 4; left: 47%; top: 63%; width: 34%; transform: translate(14px, 10px) scale(1.08) rotate(2deg); }
+.q2ProfileA { z-index: 5; right: 0; top: 14%; width: 22%; transform: translate(18px, -13px) rotate(7deg); }
+.q2ProfileB { z-index: 5; left: 0; top: 57%; width: 22%; transform: translate(-17px, 12px) rotate(-7deg); }
+.q2Search { z-index: 5; right: -1%; top: 48%; width: 24%; transform: translate(28px, 7px) rotate(5deg); }
+
+.journeyStopAnchor[data-journey-stop='q2'][data-revealed='true'] .q2Nav { transform: translate(0, 0) rotate(0deg); transition-delay: 20ms; }
+.journeyStopAnchor[data-journey-stop='q2'][data-revealed='true'] .q2Search { transform: translate(0, 0) rotate(-1deg); transition-delay: 100ms; }
+.journeyStopAnchor[data-journey-stop='q2'][data-revealed='true'] .q2Media { transform: translate(0, 0) rotate(0deg); transition-delay: 170ms; }
+.journeyStopAnchor[data-journey-stop='q2'][data-revealed='true'] .q2TextCluster { transform: translate(0, 0) rotate(0deg); transition-delay: 240ms; }
+.journeyStopAnchor[data-journey-stop='q2'][data-revealed='true'] .q2Cta { transform: translate(0, 0) scale(.82) rotate(0deg); transition-delay: 310ms; }
+.journeyStopAnchor[data-journey-stop='q2'][data-revealed='true'] .q2ProfileA { transform: translate(0, 0) rotate(1deg); transition-delay: 390ms; }
+.journeyStopAnchor[data-journey-stop='q2'][data-revealed='true'] .q2ProfileB { transform: translate(0, 0) rotate(-1deg); transition-delay: 440ms; }
 
 /* Q3 — direct whole-character movement into a controlled spotlight. */
 .q3Scene {
@@ -171,12 +215,32 @@
 }
 .q3Beam { z-index: 1; left: 12%; top: -4%; width: 82%; filter: none; }
 .q3FloorPool { z-index: 2; left: 26%; bottom: 4%; width: 61%; filter: none; }
-.q3Shadow { z-index: 3; left: 24%; bottom: 12%; width: 28%; filter: none; }
-.q3Character { z-index: 5; left: 25%; bottom: 13%; width: 27%; }
-.q3WebsiteCard { z-index: 6; left: 48%; top: 42%; width: 31%; transform: rotate(1deg); }
-.q3ProfileCard { z-index: 5; right: 5%; top: 18%; width: 28%; transform: rotate(2deg); }
-.q3BrandTile { z-index: 7; left: 58%; top: 68%; width: 14%; transform: rotate(3deg); }
-.q3SecondaryTile { z-index: 5; right: 6%; top: 54%; width: 13%; transform: rotate(3deg); }
+.q3Shadow { z-index: 3; left: 24%; bottom: 12%; width: 28%; opacity: .55; filter: none; transform: translate(-44px, 18px) scale(.82); }
+.q3Character { z-index: 5; left: 25%; bottom: 13%; width: 27%; transform: translate(-48px, 18px) scale(.97); }
+.q3WebsiteCard { z-index: 6; left: 48%; top: 42%; width: 31%; opacity: 0; transform: translate(12px, 10px) scale(.94) rotate(-2deg); }
+.q3ProfileCard { z-index: 5; right: 5%; top: 18%; width: 28%; opacity: 0; transform: translate(10px, -9px) scale(.95) rotate(4deg); }
+.q3BrandTile { z-index: 7; left: 58%; top: 68%; width: 14%; opacity: 0; transform: translateY(10px) scale(.92) rotate(1deg); }
+.q3SecondaryTile { z-index: 5; right: 6%; top: 54%; width: 13%; opacity: 0; transform: translate(9px, 5px) scale(.92) rotate(5deg); }
+
+.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3Shadow {
+  opacity: 1;
+  transform: translate(0, 0) scale(1);
+  transition-delay: 20ms;
+}
+.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3Character {
+  transform: translate(0, 0) scale(1);
+  transition-delay: 20ms;
+}
+.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3WebsiteCard,
+.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3ProfileCard,
+.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3BrandTile,
+.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3SecondaryTile {
+  opacity: 1;
+}
+.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3WebsiteCard { transform: translate(0, 0) scale(1) rotate(1deg); transition-delay: 330ms; }
+.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3ProfileCard { transform: translate(0, 0) scale(1) rotate(2deg); transition-delay: 430ms; }
+.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3BrandTile { transform: translateY(0) scale(1) rotate(3deg); transition-delay: 530ms; }
+.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3SecondaryTile { transform: translate(0, 0) scale(1) rotate(3deg); transition-delay: 610ms; }
 
 .reassuranceHeading {
   position: relative;
@@ -328,6 +392,12 @@
   .journeyArtwork { width: min(88vw, 520px); }
   .journeyBeatTextLeft .journeyArtwork { justify-self: end; }
   .journeyBeatTextRight .journeyArtwork { justify-self: start; }
+  .q1Nav { left: 8%; width: 35%; }
+  .q1ImageCard { left: 4%; width: 29%; }
+  .q1BrowserLarge { right: 2%; width: 31%; }
+  .q1BrowserSmall { right: 4%; width: 22%; }
+  .q3Shadow { transform: translate(-28px, 12px) scale(.86); }
+  .q3Character { transform: translate(-30px, 12px) scale(.98); }
   .reassuranceHeading {
     width: min(91vw, 680px);
     font-size: clamp(28px, 8vw, 36px);
@@ -355,6 +425,36 @@
   .journeyQuestion { transform: none; }
   .ribbonPath,
   .ribbonTaper { filter: none; }
+  .artworkLayer {
+    transition: none !important;
+    animation: none !important;
+  }
+  .q1Scene .artworkLayer,
+  .q3Shadow,
+  .q3WebsiteCard,
+  .q3ProfileCard,
+  .q3BrandTile,
+  .q3SecondaryTile { opacity: 1; }
+  .q1Island,
+  .q1Storefront { transform: translateY(0) scale(1); }
+  .q1Nav { transform: translate(0, 0) rotate(-4deg); }
+  .q1ImageCard { transform: translateX(0) rotate(-2deg); }
+  .q1Cta { transform: translate(0, 0) rotate(-7deg); }
+  .q1BrowserLarge { transform: translate(0, 0) rotate(2deg); }
+  .q1BrowserSmall { transform: translateX(0) rotate(3deg); }
+  .q2Nav { transform: translate(0, 0) rotate(0deg); }
+  .q2Media,
+  .q2TextCluster { transform: translate(0, 0) rotate(0deg); }
+  .q2Cta { transform: translate(0, 0) scale(.82) rotate(0deg); }
+  .q2ProfileA { transform: translate(0, 0) rotate(1deg); }
+  .q2ProfileB,
+  .q2Search { transform: translate(0, 0) rotate(-1deg); }
+  .q3Shadow,
+  .q3Character { transform: translate(0, 0) scale(1); }
+  .q3WebsiteCard { transform: translate(0, 0) scale(1) rotate(1deg); }
+  .q3ProfileCard { transform: translate(0, 0) scale(1) rotate(2deg); }
+  .q3BrandTile,
+  .q3SecondaryTile { transform: translate(0, 0) scale(1) rotate(3deg); }
   .auroraText {
     animation: none;
     background-position: 55% 50%;
