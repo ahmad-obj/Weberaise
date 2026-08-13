@@ -58,6 +58,22 @@ test('motion blueprint preserves Codrops hover, takeover, and title-direction be
   assert.equal(getIntroExitX(1440, 900, 'right'), 1194);
 });
 
+test('surface wave spatially reveals row inversion without a color crossfade', () => {
+  const component = read('src/components/ServicesPage/ServicesPage.tsx');
+  const css = read('src/components/ServicesPage/ServicesPage.module.css');
+
+  assert.match(component, /styles\.rowInversionSurface/);
+  assert.match(component, /viewBox="0 0 120 100"/);
+  assert.match(component, /preserveAspectRatio="none"/);
+  assert.match(component, /focusable="false"/);
+  assert.match(component, /<path\s+d="M 12 -5 C/);
+  assert.match(css, /\.rowInversionSurface\s*\{[\s\S]*?transform:\s*translate3d\(101%,\s*0,\s*0\)[\s\S]*?will-change:\s*transform/);
+  assert.match(css, /\.row\[data-row-active='true'\]\s+\.rowInversionSurface[\s\S]*?transform:\s*translate3d\(0,\s*0,\s*0\)/);
+  assert.match(css, /\.cellText\s*\{[\s\S]*?mix-blend-mode:\s*difference/);
+  assert.doesNotMatch(css, /\.row\s*\{[^}]*transition:[^}]*background-color/);
+  assert.doesNotMatch(css, /\.row\s*\{[^}]*transition:[^}]*\bcolor\b/);
+});
+
 test('services page establishes the dedicated route and locked service model', () => {
   assert.equal(sourceExists('src/app/services/page.tsx'), true);
   assert.equal(sourceExists('src/components/ServicesPage/servicesModel.ts'), true);
@@ -97,6 +113,17 @@ test('opening preserves the SERVICES word as the same DOM node', () => {
   assert.match(css, /\.servicesLabelSlot\s*\{[\s\S]*?justify-content:\s*center/);
   assert.match(css, /\.page\[data-handoff-active='true'\]\s+\.indexStage\s*\{[\s\S]*z-index:\s*310/);
   assert.match(css, /\.page\[data-handoff-active='true'\]\s+\.servicesWord\s*\{[\s\S]*z-index:\s*320/);
+});
+
+test('intro locks scrolling until the same-node handoff becomes interactive', () => {
+  const component = read('src/components/ServicesPage/ServicesPage.tsx');
+
+  assert.match(component, /const introBodyOverflowRef = useRef\(''\)/);
+  assert.match(component, /introBodyOverflowRef\.current = document\.body\.style\.overflow/);
+  assert.match(component, /document\.body\.style\.overflow = 'hidden'/);
+  assert.match(component, /const releaseIntroScroll = \(\) =>/);
+  assert.match(component, /document\.body\.style\.overflow = introBodyOverflowRef\.current/);
+  assert.match(component, /revealIndexForInteraction[\s\S]*releaseIntroScroll\(\)/);
 });
 
 test('service index mirrors the Codrops menu-row geometry instead of a custom editorial dashboard', () => {
@@ -146,6 +173,17 @@ test('row hover choreography follows the reference thumbnail and title-switch mo
   assert.match(component, /startAt:\s*\{\s*yPercent:\s*100,\s*rotation:\s*titleIn\.rotation\s*\}/);
   assert.match(component, /dataset\.switched\s*=\s*'true'/);
   assert.match(component, /delete title\.dataset\.switched/);
+});
+
+test('pointer and focus retain row choreography until both interaction sources leave', () => {
+  const component = read('src/components/ServicesPage/ServicesPage.tsx');
+
+  assert.match(component, /rowInteractionRefs/);
+  assert.match(component, /pointer:\s*false,\s*focus:\s*false/);
+  assert.match(component, /interaction\[source\]\s*=\s*true/);
+  assert.match(component, /const wasActive = interaction\.pointer \|\| interaction\.focus/);
+  assert.match(component, /interaction\[source\]\s*=\s*false/);
+  assert.match(component, /if \(interaction\.pointer \|\| interaction\.focus \|\| currentIndexRef\.current !== -1\) return/);
 });
 
 test('click transition mirrors Codrops cover stacking, Flip relocation, and 4x2 preview grid', () => {
