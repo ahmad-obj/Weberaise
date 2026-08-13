@@ -5,7 +5,11 @@ import type { BuiltJourneyPath } from './buildJourneyPath';
 import type { JourneyStopId } from './journeyRoute';
 import { buildPathLookup, resolveLengthForDocumentY } from './pathLookup';
 import { buildRibbonPacingAnchors, resolvePacedLength } from './ribbonPacing';
-import { normalizeRibbonProgress, restoreRibbonLength } from './ribbonProgress';
+import {
+  normalizeRibbonProgress,
+  resolveInitialRibbonDraw,
+  restoreRibbonLength,
+} from './ribbonProgress';
 
 export const HEAD_BAND_MIN = 0.45;
 export const HEAD_BAND_MAX = 0.58;
@@ -24,7 +28,7 @@ type RibbonControllerOptions = {
   openingLocalY: number;
   sampleSpacing: number;
   stops: BuiltJourneyPath['stops'];
-  markers: BuiltJourneyPath['markers'];
+  markerProgress: BuiltJourneyPath['markerProgress'];
   taper?: RibbonTaperController;
   reducedMotion: boolean;
   onReveal: (id: JourneyStopId) => void;
@@ -40,7 +44,7 @@ export function createRibbonController({
   openingLocalY,
   sampleSpacing,
   stops,
-  markers,
+  markerProgress,
   taper,
   reducedMotion,
   onReveal,
@@ -48,7 +52,7 @@ export function createRibbonController({
   const rootRect = root.getBoundingClientRect();
   const rootDocumentTop = window.scrollY + rootRect.top;
   const lookup = buildPathLookup(measurementPath, svg, rootDocumentTop, sampleSpacing);
-  const pacingAnchors = buildRibbonPacingAnchors({ lookup, markers, stops, viewportHeight: Math.max(1, window.innerHeight) });
+  const pacingAnchors = buildRibbonPacingAnchors({ lookup, markerProgress, stops, viewportHeight: Math.max(1, window.innerHeight) });
   const openingFloor = pacingAnchors.find((anchor) => anchor.id === 'openingExit')?.pathLength
     ?? Math.min(lookup.totalLength, resolveLengthForDocumentY(lookup, rootDocumentTop + openingLocalY));
   const taperTotalLength = taper?.revealPath.getTotalLength() ?? 0;
@@ -122,11 +126,16 @@ export function createRibbonController({
     }
   };
 
-  const renderFromScroll = () => {
-    raf = 0;
+  const resolveScrollState = () => {
     const viewportHeight = Math.max(1, window.innerHeight);
     const scrollLocalY = Math.max(0, window.scrollY - rootDocumentTop);
     latestResolvedLength = scrollLocalY > 1 ? resolvePacedLength(pacingAnchors, scrollLocalY) : 0;
+    return { viewportHeight, scrollLocalY };
+  };
+
+  const renderFromScroll = () => {
+    raf = 0;
+    const { viewportHeight } = resolveScrollState();
     scrubTo(Math.max(openingFloor, latestResolvedLength));
     revealReachedStops(viewportHeight);
   };
@@ -138,18 +147,19 @@ export function createRibbonController({
   window.addEventListener('scroll', handleScroll, { passive: true });
 
   setVisibleLength(restoredVisibleLength);
-  if (openingPlayed || reducedMotion) {
-    root.dataset.ribbonOpened = 'true';
-    renderFromScroll();
-  } else {
-    const remainingOpening = clamp(
-      (openingFloor - restoredVisibleLength) / Math.max(0.001, openingFloor),
-      0,
-      1,
-    );
-    scrubTo(openingFloor, 0.82 * remainingOpening);
-    revealReachedStops(Math.max(1, window.innerHeight));
-  }
+  const initialScrollState = resolveScrollState();
+  const initialDraw = resolveInitialRibbonDraw({
+    restoredVisibleLength,
+    openingFloor,
+    pacedLength: latestResolvedLength,
+    scrollLocalY: initialScrollState.scrollLocalY,
+    openingPlayed,
+    openingSeconds: 0.82,
+    scrubSeconds,
+  });
+  if (openingPlayed || reducedMotion) root.dataset.ribbonOpened = 'true';
+  scrubTo(initialDraw.targetLength, initialDraw.duration);
+  revealReachedStops(initialScrollState.viewportHeight);
 
   return () => {
     window.removeEventListener('scroll', handleScroll);

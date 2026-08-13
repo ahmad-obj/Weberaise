@@ -32,6 +32,7 @@ export type BuiltJourneyPath = {
   taper: RibbonTaperGeometry;
   segments: readonly RibbonCurveSegment[];
   markers: Record<RibbonMarkerId, RibbonPoint>;
+  markerProgress: Record<RibbonMarkerId, number>;
 };
 
 function clamp(value: number, min: number, max: number) { return Math.min(max, Math.max(min, value)); }
@@ -263,6 +264,7 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
     y: q3Finish.bottom + Math.max(30, o2.height * 0.44),
   };
   curveTo(builder, 'q3-outside-exit', q3Exit, { x: 0.12, y: 1 }, Math.max(32, o2.width * 0.58), Math.max(42, o2.height * 0.58));
+  builder.mark('q3OutsideExit');
   const lookBounds: RibbonRect = {
     left: Math.min(o1.left, o2.left), top: Math.min(o1.top, o2.top), right: Math.max(o1.right, o2.right), bottom: Math.max(o1.bottom, o2.bottom),
     width: Math.max(o1.right, o2.right) - Math.min(o1.left, o2.left), height: Math.max(o1.bottom, o2.bottom) - Math.min(o1.top, o2.top),
@@ -326,5 +328,6 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
     taper,
     segments: builder.segments,
     markers: builder.markers,
+    markerProgress: builder.toMarkerProgress(),
   };
 }

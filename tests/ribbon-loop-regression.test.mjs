@@ -2,7 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildJourneyPath } from '../src/components/MainSite/PostExploreNarrative/buildJourneyPath.ts';
 import { sampleCurveSegments } from '../src/components/MainSite/PostExploreNarrative/ribbonCurveBuilder.ts';
-import { RIBBON_MARKER_ORDER, resolveMarkerLengths } from '../src/components/MainSite/PostExploreNarrative/ribbonPacing.ts';
+import {
+  buildRibbonPacingAnchors,
+  CALM_MAX_PATH_PER_SCROLL_PX,
+  INTERACTION_MAX_PATH_PER_SCROLL_PX,
+  LARGE_LOOP_MAX_PATH_PER_SCROLL_PX,
+  RIBBON_MARKER_ORDER,
+  resolveMarkerLengths,
+} from '../src/components/MainSite/PostExploreNarrative/ribbonPacing.ts';
 
 const modulePath = '../src/components/MainSite/PostExploreNarrative/ribbonPrimitives.ts';
 
@@ -344,6 +351,46 @@ test('production route resolves OO pacing markers to the two loop completions, n
   assert.ok(resolved.q3SecondLoopComplete > expectedSecondStart + (expectedSecond - expectedSecondStart) * 0.45, `second loop resolved too early at ${resolved.q3SecondLoopComplete}`);
   assert.ok(resolved.q3SecondLoopComplete <= expectedSecond + 1, `second loop resolved past its boundary at ${resolved.q3SecondLoopComplete}`);
   assert.ok(resolved.q3SecondLoopComplete - resolved.q3FirstLoopComplete > 100, 'OO completion markers need a visible arc-length budget');
+});
+
+test('production pacing bounds every eased interval and separates Q3 exit from reassurance', () => {
+  const built = buildJourneyPath(desktopRoot, desktopConfig);
+  const points = sampleCurveSegments(built.segments, 40);
+  let cumulativeLength = 0;
+  const samples = points.map((point, index) => {
+    if (index > 0) cumulativeLength += Math.hypot(point.x - points[index - 1].x, point.y - points[index - 1].y);
+    return { length: cumulativeLength, localX: point.x, localY: point.y, documentY: point.y };
+  });
+  const anchors = buildRibbonPacingAnchors({
+    lookup: { totalLength: cumulativeLength, samples },
+    markers: built.markers,
+    markerProgress: built.markerProgress,
+    stops: built.stops,
+    viewportHeight: 900,
+  });
+  const byId = Object.fromEntries(anchors.map((anchor) => [anchor.id, anchor]));
+  const interactionAnchors = new Set([
+    'q1WrapFront', 'q1WrapBack', 'q1WrapExit',
+    'q3FirstLoopComplete', 'q3SecondLoopComplete',
+  ]);
+
+  assert.ok(byId.q1Approach.scrollLocalY >= 900 * 0.28);
+  assert.ok(byId.q3OutsideExit.pathLength > byId.q3SecondLoopComplete.pathLength);
+  assert.ok(byId.q3OutsideExit.pathLength < byId.reassuranceApproach.pathLength);
+  for (let index = 1; index < anchors.length; index += 1) {
+    const lower = anchors[index - 1];
+    const upper = anchors[index];
+    assert.ok(upper.scrollLocalY > lower.scrollLocalY, `${upper.id} scroll order`);
+    assert.ok(upper.pathLength > lower.pathLength, `${upper.id} path order`);
+    const peakSlope = 1.5 * (upper.pathLength - lower.pathLength)
+      / (upper.scrollLocalY - lower.scrollLocalY);
+    const limit = upper.id === 'reassuranceLoopComplete'
+      ? LARGE_LOOP_MAX_PATH_PER_SCROLL_PX
+      : interactionAnchors.has(upper.id)
+        ? INTERACTION_MAX_PATH_PER_SCROLL_PX
+        : CALM_MAX_PATH_PER_SCROLL_PX;
+    assert.ok(peakSlope <= limit + 1e-6, `${lower.id} → ${upper.id} peaks at ${peakSlope}`);
+  }
 });
 
 test('reassurance route stays inside the document so its exit and taper remain visible', () => {

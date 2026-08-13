@@ -9,9 +9,14 @@ const modulePath = '../src/components/MainSite/PostExploreNarrative/ribbonPacing
 
 const markerIds = [
   'openingExit', 'q1Approach', 'q1WrapFront', 'q1WrapBack', 'q1WrapExit', 'q2BendExit',
-  'q3Approach', 'q3FirstLoopComplete', 'q3SecondLoopComplete',
+  'q3Approach', 'q3FirstLoopComplete', 'q3SecondLoopComplete', 'q3OutsideExit',
   'reassuranceApproach', 'reassuranceLoopComplete', 'taperEnd',
 ];
+
+const interactionAnchors = new Set([
+  'q1WrapFront', 'q1WrapBack', 'q1WrapExit',
+  'q3FirstLoopComplete', 'q3SecondLoopComplete',
+]);
 
 function fixture() {
   const samples = markerIds.map((id, index) => ({
@@ -20,14 +25,15 @@ function fixture() {
     localY: index * 280,
     documentY: index * 280,
   }));
-  const markers = Object.fromEntries(markerIds.map((id, index) => [id, { x: index * 40, y: index * 280 }]));
   const stops = {
     q1: { localY: 700, revealLocalY: 560, revealViewportRatio: 0.76, bandBias: 0 },
     q2: { localY: 1500, revealLocalY: 1360, revealViewportRatio: 0.76, bandBias: 0 },
     q3: { localY: 2300, revealLocalY: 2160, revealViewportRatio: 0.76, bandBias: 0 },
     reassurance: { localY: 3200, revealLocalY: 3060, revealViewportRatio: 0.82, bandBias: 0 },
   };
-  return { lookup: { totalLength: samples.at(-1).length, samples }, markers, stops, viewportHeight: 900 };
+  const totalLength = samples.at(-1).length;
+  const markerProgress = Object.fromEntries(markerIds.map((id, index) => [id, samples[index].length / totalLength]));
+  return { lookup: { totalLength, samples }, markerProgress, stops, viewportHeight: 900 };
 }
 
 test('semantic ribbon pacing module exists', () => {
@@ -36,7 +42,12 @@ test('semantic ribbon pacing module exists', () => {
 
 test('pacing anchors are monotonic and protect every perceptual loop budget', async () => {
   assert.equal(existsSync(moduleFile), true, 'ribbonPacing.ts must exist before its mapping can be tested');
-  const { buildRibbonPacingAnchors } = await import(modulePath);
+  const {
+    buildRibbonPacingAnchors,
+    CALM_MAX_PATH_PER_SCROLL_PX,
+    INTERACTION_MAX_PATH_PER_SCROLL_PX,
+    LARGE_LOOP_MAX_PATH_PER_SCROLL_PX,
+  } = await import(modulePath);
   const anchors = buildRibbonPacingAnchors(fixture());
 
   for (let index = 1; index < anchors.length; index += 1) {
@@ -46,10 +57,26 @@ test('pacing anchors are monotonic and protect every perceptual loop budget', as
 
   const byId = Object.fromEntries(anchors.map((anchor) => [anchor.id, anchor]));
   const budget = (from, to) => byId[to].scrollLocalY - byId[from].scrollLocalY;
+  assert.ok(byId.q1Approach.scrollLocalY >= 900 * 0.28);
   assert.ok(budget('q1Approach', 'q1WrapExit') >= 900 * 0.52);
   assert.ok(budget('q1WrapExit', 'q2BendExit') <= 900 * 0.36);
   assert.ok(budget('q3Approach', 'q3SecondLoopComplete') >= 900 * 0.42);
   assert.ok(budget('reassuranceApproach', 'reassuranceLoopComplete') >= 900 * 0.48);
+  assert.ok(byId.q3OutsideExit.pathLength > byId.q3SecondLoopComplete.pathLength);
+  assert.ok(byId.q3OutsideExit.pathLength < byId.reassuranceApproach.pathLength);
+
+  for (let index = 1; index < anchors.length; index += 1) {
+    const lower = anchors[index - 1];
+    const upper = anchors[index];
+    const peakSlope = 1.5 * (upper.pathLength - lower.pathLength)
+      / (upper.scrollLocalY - lower.scrollLocalY);
+    const limit = upper.id === 'reassuranceLoopComplete'
+      ? LARGE_LOOP_MAX_PATH_PER_SCROLL_PX
+      : interactionAnchors.has(upper.id)
+        ? INTERACTION_MAX_PATH_PER_SCROLL_PX
+        : CALM_MAX_PATH_PER_SCROLL_PX;
+    assert.ok(peakSlope <= limit + 1e-6, `${lower.id} → ${upper.id} peaks at ${peakSlope}`);
+  }
 });
 
 test('paced length interpolation remains bounded and reversible', async () => {

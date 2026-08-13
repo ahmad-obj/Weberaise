@@ -45,8 +45,15 @@ test('art-directed path remains one continuous cubic route', () => {
   assert.deepEqual(Object.keys(built.markers), [
     'openingExit', 'q1Approach', 'q1WrapFront', 'q1WrapBack', 'q1WrapExit',
     'q2BendExit', 'q3Approach', 'q3FirstLoopComplete', 'q3SecondLoopComplete',
-    'reassuranceApproach', 'reassuranceLoopComplete', 'taperEnd',
+    'q3OutsideExit', 'reassuranceApproach', 'reassuranceLoopComplete', 'taperEnd',
   ]);
+  const markerProgress = Object.values(built.markerProgress);
+  assert.equal(markerProgress.length, Object.keys(built.markers).length);
+  for (let index = 1; index < markerProgress.length; index += 1) {
+    assert.ok(markerProgress[index] > markerProgress[index - 1], `marker ${index} must advance along authored segments`);
+  }
+  assert.ok(built.markerProgress.q3FirstLoopComplete < built.markerProgress.q3SecondLoopComplete);
+  assert.equal(built.markerProgress.taperEnd, 1);
   for (let index = 0; index < built.segments.length - 1; index += 1) {
     const segment = built.segments[index];
     const next = built.segments[index + 1];

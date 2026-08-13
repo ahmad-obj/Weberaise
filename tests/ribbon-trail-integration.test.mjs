@@ -70,7 +70,7 @@ test('controller paces semantic arc length through one short overwrite scrub', (
   assert.match(controller, /window\.innerWidth\s*<=\s*720\s*\?\s*0\.14\s*:\s*0\.18/);
   assert.match(controller, /overwrite:\s*true/);
   assert.match(controller, /scrubTween\?\.kill\(\)/);
-  assert.match(narrative, /markers:\s*geometry\.markers/);
+  assert.match(narrative, /markerProgress:\s*geometry\.markerProgress/);
 });
 
 test('controller restores document-relative progress and reveals after a geometry rebuild', () => {
@@ -80,7 +80,9 @@ test('controller restores document-relative progress and reveals after a geometr
   assert.doesNotMatch(controller, /initialScrollY/);
   assert.doesNotMatch(controller, /travel\s*>\s*1/);
   assert.match(controller, /scrubTo\(Math\.max\(openingFloor,\s*latestResolvedLength\)\);\s*revealReachedStops\(viewportHeight\);/s);
-  assert.match(controller, /if \(openingPlayed \|\| reducedMotion\)[\s\S]*renderFromScroll\(\)/);
+  assert.match(controller, /const initialScrollState\s*=\s*resolveScrollState\(\)/);
+  assert.match(controller, /resolveInitialRibbonDraw\([\s\S]*pacedLength:\s*latestResolvedLength[\s\S]*scrollLocalY:\s*initialScrollState\.scrollLocalY/s);
+  assert.match(controller, /scrubTo\(initialDraw\.targetLength,\s*initialDraw\.duration\);\s*revealReachedStops\(initialScrollState\.viewportHeight\);/s);
 });
 
 test('opening and scroll share one draw tween and persist rebuild progress', () => {

@@ -17,6 +17,7 @@ const markerIds = [
   'q3Approach',
   'q3FirstLoopComplete',
   'q3SecondLoopComplete',
+  'q3OutsideExit',
   'reassuranceApproach',
   'reassuranceLoopComplete',
   'taperEnd',

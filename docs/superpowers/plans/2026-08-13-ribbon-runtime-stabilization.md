@@ -180,6 +180,8 @@ In `ribbonController.ts`:
 - remove `introState` and `introTween`;
 - add an optional duration to `scrubTo`, but retain exactly one `gsap.to(drawState, ...)` call;
 - start the opening by targeting `openingFloor` for the remaining fraction of 0.82 seconds;
+- resolve the live document-scroll target before the first tween; at nonzero scroll target `Math.max(openingFloor, latestResolvedLength)` with the scrub duration even when `ribbonOpened` is still unset;
+- retain the scaled 0.82-second opening treatment only at true scroll zero;
 - let scroll events retarget that same tween to `Math.max(openingFloor, latestResolvedLength)`;
 - clean up only `scrubTween` and pending animation frames.
 
@@ -215,6 +217,8 @@ git commit -m "fix: preserve ribbon draw state across rebuilds"
 - Adds marker: `RibbonMarkerId = 'q3OutsideExit'`.
 - Produces: `CALM_MAX_PATH_PER_SCROLL_PX = 5`.
 - Produces: `INTERACTION_MAX_PATH_PER_SCROLL_PX = 3.5`.
+- Produces: `LARGE_LOOP_MAX_PATH_PER_SCROLL_PX = 6.5`.
+- Produces: `BuiltJourneyPath.markerProgress: Record<RibbonMarkerId, number>` from authored segment boundaries.
 - Preserves: `buildRibbonPacingAnchors(input): RibbonPacingAnchor[]` and `resolvePacedLength(anchors, scrollLocalY): number`.
 
 - [ ] **Step 1: Write failing semantic marker and speed-cap tests**
@@ -232,8 +236,9 @@ For each adjacent anchor pair, compute the smoothstep peak slope:
 ```js
 const peakSlope = 1.5 * (upper.pathLength - lower.pathLength) /
   (upper.scrollLocalY - lower.scrollLocalY);
-const interaction = ['q1WrapFront', 'q1WrapBack', 'q1WrapExit', 'q3FirstLoopComplete', 'q3SecondLoopComplete', 'reassuranceLoopComplete'].includes(upper.id);
-assert.ok(peakSlope <= (interaction ? 3.5 : 5) + 1e-6);
+const interaction = ['q1WrapFront', 'q1WrapBack', 'q1WrapExit', 'q3FirstLoopComplete', 'q3SecondLoopComplete'].includes(upper.id);
+const limit = upper.id === 'reassuranceLoopComplete' ? 6.5 : interaction ? 3.5 : 5;
+assert.ok(peakSlope <= limit + 1e-6);
 ```
 
 - [ ] **Step 2: Add a production-route pacing regression**
@@ -270,7 +275,9 @@ const speedFloor = previous.scrollLocalY + pathDelta * 1.5 / maxPathPerScrollPx;
 const scrollLocalY = Math.max(desiredScrollLocalY, previous.scrollLocalY + 1, speedFloor);
 ```
 
-Use the interaction limit for Q1 wrap markers, both Q3 loop-completion markers, and reassurance-loop completion. Use the calm limit elsewhere.
+Use the interaction limit for Q1 wrap markers and both Q3 loop-completion markers. Use the large-loop limit for reassurance-loop completion and the calm limit elsewhere.
+
+Record every marker's normalized arc progress when `RibbonCurveBuilder.mark(id)` is called, using cumulative sampled length at that exact segment boundary. Pass `markerProgress` through `BuiltJourneyPath`, `JourneyNarrative`, and `ribbonController`; construct runtime marker lengths as `markerProgress[id] * lookup.totalLength`. Keep coordinate-based marker resolution only as a regression utility, not as the controller's runtime identity mechanism.
 
 - [ ] **Step 6: Give Q1 and the Q3 exit visible scroll budgets**
 

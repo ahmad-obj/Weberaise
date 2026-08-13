@@ -10,6 +10,7 @@ export type RibbonMarkerId =
   | 'q3Approach'
   | 'q3FirstLoopComplete'
   | 'q3SecondLoopComplete'
+  | 'q3OutsideExit'
   | 'reassuranceApproach'
   | 'reassuranceLoopComplete'
   | 'taperEnd';
@@ -109,6 +110,7 @@ export function sampleCurveSegments(segments: readonly RibbonCurveSegment[], sam
 export class RibbonCurveBuilder {
   readonly segments: RibbonCurveSegment[] = [];
   readonly markers = {} as Record<RibbonMarkerId, RibbonPoint>;
+  private readonly markerSegmentEnds = {} as Record<RibbonMarkerId, number>;
   private current: RibbonPoint;
 
   constructor(start: RibbonPoint) {
@@ -155,7 +157,30 @@ export class RibbonCurveBuilder {
 
   mark(id: RibbonMarkerId) {
     this.markers[id] = clone(this.current);
+    this.markerSegmentEnds[id] = this.segments.length;
     return this;
+  }
+
+  toMarkerProgress(samplesPerSegment = 48): Record<RibbonMarkerId, number> {
+    const boundaryLengths = [0];
+    let totalLength = 0;
+    for (const segment of this.segments) {
+      const points = sampleCurveSegments([segment], samplesPerSegment);
+      for (let index = 1; index < points.length; index += 1) {
+        totalLength += Math.hypot(
+          points[index]!.x - points[index - 1]!.x,
+          points[index]!.y - points[index - 1]!.y,
+        );
+      }
+      boundaryLengths.push(totalLength);
+    }
+
+    const progress = {} as Record<RibbonMarkerId, number>;
+    for (const id of Object.keys(this.markers) as RibbonMarkerId[]) {
+      const boundary = this.markerSegmentEnds[id];
+      progress[id] = totalLength > 0 ? (boundaryLengths[boundary] ?? totalLength) / totalLength : 0;
+    }
+    return progress;
   }
 
   toPathD() {

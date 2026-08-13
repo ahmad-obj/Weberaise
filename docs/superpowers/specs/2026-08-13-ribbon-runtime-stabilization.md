@@ -42,12 +42,17 @@ Every applied draw frame will persist normalized visible progress on the journey
 
 This prevents rebuilds from falling back to zero or to the opening floor.
 
-### Bounded semantic pacing
+Every controller construction also resolves the live document scroll before choosing its first tween target. A restored page or a fast scroll during the settled-measurement delay therefore catches up immediately instead of waiting at the opening floor for another scroll event. Only a genuine top-of-page opening keeps the longer authored opening duration.
 
-Pacing remains semantic and reversible, but each adjacent anchor pair will receive enough scroll distance to cap the maximum derivative of the existing smoothstep interpolation.
+### Authored marker identity and bounded semantic pacing
+
+Pacing remains semantic and reversible. Marker progress is recorded from the authored cubic segment boundaries instead of rediscovered later from repeated SVG coordinates. This prevents an early route point from being mistaken for Q1's approach/front wrap and prevents shared loop seams from being confused with later passes.
+
+Each adjacent anchor pair receives enough scroll distance to cap the maximum derivative of the existing smoothstep interpolation.
 
 - Calm approach and travel segments: maximum 5 path units per scroll pixel.
-- Q1 wrap, Q3 O loops, and reassurance loop: maximum 3.5 path units per scroll pixel.
+- Q1 wrap and Q3 O loops: maximum 3.5 path units per scroll pixel.
+- The much larger reassurance oval: maximum 6.5 path units per scroll pixel so it remains visible but still completes before the retained GROW section.
 - The Q1 approach cannot complete before 0.28 viewport heights of scroll.
 - A new `q3OutsideExit` marker separates the paired-O loops from the journey toward reassurance.
 
@@ -64,7 +69,9 @@ Automated tests must prove:
 - no placeholder homepage sections render after `PostExploreNarrative`;
 - the initial geometry uses the settled rebuild scheduler;
 - the controller has one draw tween, persists normalized progress, and restores it on reconstruction;
+- controller creation at nonzero scroll targets the live paced length even before the opening flag is set;
 - all marker lengths and scroll anchors remain monotonic;
+- pacing consumes authored marker progress rather than coordinate-nearest marker recovery;
 - Q3 outside exit is ordered between the second O loop and reassurance;
 - calculated maximum pacing slopes respect the calm and interaction limits;
 - existing artwork, path continuity, reassurance, reduced-motion, and reverse-scroll contracts remain passing.

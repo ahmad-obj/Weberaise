@@ -13,10 +13,15 @@ export const RIBBON_MARKER_ORDER: readonly RibbonMarkerId[] = [
   'q3Approach',
   'q3FirstLoopComplete',
   'q3SecondLoopComplete',
+  'q3OutsideExit',
   'reassuranceApproach',
   'reassuranceLoopComplete',
   'taperEnd',
 ];
+
+export const CALM_MAX_PATH_PER_SCROLL_PX = 5;
+export const INTERACTION_MAX_PATH_PER_SCROLL_PX = 3.5;
+export const LARGE_LOOP_MAX_PATH_PER_SCROLL_PX = 6.5;
 
 export type RibbonPacingAnchor = {
   id: RibbonMarkerId;
@@ -27,7 +32,7 @@ export type RibbonPacingAnchor = {
 type MarkerPoint = { id: RibbonMarkerId; point: RibbonPoint };
 type PacingInput = {
   lookup: PathLookup;
-  markers: Record<RibbonMarkerId, RibbonPoint>;
+  markerProgress: Record<RibbonMarkerId, number>;
   stops: BuiltJourneyPath['stops'];
   viewportHeight: number;
 };
@@ -107,45 +112,57 @@ function pushAnchor(
   id: RibbonMarkerId,
   desiredScrollLocalY: number,
   markerLengths: Record<RibbonMarkerId, number>,
+  maxPathPerScrollPx: number,
 ) {
   const previous = anchors.at(-1);
+  const pathLength = Math.max(markerLengths[id], (previous?.pathLength ?? -1) + 0.001);
+  const pathDelta = previous ? Math.max(0, pathLength - previous.pathLength) : 0;
+  const speedFloor = previous
+    ? previous.scrollLocalY + pathDelta * 1.5 / maxPathPerScrollPx
+    : desiredScrollLocalY;
   anchors.push({
     id,
-    scrollLocalY: Math.max(desiredScrollLocalY, (previous?.scrollLocalY ?? -1) + 1),
-    pathLength: Math.max(markerLengths[id], (previous?.pathLength ?? -1) + 0.001),
+    scrollLocalY: Math.max(desiredScrollLocalY, (previous?.scrollLocalY ?? -1) + 1, speedFloor),
+    pathLength,
   });
 }
 
-export function buildRibbonPacingAnchors({ lookup, markers, stops, viewportHeight }: PacingInput): RibbonPacingAnchor[] {
+export function buildRibbonPacingAnchors({ lookup, markerProgress, stops, viewportHeight }: PacingInput): RibbonPacingAnchor[] {
   const safeViewportHeight = Math.max(1, viewportHeight);
-  const orderedMarkers = RIBBON_MARKER_ORDER.map((id) => ({ id, point: markers[id] }));
-  const markerLengths = resolveMarkerLengths(lookup, orderedMarkers);
+  const markerLengths = Object.fromEntries(RIBBON_MARKER_ORDER.map((id) => [
+    id,
+    clamp(markerProgress[id], 0, 1) * lookup.totalLength,
+  ])) as Record<RibbonMarkerId, number>;
   markerLengths.taperEnd = lookup.totalLength;
 
-  const q1Start = Math.max(1, stops.q1.revealLocalY - safeViewportHeight * stops.q1.revealViewportRatio);
+  const q1Start = Math.max(
+    safeViewportHeight * 0.28,
+    stops.q1.revealLocalY - safeViewportHeight * stops.q1.revealViewportRatio,
+  );
   const q3NaturalStart = Math.max(1, stops.q3.revealLocalY - safeViewportHeight * stops.q3.revealViewportRatio);
   const reassuranceNaturalStart = Math.max(1, stops.reassurance.revealLocalY - safeViewportHeight * stops.reassurance.revealViewportRatio);
   const anchors: RibbonPacingAnchor[] = [];
 
-  pushAnchor(anchors, 'openingExit', 0, markerLengths);
-  pushAnchor(anchors, 'q1Approach', q1Start, markerLengths);
-  pushAnchor(anchors, 'q1WrapFront', q1Start + safeViewportHeight * 0.16, markerLengths);
-  pushAnchor(anchors, 'q1WrapBack', q1Start + safeViewportHeight * 0.34, markerLengths);
-  pushAnchor(anchors, 'q1WrapExit', q1Start + safeViewportHeight * 0.55, markerLengths);
+  pushAnchor(anchors, 'openingExit', 0, markerLengths, CALM_MAX_PATH_PER_SCROLL_PX);
+  pushAnchor(anchors, 'q1Approach', q1Start, markerLengths, CALM_MAX_PATH_PER_SCROLL_PX);
+  pushAnchor(anchors, 'q1WrapFront', q1Start + safeViewportHeight * 0.16, markerLengths, INTERACTION_MAX_PATH_PER_SCROLL_PX);
+  pushAnchor(anchors, 'q1WrapBack', q1Start + safeViewportHeight * 0.34, markerLengths, INTERACTION_MAX_PATH_PER_SCROLL_PX);
+  pushAnchor(anchors, 'q1WrapExit', q1Start + safeViewportHeight * 0.55, markerLengths, INTERACTION_MAX_PATH_PER_SCROLL_PX);
 
   const q1ExitScroll = anchors.at(-1)!.scrollLocalY;
-  pushAnchor(anchors, 'q2BendExit', q1ExitScroll + safeViewportHeight * 0.32, markerLengths);
+  pushAnchor(anchors, 'q2BendExit', q1ExitScroll + safeViewportHeight * 0.32, markerLengths, CALM_MAX_PATH_PER_SCROLL_PX);
   const earliestQ3Start = anchors.at(-1)!.scrollLocalY + 1;
   const q3Start = Math.max(q3NaturalStart, earliestQ3Start);
-  pushAnchor(anchors, 'q3Approach', q3Start, markerLengths);
-  pushAnchor(anchors, 'q3FirstLoopComplete', q3Start + safeViewportHeight * 0.22, markerLengths);
-  pushAnchor(anchors, 'q3SecondLoopComplete', q3Start + safeViewportHeight * 0.44, markerLengths);
+  pushAnchor(anchors, 'q3Approach', q3Start, markerLengths, CALM_MAX_PATH_PER_SCROLL_PX);
+  pushAnchor(anchors, 'q3FirstLoopComplete', q3Start + safeViewportHeight * 0.22, markerLengths, INTERACTION_MAX_PATH_PER_SCROLL_PX);
+  pushAnchor(anchors, 'q3SecondLoopComplete', q3Start + safeViewportHeight * 0.44, markerLengths, INTERACTION_MAX_PATH_PER_SCROLL_PX);
+  pushAnchor(anchors, 'q3OutsideExit', q3Start + safeViewportHeight * 0.7, markerLengths, CALM_MAX_PATH_PER_SCROLL_PX);
 
   const earliestReassuranceStart = anchors.at(-1)!.scrollLocalY + 1;
   const reassuranceStart = Math.max(reassuranceNaturalStart, earliestReassuranceStart);
-  pushAnchor(anchors, 'reassuranceApproach', reassuranceStart, markerLengths);
-  pushAnchor(anchors, 'reassuranceLoopComplete', reassuranceStart + safeViewportHeight * 0.5, markerLengths);
-  pushAnchor(anchors, 'taperEnd', anchors.at(-1)!.scrollLocalY + safeViewportHeight * 0.24, markerLengths);
+  pushAnchor(anchors, 'reassuranceApproach', reassuranceStart, markerLengths, CALM_MAX_PATH_PER_SCROLL_PX);
+  pushAnchor(anchors, 'reassuranceLoopComplete', reassuranceStart + safeViewportHeight * 0.5, markerLengths, LARGE_LOOP_MAX_PATH_PER_SCROLL_PX);
+  pushAnchor(anchors, 'taperEnd', anchors.at(-1)!.scrollLocalY + safeViewportHeight * 0.24, markerLengths, CALM_MAX_PATH_PER_SCROLL_PX);
 
   return anchors;
 }
