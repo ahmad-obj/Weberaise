@@ -5,7 +5,7 @@ const ROOT = '/artwork/journey/display/Q1';
 
 export function Q1ArtworkScene() {
   return (
-    <div className={`${styles.artworkScene} ${styles.q1Scene}`} data-artwork-scene="q1" data-artwork-cluster="" aria-hidden="true">
+    <div className={`${styles.artworkScene} ${styles.q1Scene}`} data-artwork-scene="q1" data-artwork-reference="q1-master" data-artwork-cluster="" aria-hidden="true">
       <ArtworkLayer src={`${ROOT}/01_island_platform.png`} name="island" className={styles.q1Island} width={1217} height={764} />
       <ArtworkLayer src={`${ROOT}/02_storefront.png`} name="storefront" className={styles.q1Storefront} width={1273} height={900} />
       <ArtworkLayer src={`${ROOT}/03_floating_nav_strip.png`} name="nav" className={styles.q1Nav} width={1206} height={748} />

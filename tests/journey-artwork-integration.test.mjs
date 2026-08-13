@@ -74,6 +74,26 @@ test('Q1 and Q2 scenes declare their supplied master references', () => {
   assert.match(read(`${feature}/artwork/Q2ArtworkScene.tsx`), /data-artwork-reference=["']q2-master["']/);
 });
 
+test('artwork placement is isolated from image reveal motion', () => {
+  const layer = read(`${feature}/artwork/ArtworkLayer.tsx`);
+  const css = read(`${feature}/PostExploreNarrative.module.css`);
+  assert.match(layer, /<span[^>]+data-artwork-layer=\{name\}/s);
+  assert.match(layer, /className=\{styles\.artworkImage\}/);
+  assert.match(css, /\.artworkPlacement\s*\{/);
+  assert.match(css, /\.artworkImage\s*\{/);
+});
+
+test('Q1 and Q2 use stronger beat-specific hierarchy and edge bias', () => {
+  const narrative = read(`${feature}/JourneyNarrative.tsx`);
+  const css = read(`${feature}/PostExploreNarrative.module.css`);
+  assert.match(narrative, /styles\.journeyBeatQ1/);
+  assert.match(narrative, /styles\.journeyBeatQ2/);
+  assert.match(css, /\.journeyBeatQ1[\s\S]*font-size:\s*clamp\(52px,\s*6\.05vw,\s*106px\)/);
+  assert.match(css, /\.journeyBeatQ1[\s\S]*translateX\(7%\)/);
+  assert.match(css, /\.journeyBeatQ2[\s\S]*font-size:\s*clamp\(50px,\s*5\.9vw,\s*102px\)/);
+  assert.match(css, /\.journeyBeatQ2[\s\S]*translateX\(-8%\)/);
+});
+
 test('Q3 is an exact centered two-line typography event with measurable O glyphs', () => {
   const narrative = read(`${feature}/JourneyNarrative.tsx`);
   assert.match(narrative, /data-q3-line="lead"/);

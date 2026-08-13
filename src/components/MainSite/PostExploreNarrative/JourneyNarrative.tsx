@@ -137,8 +137,8 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
       <RibbonBackLayer d={pathD} width={width} height={height} svgRef={backSvgRef} backPathRef={backPathRef} taperRevealPathRef={taperRevealPathRef} taper={taper} />
       <div className={styles.journeyContent}>
         <div className={styles.journeyLead} aria-hidden="true" />
-        <JourneyStop id="q1" align="left"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft}`}><h2 className={styles.journeyQuestion} data-journey-question>{questions[0]}</h2><JourneyArtwork id="q1" label="Website concept artwork placeholder" /></div></JourneyStop>
-        <JourneyStop id="q2" align="right"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextRight}`}><JourneyArtwork id="q2" label="Website redesign artwork placeholder" /><h2 className={styles.journeyQuestion} data-journey-question data-ribbon-question="q2">{questions[1]}</h2></div></JourneyStop>
+        <JourneyStop id="q1" align="left"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft} ${styles.journeyBeatQ1}`}><h2 className={styles.journeyQuestion} data-journey-question>{questions[0]}</h2><JourneyArtwork id="q1" label="Website concept artwork placeholder" /></div></JourneyStop>
+        <JourneyStop id="q2" align="right"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextRight} ${styles.journeyBeatQ2}`}><JourneyArtwork id="q2" label="Website redesign artwork placeholder" /><h2 className={styles.journeyQuestion} data-journey-question data-ribbon-question="q2">{questions[1]}</h2></div></JourneyStop>
         <JourneyStop id="q3" align="left"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft}`}><h2 className={styles.journeyQuestion} data-journey-question><LookQuestion text={questions[2] ?? ''} /></h2><JourneyArtwork id="q3" label="Online presence artwork placeholder" /></div></JourneyStop>
         <JourneyStop id="reassurance" align="center"><h2 className={styles.reassuranceHeading} data-reassurance-text><ShutterText text={reassurance} active={reassuranceActive} /></h2></JourneyStop>
       </div>

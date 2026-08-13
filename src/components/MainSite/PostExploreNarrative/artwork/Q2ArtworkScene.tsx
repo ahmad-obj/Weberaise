@@ -5,7 +5,7 @@ const ROOT = '/artwork/journey/display/Q2';
 
 export function Q2ArtworkScene() {
   return (
-    <div className={`${styles.artworkScene} ${styles.q2Scene}`} data-artwork-scene="q2" data-artwork-cluster="" aria-hidden="true">
+    <div className={`${styles.artworkScene} ${styles.q2Scene}`} data-artwork-scene="q2" data-artwork-reference="q2-master" data-artwork-cluster="" aria-hidden="true">
       <ArtworkLayer src={`${ROOT}/01_browser_base_shell.png`} name="browser-shell" className={styles.q2BrowserShell} width={1154} height={967} />
       <ArtworkLayer src={`${ROOT}/02_nav_header_strip.png`} name="nav" className={styles.q2Nav} width={1380} height={907} />
       <ArtworkLayer src={`${ROOT}/03_image_media_block.png`} name="media" className={styles.q2Media} width={1267} height={890} />
