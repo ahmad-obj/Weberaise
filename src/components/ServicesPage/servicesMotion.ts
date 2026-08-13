@@ -10,6 +10,7 @@ export const SERVICES_MOTION = {
     rowRevealStagger: 0.1,
   },
   hover: {
+    surfaceLead: 0.16,
     blocksIn: {
       duration: 0.4,
       ease: 'power3',

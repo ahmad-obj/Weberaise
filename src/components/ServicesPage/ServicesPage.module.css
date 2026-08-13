@@ -138,15 +138,12 @@
   padding: var(--padding-row) var(--padding-sides);
   border-top: 1px solid rgb(255 255 255 / 0.2);
   background: var(--wr-black);
-  transition:
-    background-color 0.46s var(--wr-ease-premium),
-    color 0.38s var(--wr-ease-premium),
-    border-color 0.46s var(--wr-ease-premium);
+  overflow: hidden;
+  isolation: isolate;
+  transition: border-color 0.46s var(--wr-ease-premium);
 }
 
 .row[data-row-active='true'] {
-  background: var(--wr-white);
-  color: var(--wr-black);
   border-color: var(--wr-white);
 }
 
@@ -156,6 +153,37 @@
 
 .row[data-current='true'] .rowNumber {
   opacity: 0;
+}
+
+.rowInversionSurface {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  left: -20%;
+  z-index: 0;
+  display: block;
+  width: 120%;
+  height: calc(100% + 2px);
+  overflow: visible;
+  color: var(--wr-white);
+  pointer-events: none;
+  transform: translate3d(101%, 0, 0);
+  transition: transform 0.66s var(--wr-ease-premium);
+  will-change: transform;
+}
+
+.rowInversionSurface path {
+  fill: currentColor;
+}
+
+.row[data-row-active='true'] .rowInversionSurface,
+.row[data-current='true'] .rowInversionSurface,
+.row:has(.rowButton:focus-visible) .rowInversionSurface {
+  transform: translate3d(0, 0, 0);
+}
+
+.row[data-current='true'] .rowInversionSurface {
+  transition-duration: 1ms;
 }
 
 .rowButton {
@@ -174,11 +202,10 @@
 .rowButton:focus-visible {
   outline: 1px solid currentColor;
   outline-offset: -6px;
+  mix-blend-mode: difference;
 }
 
 .row:has(.rowButton:focus-visible) {
-  background: var(--wr-white);
-  color: var(--wr-black);
   border-color: var(--wr-white);
 }
 
@@ -190,6 +217,8 @@
 .cellText {
   z-index: 2;
   min-width: 0;
+  color: var(--wr-white);
+  mix-blend-mode: difference;
 }
 
 .rowIdentity {
@@ -239,6 +268,7 @@
 }
 
 .cellBlocks {
+  z-index: 2;
   display: grid;
   align-content: center;
   grid-auto-columns: auto;
@@ -595,6 +625,7 @@
 @media (prefers-reduced-motion: reduce) {
   .row,
   .rowButton,
+  .rowInversionSurface,
   .tile {
     transition-duration: 1ms !important;
   }

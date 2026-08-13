@@ -38,8 +38,8 @@ On exit the surface returns to the right, revealing the black row from left to r
 
 - Surface travel: approximately 0.62–0.7 seconds, premium `power4`-like cubic easing.
 - The surface begins immediately.
-- Preview-piece entrance begins about 0.08–0.12 seconds after the surface, when the advancing white field has reached their origin region.
-- The clipped title exit/switch/entrance begins about 0.12–0.16 seconds after the surface.
+- Preview-piece entrance begins about 0.16 seconds after the surface; its negative stagger makes the earliest piece begin around 0.09 seconds, when the advancing white field has reached the preview region.
+- The clipped title exit/switch/entrance begins about 0.16 seconds after the surface.
 - Preserve the Codrops-derived preview values: start scale about `.8`, `xPercent` about `20`, duration about `.4`, `power3`, and negative stagger around `-.035`.
 - On exit, title and pieces reverse immediately while the surface withdraws. Because the black field returns from the title side first and the preview side last, the disappearing black pieces retain contrast throughout most of their exit.
 - Rapid hover/focus changes must reverse the same surface without snapping or resetting its geometry.
@@ -72,4 +72,3 @@ The SVG scales with row height and width, so the same wave geometry works across
 - The selected white row and fullscreen white cover read as the same surface system.
 - Pointer-plus-focus ownership cannot produce a white row with reverted internal choreography.
 - Desktop every-row hover, keyboard focus, rapid enter/leave, first/middle/last open, close, mobile tap, reduced motion, and repeated cycles remain correct.
-

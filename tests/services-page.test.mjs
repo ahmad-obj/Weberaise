@@ -43,6 +43,7 @@ test('motion blueprint preserves Codrops hover, takeover, and title-direction be
     xPercent: 20,
     stagger: -0.035,
   });
+  assert.equal(SERVICES_MOTION.hover.surfaceLead, 0.16);
   assert.equal(SERVICES_MOTION.hover.titleOut.duration, 0.1);
   assert.equal(SERVICES_MOTION.hover.titleIn.duration, 0.5);
   assert.equal(SERVICES_MOTION.intro.rowRevealDuration, 0.42);
@@ -61,6 +62,7 @@ test('motion blueprint preserves Codrops hover, takeover, and title-direction be
 test('surface wave spatially reveals row inversion without a color crossfade', () => {
   const component = read('src/components/ServicesPage/ServicesPage.tsx');
   const css = read('src/components/ServicesPage/ServicesPage.module.css');
+  const rowRule = css.match(/\.row\s*\{([\s\S]*?)\}/)?.[1] ?? '';
 
   assert.match(component, /styles\.rowInversionSurface/);
   assert.match(component, /viewBox="0 0 120 100"/);
@@ -70,8 +72,8 @@ test('surface wave spatially reveals row inversion without a color crossfade', (
   assert.match(css, /\.rowInversionSurface\s*\{[\s\S]*?transform:\s*translate3d\(101%,\s*0,\s*0\)[\s\S]*?will-change:\s*transform/);
   assert.match(css, /\.row\[data-row-active='true'\]\s+\.rowInversionSurface[\s\S]*?transform:\s*translate3d\(0,\s*0,\s*0\)/);
   assert.match(css, /\.cellText\s*\{[\s\S]*?mix-blend-mode:\s*difference/);
-  assert.doesNotMatch(css, /\.row\s*\{[^}]*transition:[^}]*background-color/);
-  assert.doesNotMatch(css, /\.row\s*\{[^}]*transition:[^}]*\bcolor\b/);
+  assert.doesNotMatch(rowRule, /transition:[^;]*background-color/);
+  assert.doesNotMatch(rowRule, /transition:[^;]*(?:^|,)\s*color\s/);
 });
 
 test('services page establishes the dedicated route and locked service model', () => {
@@ -121,6 +123,7 @@ test('intro locks scrolling until the same-node handoff becomes interactive', ()
   assert.match(component, /const introBodyOverflowRef = useRef\(''\)/);
   assert.match(component, /introBodyOverflowRef\.current = document\.body\.style\.overflow/);
   assert.match(component, /document\.body\.style\.overflow = 'hidden'/);
+  assert.match(component, /window\.scrollTo\(\{ top: 0, left: 0, behavior: 'auto' \}\)/);
   assert.match(component, /const releaseIntroScroll = \(\) =>/);
   assert.match(component, /document\.body\.style\.overflow = introBodyOverflowRef\.current/);
   assert.match(component, /revealIndexForInteraction[\s\S]*releaseIntroScroll\(\)/);
@@ -166,7 +169,7 @@ test('row hover choreography follows the reference thumbnail and title-switch mo
   assert.doesNotMatch(css, /\.rowNumber\s*\{[^}]*position:\s*absolute/);
   assert.match(component, /row\.dataset\.rowActive\s*=\s*'true'/);
   assert.match(component, /delete row\.dataset\.rowActive/);
-  assert.match(css, /\.row\[data-row-active='true'\]\s*\{[\s\S]*?background:\s*var\(--wr-white\)[\s\S]*?color:\s*var\(--wr-black\)/);
+  assert.match(css, /\.row\[data-row-active='true'\]\s+\.rowInversionSurface[\s\S]*?transform:\s*translate3d\(0,\s*0,\s*0\)/);
   assert.match(css, /\.row\s*\{[\s\S]*?transition:[\s\S]*?var\(--wr-ease-premium\)/);
   assert.match(component, /startAt:\s*\{\s*scale:\s*blocksIn\.scale,\s*xPercent:\s*blocksIn\.xPercent\s*\}/);
   assert.match(component, /duration:\s*titleOut\.duration[\s\S]*yPercent:\s*-100/);

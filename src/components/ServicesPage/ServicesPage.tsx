@@ -26,6 +26,7 @@ export function ServicesPage() {
   const previewTitleRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const previewGridRefs = useRef<Array<HTMLDivElement | null>>([]);
   const hoverTimelineRefs = useRef<Array<ReturnType<typeof gsap.timeline> | null>>([]);
+  const rowInteractionRefs = useRef<Array<{ pointer: boolean; focus: boolean }>>([]);
   const originButtonRef = useRef<HTMLButtonElement | null>(null);
   const currentIndexRef = useRef(-1);
   const animationLockRef = useRef(false);
@@ -35,12 +36,22 @@ export function ServicesPage() {
   const handoffTimelineRef = useRef<ReturnType<typeof gsap.timeline> | null>(null);
   const handoffFlipRef = useRef<ReturnType<typeof Flip.from> | null>(null);
   const detailTimelineRef = useRef<ReturnType<typeof gsap.timeline> | null>(null);
+  const introBodyOverflowRef = useRef('');
+  const introScrollbarGutterRef = useRef('');
+  const introScrollLockedRef = useRef(false);
   const previousBodyOverflowRef = useRef('');
 
   const setRowsFocusable = (enabled: boolean) => {
     rowButtonRefs.current.forEach((button) => {
       if (button) button.tabIndex = enabled ? 0 : -1;
     });
+  };
+
+  const releaseIntroScroll = () => {
+    if (!introScrollLockedRef.current) return;
+    document.body.style.overflow = introBodyOverflowRef.current;
+    document.documentElement.style.scrollbarGutter = introScrollbarGutterRef.current;
+    introScrollLockedRef.current = false;
   };
 
   const revealIndexForInteraction = () => {
@@ -50,10 +61,16 @@ export function ServicesPage() {
     page.dataset.indexInteractive = 'true';
     indexStage.removeAttribute('aria-hidden');
     setRowsFocusable(true);
+    releaseIntroScroll();
   };
 
   const showRowPreview = (index: number, source: 'pointer' | 'focus') => {
-    if (currentIndexRef.current !== -1 || (source === 'pointer' && !finePointerRef.current)) return;
+    if (source === 'pointer' && !finePointerRef.current) return;
+    const interaction = rowInteractionRefs.current[index] ?? { pointer: false, focus: false };
+    rowInteractionRefs.current[index] = interaction;
+    const wasActive = interaction.pointer || interaction.focus;
+    interaction[source] = true;
+    if (currentIndexRef.current !== -1 || wasActive) return;
     const row = rowRefs.current[index];
     const title = rowTitleRefs.current[index];
     const blocksWrap = rowBlocksRefs.current[index];
@@ -73,7 +90,7 @@ export function ServicesPage() {
     }
 
     const blocksIn = SERVICES_MOTION.hover.blocksIn;
-    const { titleIn, titleOut } = SERVICES_MOTION.hover;
+    const { surfaceLead, titleIn, titleOut } = SERVICES_MOTION.hover;
 
     const timeline = gsap.timeline();
     hoverTimelineRefs.current[index] = timeline;
@@ -86,24 +103,28 @@ export function ServicesPage() {
         xPercent: 0,
         opacity: 1,
         stagger: blocksIn.stagger,
-      }, 0)
+      }, surfaceLead)
       .to(title, {
         duration: titleOut.duration,
         ease: titleOut.ease,
         yPercent: -100,
         onComplete: () => { title.dataset.switched = 'true'; },
-      }, 0)
+      }, surfaceLead)
       .to(title, {
         duration: titleIn.duration,
         ease: titleIn.ease,
         startAt: { yPercent: 100, rotation: titleIn.rotation },
         yPercent: 0,
         rotation: 0,
-      }, titleOut.duration);
+      }, surfaceLead + titleOut.duration);
   };
 
   const hideRowPreview = (index: number, source: 'pointer' | 'focus') => {
-    if (currentIndexRef.current !== -1 || (source === 'pointer' && !finePointerRef.current)) return;
+    if (source === 'pointer' && !finePointerRef.current) return;
+    const interaction = rowInteractionRefs.current[index] ?? { pointer: false, focus: false };
+    rowInteractionRefs.current[index] = interaction;
+    interaction[source] = false;
+    if (interaction.pointer || interaction.focus || currentIndexRef.current !== -1) return;
     const row = rowRefs.current[index];
     const title = rowTitleRefs.current[index];
     const blocksWrap = rowBlocksRefs.current[index];
@@ -159,6 +180,12 @@ export function ServicesPage() {
 
     reducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     finePointerRef.current = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    introBodyOverflowRef.current = document.body.style.overflow;
+    introScrollbarGutterRef.current = document.documentElement.style.scrollbarGutter;
+    introScrollLockedRef.current = true;
+    document.documentElement.style.scrollbarGutter = 'stable';
+    document.body.style.overflow = 'hidden';
     setRowsFocusable(false);
     indexStage.setAttribute('aria-hidden', 'true');
 
@@ -264,6 +291,7 @@ export function ServicesPage() {
       if (servicesWord.parentElement !== introServicesSlot) introServicesSlot.appendChild(servicesWord);
       delete servicesWord.dataset.docked;
       delete page.dataset.handoffActive;
+      releaseIntroScroll();
     };
   }, []);
 
@@ -292,6 +320,7 @@ export function ServicesPage() {
 
     animationLockRef.current = true;
     currentIndexRef.current = index;
+    rowInteractionRefs.current[index] = { pointer: false, focus: false };
     originButtonRef.current = button;
     button.setAttribute('aria-expanded', 'true');
     setRowsFocusable(false);
@@ -491,6 +520,7 @@ export function ServicesPage() {
       }, 'start+=0.4')
       .add(() => {
         delete row.dataset.rowActive;
+        row.dataset.current = 'false';
       }, 'start+=0.7');
   };
 
@@ -520,7 +550,7 @@ export function ServicesPage() {
         originBlocks.prepend(...primaryBlocks);
       }
     }
-    document.body.style.overflow = previousBodyOverflowRef.current;
+    if (currentIndexRef.current >= 0) document.body.style.overflow = previousBodyOverflowRef.current;
   }, []);
 
   return (
@@ -559,6 +589,16 @@ export function ServicesPage() {
               onMouseEnter={() => showRowPreview(index, 'pointer')}
               onMouseLeave={() => hideRowPreview(index, 'pointer')}
             >
+              <svg
+                className={styles.rowInversionSurface}
+                viewBox="0 0 120 100"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="M 12 -5 C -4 28 22 45 8 64 C 0 80 16 91 10 105 L 125 105 L 125 -5 Z" />
+              </svg>
+
               <button
                 ref={(element: HTMLButtonElement | null) => { rowButtonRefs.current[index] = element; }}
                 type="button"

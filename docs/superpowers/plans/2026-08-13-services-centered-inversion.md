@@ -108,12 +108,20 @@ Verification note: the focused Services suite, typecheck, and production build p
 
 ## Task 8: Requested adversarial graphic-design review and final refinement
 
-- [ ] Only after Tasks 1–7, spawn one review agent explicitly framed as an adversarial senior graphic/interaction designer.
-- [ ] Give it the approved revision spec, Codrops and Weberaise screenshots, desktop/mobile captures, and permission to criticize hierarchy, rhythm, typography, contrast, identity, hover transition, takeover continuity, and whitespace.
-- [ ] Require ranked findings with visual evidence and concrete alternatives, not a generic approval.
-- [ ] Debate each material recommendation against the user's locked direction, Codrops choreography, accessibility, and current browser evidence.
-- [ ] Accept only changes that strengthen the approved system; document rejected recommendations and why.
-- [ ] Implement accepted refinements, repeat affected screenshots/tests, then run final verification before completion claims.
+- [x] Only after Tasks 1–7, spawn one review agent explicitly framed as an adversarial senior graphic/interaction designer.
+- [x] Give it the approved revision spec, Codrops and Weberaise screenshots, desktop/mobile captures, and permission to criticize hierarchy, rhythm, typography, contrast, identity, hover transition, takeover continuity, and whitespace.
+- [x] Require ranked findings with visual evidence and concrete alternatives, not a generic approval.
+- [x] Debate each material recommendation against the user's locked direction, Codrops choreography, accessibility, and current browser evidence.
+- [x] Accept only changes that strengthen the approved system; document rejected recommendations and why.
+- [x] Implement accepted refinements, repeat affected screenshots/tests, then run final verification before completion claims.
+
+Review resolution:
+
+- Accepted intro scroll stabilization: reset to the route top, preserve the scrollbar gutter, lock body scrolling through the handoff, and restore the previous values when the index becomes interactive.
+- Accepted independent pointer/focus ownership: the animated title, pieces, and inversion persist until both interaction sources leave.
+- Accepted the contrast-phase criticism and strengthened it through the user-approved SVG Surface Wave, difference-blended type, and delayed interior choreography instead of a faster color wipe.
+- Rejected permanent Geist Mono in the fullscreen title. Coarse-pointer opens have no hover type state, and adding a second post-grid type morph would create a separate typographic event inside the deliberately pure preview. The transferred pieces already provide physical state lineage; Inter Tight remains the detail hierarchy voice.
+- Deferred fading the index rules during handoff and increasing mobile number scale. Browser evidence showed no readability or overflow defect after the centered revision, and neither change serves the newly approved inversion motion strongly enough to justify additional churn.
 
 ## Commit strategy
 
