@@ -13,7 +13,12 @@ import {
   type RibbonRect,
 } from './ribbonPrimitives';
 
-export type BuiltJourneyStop = { localY: number; revealLocalY: number; bandBias: number };
+export type BuiltJourneyStop = {
+  localY: number;
+  revealLocalY: number;
+  revealViewportRatio: number;
+  bandBias: number;
+};
 export type RibbonClipRect = { x: number; y: number; width: number; height: number };
 export type RibbonTaperGeometry = {
   startLocalY: number;
@@ -125,12 +130,13 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   };
 
   const stops: Record<JourneyStopId, BuiltJourneyStop> = {
-    q1: { localY: centerY(artQ1), revealLocalY: Math.max(openingLocalY, q1.top - 132), bandBias: 0.006 },
-    q2: { localY: centerY(q2), revealLocalY: Math.max(0, q2.top - 142), bandBias: -0.004 },
-    q3: { localY: centerY(lookBounds), revealLocalY: Math.max(0, q3.top - 136), bandBias: 0.004 },
+    q1: { localY: centerY(artQ1), revealLocalY: Math.max(openingLocalY, q1.top), revealViewportRatio: 0.76, bandBias: 0.006 },
+    q2: { localY: centerY(q2), revealLocalY: q2.top, revealViewportRatio: 0.76, bandBias: -0.004 },
+    q3: { localY: centerY(lookBounds), revealLocalY: q3.top, revealViewportRatio: 0.76, bandBias: 0.004 },
     reassurance: {
       localY: centerY(reassuranceText),
-      revealLocalY: Math.max(0, reassuranceText.top - config.reassurance.approachLead * 0.68),
+      revealLocalY: reassuranceText.top,
+      revealViewportRatio: 0.82,
       bandBias: config.reassurance.bandBias,
     },
   };

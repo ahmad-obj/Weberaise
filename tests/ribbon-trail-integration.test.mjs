@@ -48,3 +48,11 @@ test('controller resolves once and applies the same length to every visible copy
   assert.match(controller, /openingLocalY/);
   assert.doesNotMatch(controller, /openingLength:\s*number/);
 });
+
+test('reveals use each stop viewport ratio instead of the animated ribbon head', () => {
+  const controller = read(`${featureDir}/ribbonController.ts`);
+  assert.match(controller, /revealReachedStops\s*=\s*\(viewportHeight:\s*number\)/);
+  assert.match(controller, /revealDocumentY\s*=\s*window\.scrollY\s*\+\s*viewportHeight\s*\*\s*stop\.revealViewportRatio/);
+  assert.match(controller, /if\s*\(revealDocumentY\s*<\s*rootDocumentTop\s*\+\s*stop\.revealLocalY\)/);
+  assert.match(controller, /revealedStops\.has\(id\)/);
+});

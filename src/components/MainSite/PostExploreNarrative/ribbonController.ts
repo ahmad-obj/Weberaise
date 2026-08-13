@@ -105,11 +105,12 @@ export function createRibbonController({
   let raf = 0;
   const introState = { opening: openingPlayed || reducedMotion ? openingFloor : 0 };
 
-  const revealReachedStops = () => {
+  const revealReachedStops = (viewportHeight: number) => {
     for (const id of Object.keys(stops) as JourneyStopId[]) {
       if (revealedStops.has(id)) continue;
       const stop = stops[id];
-      if (latestTargetDocumentY < rootDocumentTop + stop.revealLocalY) continue;
+      const revealDocumentY = window.scrollY + viewportHeight * stop.revealViewportRatio;
+      if (revealDocumentY < rootDocumentTop + stop.revealLocalY) continue;
       revealedStops.add(id);
       onReveal(id);
     }
@@ -126,7 +127,7 @@ export function createRibbonController({
     latestResolvedLength = travel > 1 ? resolveLengthForDocumentY(lookup, latestTargetDocumentY) : 0;
     const opening = root.dataset.ribbonOpened === 'true' ? openingFloor : introState.opening;
     setVisibleLength(Math.max(opening, latestResolvedLength));
-    if (travel > 1) revealReachedStops();
+    if (travel > 1) revealReachedStops(viewportHeight);
   };
 
   const queueRender = () => {

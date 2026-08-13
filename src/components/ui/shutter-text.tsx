@@ -40,7 +40,7 @@ export default function ShutterText({ lines, active, className = '' }: ShutterTe
                   <motion.span
                     initial={{ opacity: 0, filter: 'blur(10px)' }}
                     animate={{ opacity: 1, filter: 'blur(0px)' }}
-                    transition={{ delay: staggerIndex * 0.04 + 0.3, duration: 0.8 }}
+                    transition={{ delay: staggerIndex * 0.03 + 0.12, duration: 0.8 }}
                     className={styles.mainCharacter}
                   >
                     {glyph(char)}
@@ -49,7 +49,7 @@ export default function ShutterText({ lines, active, className = '' }: ShutterTe
                   <motion.span
                     initial={{ x: '-100%', opacity: 0 }}
                     animate={{ x: '100%', opacity: [0, 1, 0] }}
-                    transition={{ duration: 0.7, delay: staggerIndex * 0.04, ease: 'easeInOut' }}
+                    transition={{ duration: 0.7, delay: staggerIndex * 0.03, ease: 'easeInOut' }}
                     className={`${styles.slice} ${styles.sliceBright}`}
                     style={{ clipPath: 'polygon(0 0, 100% 0, 100% 35%, 0 35%)' }}
                     aria-hidden="true"
@@ -60,7 +60,7 @@ export default function ShutterText({ lines, active, className = '' }: ShutterTe
                   <motion.span
                     initial={{ x: '100%', opacity: 0 }}
                     animate={{ x: '-100%', opacity: [0, 1, 0] }}
-                    transition={{ duration: 0.7, delay: staggerIndex * 0.04 + 0.1, ease: 'easeInOut' }}
+                    transition={{ duration: 0.7, delay: staggerIndex * 0.03 + 0.08, ease: 'easeInOut' }}
                     className={`${styles.slice} ${styles.sliceMiddle}`}
                     style={{ clipPath: 'polygon(0 35%, 100% 35%, 100% 65%, 0 65%)' }}
                     aria-hidden="true"
@@ -71,7 +71,7 @@ export default function ShutterText({ lines, active, className = '' }: ShutterTe
                   <motion.span
                     initial={{ x: '-100%', opacity: 0 }}
                     animate={{ x: '100%', opacity: [0, 1, 0] }}
-                    transition={{ duration: 0.7, delay: staggerIndex * 0.04 + 0.2, ease: 'easeInOut' }}
+                    transition={{ duration: 0.7, delay: staggerIndex * 0.03 + 0.16, ease: 'easeInOut' }}
                     className={`${styles.slice} ${styles.sliceBright}`}
                     style={{ clipPath: 'polygon(0 65%, 100% 65%, 100% 100%, 0 100%)' }}
                     aria-hidden="true"

@@ -118,14 +118,25 @@ test('Q1 and Q2 artwork motion is driven once by journey reveal state with reduc
   assert.match(css, /\.q2Cta/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /transition:\s*none\s*!important/);
+  assert.match(css, /\.q1Scene \.artworkImage[\s\S]*transition-duration:\s*1\.3s/);
+  assert.match(css, /\.q2Scene[^}]*\.artworkImage[\s\S]*transition-duration:\s*1\.15s/);
+  for (const delay of ['0ms', '120ms', '240ms', '350ms', '460ms']) {
+    assert.match(css, new RegExp(`transition-delay:\\s*${delay}`), `Q1 must include the ${delay} group`);
+  }
+  for (const delay of ['0ms', '140ms', '280ms', '420ms']) {
+    assert.match(css, new RegExp(`transition-delay:\\s*${delay}`), `Q2 must include the ${delay} group`);
+  }
 });
 
 test('journey stops expose early viewport reveal ratios', () => {
   const builder = read(`${feature}/buildJourneyPath.ts`);
   const controller = read(`${feature}/ribbonController.ts`);
+  const css = read(`${feature}/PostExploreNarrative.module.css`);
   assert.match(builder, /revealViewportRatio:\s*0\.76/g);
   assert.match(builder, /revealViewportRatio:\s*0\.82/);
   assert.match(controller, /stop\.revealViewportRatio/);
+  assert.match(css, /\.journeyLead\s*\{[^}]*height:\s*60svh/);
+  assert.match(css, /@media\s*\(max-width:\s*720px\)[\s\S]*\.journeyLead\s*\{\s*height:\s*52svh/);
 });
 
 test('front and back ribbon layers render synchronized base and highlight strokes', () => {

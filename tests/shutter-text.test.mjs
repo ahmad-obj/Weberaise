@@ -17,7 +17,8 @@ test('controlled ShutterText preserves supplied three-slice behavior', () => {
   assert.match(source, /0 0, 100% 0, 100% 35%, 0 35%/);
   assert.match(source, /0 35%, 100% 35%, 100% 65%, 0 65%/);
   assert.match(source, /0 65%, 100% 65%, 100% 100%, 0 100%/);
-  assert.match(source, /staggerIndex \* 0\.04/);
+  assert.match(source, /staggerIndex \* 0\.03/);
+  assert.match(source, /staggerIndex \* 0\.03 \+ 0\.12/);
   assert.match(source, /duration:\s*0\.7/);
   assert.match(source, /duration:\s*0\.8/);
   assert.match(source, /active:\s*boolean/);
