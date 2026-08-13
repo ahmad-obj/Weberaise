@@ -115,6 +115,19 @@
 .journeyBeatQ1 .journeyQuestion { font-size: clamp(52px, 6.05vw, 106px); }
 .journeyBeatQ2 .journeyQuestion { font-size: clamp(50px, 5.9vw, 102px); }
 
+.journeyBeatQ3 {
+  display: grid;
+  place-items: center;
+  width: 100%;
+}
+
+.journeyQuestionQ3 {
+  width: min(94vw, 1380px);
+  font-size: clamp(76px, 8.4vw, 144px);
+  line-height: .86;
+  text-align: center;
+}
+
 .journeyStopAnchor[data-revealed='true'] .journeyQuestion {
   opacity: 1;
   visibility: visible;
@@ -127,6 +140,11 @@
 
 .lookWord [data-ribbon-glyph] { display: inline-block; }
 
+.q3Line {
+  display: block;
+  white-space: nowrap;
+}
+
 .journeyArtwork {
   position: relative;
   z-index: 2;
@@ -137,8 +155,6 @@
 }
 
 .journeyArtworkQ2 { aspect-ratio: 1.34 / 1; }
-.journeyArtworkQ3 { aspect-ratio: 1.25 / 1; }
-
 .artworkScene {
   position: absolute;
   inset: 0;
@@ -162,13 +178,7 @@
 }
 
 .q1Scene .artworkImage,
-.q2Scene .artworkPlacement:not(.q2BrowserShell) .artworkImage,
-.q3Character,
-.q3Shadow,
-.q3WebsiteCard,
-.q3ProfileCard,
-.q3BrandTile,
-.q3SecondaryTile {
+.q2Scene .artworkPlacement:not(.q2BrowserShell) .artworkImage {
   transition-property: transform, opacity;
   transition-duration: 1.05s;
   transition-timing-function: cubic-bezier(.22, .61, .36, 1);
@@ -243,47 +253,10 @@
 .journeyStopAnchor[data-journey-stop='q2'][data-revealed='true'] .q2ProfileA .artworkImage { transform: none; transition-delay: 390ms; }
 .journeyStopAnchor[data-journey-stop='q2'][data-revealed='true'] .q2ProfileB .artworkImage { transform: none; transition-delay: 440ms; }
 
-/* Q3 — direct whole-character movement into a controlled spotlight. */
-.q3Scene {
-  overflow: hidden;
-  border: 1px solid rgb(96 165 250 / 0.1);
-  border-radius: clamp(22px, 2vw, 32px);
-  background: radial-gradient(circle at 63% 56%, #111b2c 0%, #07101d 52%, #03070d 100%);
-  box-shadow: 0 24px 70px rgb(0 0 0 / 0.32), inset 0 1px 0 rgb(255 255 255 / 0.025);
-}
-.q3Beam { z-index: 1; left: 12%; top: -4%; width: 82%; filter: none; }
-.q3FloorPool { z-index: 2; left: 26%; bottom: 4%; width: 61%; filter: none; }
-.q3Shadow { z-index: 3; left: 24%; bottom: 12%; width: 28%; opacity: .55; filter: none; transform: translate(-44px, 18px) scale(.82); }
-.q3Character { z-index: 5; left: 25%; bottom: 13%; width: 27%; transform: translate(-48px, 18px) scale(.97); }
-.q3WebsiteCard { z-index: 6; left: 48%; top: 42%; width: 31%; opacity: 0; transform: translate(12px, 10px) scale(.94) rotate(-2deg); }
-.q3ProfileCard { z-index: 5; right: 5%; top: 18%; width: 28%; opacity: 0; transform: translate(10px, -9px) scale(.95) rotate(4deg); }
-.q3BrandTile { z-index: 7; left: 58%; top: 68%; width: 14%; opacity: 0; transform: translateY(10px) scale(.92) rotate(1deg); }
-.q3SecondaryTile { z-index: 5; right: 6%; top: 54%; width: 13%; opacity: 0; transform: translate(9px, 5px) scale(.92) rotate(5deg); }
-
-.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3Shadow {
-  opacity: 1;
-  transform: translate(0, 0) scale(1);
-  transition-delay: 20ms;
-}
-.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3Character {
-  transform: translate(0, 0) scale(1);
-  transition-delay: 20ms;
-}
-.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3WebsiteCard,
-.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3ProfileCard,
-.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3BrandTile,
-.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3SecondaryTile {
-  opacity: 1;
-}
-.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3WebsiteCard { transform: translate(0, 0) scale(1) rotate(1deg); transition-delay: 330ms; }
-.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3ProfileCard { transform: translate(0, 0) scale(1) rotate(2deg); transition-delay: 430ms; }
-.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3BrandTile { transform: translateY(0) scale(1) rotate(3deg); transition-delay: 530ms; }
-.journeyStopAnchor[data-journey-stop='q3'][data-revealed='true'] .q3SecondaryTile { transform: translate(0, 0) scale(1) rotate(3deg); transition-delay: 610ms; }
-
 .reassuranceHeading {
   position: relative;
   z-index: 2;
-  width: min(92vw, 1500px);
+  width: min(94vw, 1500px);
   margin: 0 auto;
   color: var(--wr-text);
   font-family: var(--font-hero), Arial, sans-serif;
@@ -438,11 +411,15 @@
   .journeyBeatQ2 .journeyArtwork { width: min(94vw, 540px); }
   .journeyBeatQ1 .journeyArtwork { transform: translateX(3vw); }
   .journeyBeatQ2 .journeyArtwork { transform: translateX(-3vw); }
-  .q3Shadow { transform: translate(-28px, 12px) scale(.86); }
-  .q3Character { transform: translate(-30px, 12px) scale(.98); }
+  .journeyQuestionQ3 {
+    width: min(96vw, 100%);
+    max-width: 100%;
+    font-size: clamp(42px, 13.1vw, 64px);
+    line-height: .88;
+  }
   .reassuranceHeading {
-    width: min(91vw, 680px);
-    font-size: clamp(28px, 8vw, 36px);
+    width: calc(100vw - 28px);
+    font-size: clamp(25px, 7.45vw, 34px);
     line-height: 0.92;
   }
   .purposeSection {
@@ -473,19 +450,9 @@
     animation: none !important;
   }
   .q1Scene .artworkImage,
-  .q3Shadow,
-  .q3WebsiteCard,
-  .q3ProfileCard,
-  .q3BrandTile,
-  .q3SecondaryTile { opacity: 1; }
+  .q2Scene .artworkImage { opacity: 1; }
   .q1Scene .artworkImage,
   .q2Scene .artworkImage { transform: none; }
-  .q3Shadow,
-  .q3Character { transform: translate(0, 0) scale(1); }
-  .q3WebsiteCard { transform: translate(0, 0) scale(1) rotate(1deg); }
-  .q3ProfileCard { transform: translate(0, 0) scale(1) rotate(2deg); }
-  .q3BrandTile,
-  .q3SecondaryTile { transform: translate(0, 0) scale(1) rotate(3deg); }
   .auroraText {
     animation: none;
     background-position: 55% 50%;

@@ -14,10 +14,15 @@ import styles from './PostExploreNarrative.module.css';
 
 type JourneyGeometry = BuiltJourneyPath & { sampleSpacing: number };
 
-function LookQuestion({ text }: { text: string }) {
-  const match = text.match(/^(.*?)(look)(.*)$/i);
-  if (!match) return <>{text}</>;
-  return <>{match[1]}<span className={styles.lookWord} data-look-word>l<span data-ribbon-glyph="look-o-1">o</span><span data-ribbon-glyph="look-o-2">o</span>k</span>{match[3]}</>;
+function LookQuestion() {
+  return (
+    <>
+      <span className={styles.q3Line} data-q3-line="lead">
+        Need to <span className={styles.lookWord} data-look-word>L<span data-ribbon-glyph="look-o-1">O</span><span data-ribbon-glyph="look-o-2">O</span>K</span>
+      </span>
+      <span className={styles.q3Line} data-q3-line="finish">better online?</span>
+    </>
+  );
 }
 
 export function JourneyNarrative({ questions, reassurance }: { questions: readonly string[]; reassurance: string }) {
@@ -139,8 +144,8 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
         <div className={styles.journeyLead} aria-hidden="true" />
         <JourneyStop id="q1" align="left"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft} ${styles.journeyBeatQ1}`}><h2 className={styles.journeyQuestion} data-journey-question>{questions[0]}</h2><JourneyArtwork id="q1" label="Website concept artwork placeholder" /></div></JourneyStop>
         <JourneyStop id="q2" align="right"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextRight} ${styles.journeyBeatQ2}`}><JourneyArtwork id="q2" label="Website redesign artwork placeholder" /><h2 className={styles.journeyQuestion} data-journey-question data-ribbon-question="q2">{questions[1]}</h2></div></JourneyStop>
-        <JourneyStop id="q3" align="left"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft}`}><h2 className={styles.journeyQuestion} data-journey-question><LookQuestion text={questions[2] ?? ''} /></h2><JourneyArtwork id="q3" label="Online presence artwork placeholder" /></div></JourneyStop>
-        <JourneyStop id="reassurance" align="center"><h2 className={styles.reassuranceHeading} data-reassurance-text><ShutterText text={reassurance} active={reassuranceActive} /></h2></JourneyStop>
+        <JourneyStop id="q3" align="center"><div className={styles.journeyBeatQ3}><h2 className={`${styles.journeyQuestion} ${styles.journeyQuestionQ3}`} data-journey-question><LookQuestion /></h2></div></JourneyStop>
+        <JourneyStop id="reassurance" align="center"><h2 className={styles.reassuranceHeading} data-reassurance-text aria-label={reassurance}><ShutterText lines={['DONT WORRY.', 'WE GOT YOU']} active={reassuranceActive} /></h2></JourneyStop>
       </div>
       <RibbonFrontLayer d={pathD} width={width} height={height} frontPathRef={frontPathRef} frontClipRects={frontClipRects} />
     </section>

@@ -54,7 +54,6 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   const q3 = measure(root, rootRect, '[data-journey-stop="q3"]');
   const artQ1 = measure(root, rootRect, '[data-ribbon-artwork="q1"]');
   const artQ2 = measure(root, rootRect, '[data-ribbon-artwork="q2"]');
-  measure(root, rootRect, '[data-ribbon-artwork="q3"]');
   const q2Text = measure(root, rootRect, '[data-ribbon-question="q2"]');
   const o1 = measure(root, rootRect, '[data-ribbon-glyph="look-o-1"]');
   const o2 = measure(root, rootRect, '[data-ribbon-glyph="look-o-2"]');

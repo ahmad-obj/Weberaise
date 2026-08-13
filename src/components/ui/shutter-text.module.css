@@ -1,7 +1,6 @@
 .root {
   position: relative;
-  display: inline-flex;
-  flex-wrap: wrap;
+  display: inline-block;
   align-items: center;
   justify-content: center;
   color: #F5F7FA;
@@ -11,10 +10,12 @@
 }
 
 .row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
+  display: block;
+}
+
+.line {
+  display: block;
+  white-space: nowrap;
 }
 
 .character {

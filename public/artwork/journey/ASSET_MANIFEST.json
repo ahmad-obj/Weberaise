@@ -25,19 +25,5 @@
       "07_profile_card_b.png",
       "08_detached_search_input.png"
     ]
-  },
-  "Q3": {
-    "master_reference": "assets/Q3/master_reference.png",
-    "original_zip": "assets/Q3/Q3.zip",
-    "layers": [
-      "01_character.png",
-      "02_spotlight_beam.png",
-      "03_spotlight_floor_pool.png",
-      "04_character_ground_shadow.png",
-      "05_main_website_card.png",
-      "06_profile_search_card.png",
-      "07_brand_media_tile.png",
-      "08_secondary_blue_tile.png"
-    ]
   }
 }

@@ -96,13 +96,16 @@ test('Q1 and Q2 use stronger beat-specific hierarchy and edge bias', () => {
 
 test('Q3 is an exact centered two-line typography event with measurable O glyphs', () => {
   const narrative = read(`${feature}/JourneyNarrative.tsx`);
+  const shutter = read('src/components/ui/shutter-text.tsx');
+  const builder = read(`${feature}/buildJourneyPath.ts`);
   assert.match(narrative, /data-q3-line="lead"/);
   assert.match(narrative, /data-q3-line="finish"/);
   assert.match(narrative, /data-ribbon-glyph="look-o-1"/);
   assert.match(narrative, /data-ribbon-glyph="look-o-2"/);
   assert.doesNotMatch(narrative, /<JourneyArtwork id="q3"/);
-  assert.match(narrative, /data-reassurance-line="one"/);
-  assert.match(narrative, /data-reassurance-line="two"/);
+  assert.match(narrative, /lines=\{\[['"]DONT WORRY\.['"],\s*['"]WE GOT YOU['"]\]\}/);
+  assert.match(shutter, /data-reassurance-line=\{lineIndex === 0 \? ['"]one['"] : ['"]two['"]\}/);
+  assert.doesNotMatch(builder, /data-ribbon-artwork=["']q3["']/);
 });
 
 test('Q1 and Q2 artwork motion is driven once by journey reveal state with reduced-motion final states', () => {
