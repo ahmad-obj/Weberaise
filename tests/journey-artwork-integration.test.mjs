@@ -28,16 +28,6 @@ const layers = {
     '07_profile_card_b.png',
     '08_detached_search_input.png',
   ],
-  Q3: [
-    '01_character.png',
-    '02_spotlight_beam.png',
-    '03_spotlight_floor_pool.png',
-    '04_character_ground_shadow.png',
-    '05_main_website_card.png',
-    '06_profile_search_card.png',
-    '07_brand_media_tile.png',
-    '08_secondary_blue_tile.png',
-  ],
 };
 
 test('all separated artwork layers are preserved as source and display assets', () => {
@@ -50,15 +40,18 @@ test('all separated artwork layers are preserved as source and display assets', 
   assert.equal(existsSync(resolve(root, artworkRoot, 'ASSET_MANIFEST.json')), true);
   assert.equal(existsSync(resolve(root, artworkRoot, 'display', 'Q1', 'master_reference.png')), false);
   assert.equal(existsSync(resolve(root, artworkRoot, 'display', 'Q2', 'master_reference.png')), false);
-  assert.equal(existsSync(resolve(root, artworkRoot, 'display', 'Q3', 'master_reference.png')), false);
+  assert.equal(existsSync(resolve(root, artworkRoot, 'source', 'Q3')), false, 'Q3 source art must be removed from the journey bundle');
+  assert.equal(existsSync(resolve(root, artworkRoot, 'display', 'Q3')), false, 'Q3 display art must be removed from the journey bundle');
 });
 
-test('JourneyArtwork dispatches to focused layered scene components', () => {
+test('JourneyArtwork dispatches only to the Q1 and Q2 layered scenes', () => {
   const source = read(`${feature}/JourneyArtwork.tsx`);
-  for (const component of ['Q1ArtworkScene', 'Q2ArtworkScene', 'Q3ArtworkScene']) {
+  for (const component of ['Q1ArtworkScene', 'Q2ArtworkScene']) {
     assert.match(source, new RegExp(component));
     assert.equal(existsSync(resolve(root, feature, 'artwork', `${component}.tsx`)), true, `${component}.tsx must exist`);
   }
+  assert.doesNotMatch(source, /Q3ArtworkScene/);
+  assert.equal(existsSync(resolve(root, feature, 'artwork', 'Q3ArtworkScene.tsx')), false, 'Q3 scene component must be removed');
   assert.equal(existsSync(resolve(root, feature, 'artwork', 'ArtworkLayer.tsx')), true);
 });
 
@@ -66,7 +59,6 @@ test('each artwork scene exposes semantic layer and stable cluster targets', () 
   const expectedLayers = {
     Q1ArtworkScene: ['island', 'storefront', 'nav', 'image-card', 'cta', 'browser-large', 'browser-small'],
     Q2ArtworkScene: ['browser-shell', 'nav', 'media', 'text-cluster', 'cta', 'profile-a', 'profile-b', 'search'],
-    Q3ArtworkScene: ['beam', 'floor-pool', 'shadow', 'character', 'website-card', 'profile-card', 'brand-tile', 'secondary-tile'],
   };
 
   for (const [component, names] of Object.entries(expectedLayers)) {
@@ -77,16 +69,44 @@ test('each artwork scene exposes semantic layer and stable cluster targets', () 
   }
 });
 
-test('artwork motion is driven once by journey reveal state with reduced-motion final states', () => {
+test('Q1 and Q2 scenes declare their supplied master references', () => {
+  assert.match(read(`${feature}/artwork/Q1ArtworkScene.tsx`), /data-artwork-reference=["']q1-master["']/);
+  assert.match(read(`${feature}/artwork/Q2ArtworkScene.tsx`), /data-artwork-reference=["']q2-master["']/);
+});
+
+test('Q3 is an exact centered two-line typography event with measurable O glyphs', () => {
+  const narrative = read(`${feature}/JourneyNarrative.tsx`);
+  assert.match(narrative, /data-q3-line="lead"/);
+  assert.match(narrative, /data-q3-line="finish"/);
+  assert.match(narrative, /data-ribbon-glyph="look-o-1"/);
+  assert.match(narrative, /data-ribbon-glyph="look-o-2"/);
+  assert.doesNotMatch(narrative, /<JourneyArtwork id="q3"/);
+  assert.match(narrative, /data-reassurance-line="one"/);
+  assert.match(narrative, /data-reassurance-line="two"/);
+});
+
+test('Q1 and Q2 artwork motion is driven once by journey reveal state with reduced-motion final states', () => {
   const css = read(`${feature}/PostExploreNarrative.module.css`);
-  for (const scene of ['q1', 'q2', 'q3']) {
+  for (const scene of ['q1', 'q2']) {
     assert.match(css, new RegExp(`data-journey-stop=["']${scene}["'][^}]*data-revealed=["']true["']`));
   }
   assert.match(css, /\.q2Nav/);
   assert.match(css, /\.q2Search/);
   assert.match(css, /\.q2Cta/);
-  assert.match(css, /\.q3Character/);
-  assert.match(css, /\.q3WebsiteCard/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /transition:\s*none\s*!important/);
+});
+
+test('journey stops expose early viewport reveal ratios', () => {
+  const builder = read(`${feature}/buildJourneyPath.ts`);
+  const controller = read(`${feature}/ribbonController.ts`);
+  assert.match(builder, /revealViewportRatio:\s*0\.76/g);
+  assert.match(builder, /revealViewportRatio:\s*0\.82/);
+  assert.match(controller, /stop\.revealViewportRatio/);
+});
+
+test('front and back ribbon layers render synchronized base and highlight strokes', () => {
+  const source = read(`${feature}/RibbonTrail.tsx`);
+  assert.ok((source.match(/data-ribbon-stroke="base"/g) ?? []).length >= 2, 'base stroke must exist in both depth layers');
+  assert.ok((source.match(/data-ribbon-stroke="highlight"/g) ?? []).length >= 2, 'highlight stroke must exist in both depth layers');
 });

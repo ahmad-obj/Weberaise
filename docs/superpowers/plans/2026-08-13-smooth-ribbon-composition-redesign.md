@@ -52,7 +52,7 @@ Composition and geometry benefit from separate review perspectives, but implemen
 
 **Interfaces:**
 - Produces source contracts for Q1/Q2-only artwork, exact line groups, early triggers, semantic markers, curve continuity, pacing budgets, and synchronized stroke layers.
-- Produces a repeatable command such as `node scripts/capture-journey-qa.mjs --url http://127.0.0.1:3000 --out /tmp/weberaise-redesign-baseline-1440x900 --viewport 1440x900`.
+- Produces a repeatable command such as `node scripts/capture-journey-qa.mjs --ws ws://127.0.0.1:9222/devtools/page/PAGE_ID --url http://localhost:3000 --out /tmp/weberaise-redesign-baseline-1440x900 --viewport 1440x900`.
 
 - [ ] **Step 1: Add the Q1/Q2/Q3 static-layout contracts**
 
