@@ -26,6 +26,11 @@ test('path lookup preserves traversal samples through same-height loop', () => {
   const loopSamples = lookup.samples.filter((sample) => sample.length >= 10 && sample.length <= 50);
 
   assert.ok(loopSamples.length >= 4, `expected loop samples to survive lookup, got ${loopSamples.length}`);
+  assert.ok(lookup.samples.every((sample) => Number.isFinite(sample.localX) && Number.isFinite(sample.localY)));
+  assert.deepEqual(
+    lookup.samples.slice(0, points.length).map(({ localX, localY }) => ({ x: localX, y: localY })),
+    points,
+  );
   for (let index = 1; index < lookup.samples.length; index += 1) {
     assert.ok(
       lookup.samples[index].documentY > lookup.samples[index - 1].documentY,

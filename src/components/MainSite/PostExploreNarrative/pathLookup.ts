@@ -1,5 +1,7 @@
 export type PathSample = {
   length: number;
+  localX: number;
+  localY: number;
   documentY: number;
 };
 
@@ -34,7 +36,7 @@ export function buildPathLookup(
     const actualDocumentY = journeyTop + (point.y - viewBox.y) * scaleY;
 
     if (!previousPoint) {
-      samples.push({ length, documentY: actualDocumentY });
+      samples.push({ length, localX: point.x, localY: point.y, documentY: actualDocumentY });
       previousPoint = point;
       lastDocumentY = actualDocumentY;
       continue;
@@ -46,7 +48,7 @@ export function buildPathLookup(
     const minimumAdvance = Math.max(MIN_DOCUMENT_ADVANCE, screenTravel * MIN_TRAVEL_FACTOR);
     const documentY = Math.max(actualDocumentY, lastDocumentY + minimumAdvance);
 
-    samples.push({ length, documentY });
+    samples.push({ length, localX: point.x, localY: point.y, documentY });
     previousPoint = point;
     lastDocumentY = documentY;
   }

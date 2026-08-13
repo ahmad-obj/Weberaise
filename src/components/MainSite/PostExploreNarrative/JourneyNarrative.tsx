@@ -114,6 +114,7 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
         openingLocalY: geometry.openingLocalY,
         sampleSpacing: geometry.sampleSpacing,
         stops: geometry.stops,
+        markers: geometry.markers,
         taper: { revealPath: taperRevealPath, startLocalY: geometry.taper.startLocalY },
         reducedMotion,
         onReveal: (id: JourneyStopId) => {

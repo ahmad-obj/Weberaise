@@ -56,3 +56,14 @@ test('reveals use each stop viewport ratio instead of the animated ribbon head',
   assert.match(controller, /if\s*\(revealDocumentY\s*<\s*rootDocumentTop\s*\+\s*stop\.revealLocalY\)/);
   assert.match(controller, /revealedStops\.has\(id\)/);
 });
+
+test('controller paces semantic arc length through one short overwrite scrub', () => {
+  const controller = read(`${featureDir}/ribbonController.ts`);
+  const narrative = read(`${featureDir}/JourneyNarrative.tsx`);
+  assert.match(controller, /buildRibbonPacingAnchors/);
+  assert.match(controller, /resolvePacedLength/);
+  assert.match(controller, /window\.innerWidth\s*<=\s*720\s*\?\s*0\.14\s*:\s*0\.18/);
+  assert.match(controller, /overwrite:\s*true/);
+  assert.match(controller, /scrubTween\?\.kill\(\)/);
+  assert.match(narrative, /markers:\s*geometry\.markers/);
+});

@@ -4,13 +4,11 @@ import gsap from 'gsap';
 import type { BuiltJourneyPath } from './buildJourneyPath';
 import type { JourneyStopId } from './journeyRoute';
 import { buildPathLookup, resolveLengthForDocumentY } from './pathLookup';
+import { buildRibbonPacingAnchors, resolvePacedLength } from './ribbonPacing';
 
 export const HEAD_BAND_MIN = 0.45;
 export const HEAD_BAND_MAX = 0.58;
 export const HEAD_NOMINAL = 0.52;
-
-const ACQUISITION_START = 0.12;
-const ACQUISITION_DISTANCE = 0.46;
 
 type RibbonTaperController = {
   revealPath: SVGPathElement;
@@ -25,33 +23,13 @@ type RibbonControllerOptions = {
   openingLocalY: number;
   sampleSpacing: number;
   stops: BuiltJourneyPath['stops'];
+  markers: BuiltJourneyPath['markers'];
   taper?: RibbonTaperController;
   reducedMotion: boolean;
   onReveal: (id: JourneyStopId) => void;
 };
 
 function clamp(value: number, min: number, max: number) { return Math.min(max, Math.max(min, value)); }
-function smoothstep(value: number) {
-  const clamped = clamp(value, 0, 1);
-  return clamped * clamped * (3 - 2 * clamped);
-}
-
-function centerBandRatio(scrollY: number, viewportHeight: number, rootDocumentTop: number, stops: BuiltJourneyPath['stops']) {
-  const nominalDocumentY = scrollY + viewportHeight * HEAD_NOMINAL;
-  const zone = Math.max(240, viewportHeight * 0.78);
-  let nearest: { delta: number; absoluteDelta: number; bandBias: number } | undefined;
-  for (const stop of Object.values(stops)) {
-    const delta = rootDocumentTop + stop.localY - nominalDocumentY;
-    const absoluteDelta = Math.abs(delta);
-    if (!nearest || absoluteDelta < nearest.absoluteDelta) nearest = { delta, absoluteDelta, bandBias: stop.bandBias };
-  }
-  if (!nearest || nearest.absoluteDelta >= zone) return HEAD_NOMINAL;
-  const normalized = clamp(nearest.delta / zone, -1, 1);
-  const proximity = 1 - Math.abs(normalized);
-  const approachDrop = Math.max(0, normalized) * proximity * 0.12;
-  const visitLift = proximity * 0.025;
-  return clamp(HEAD_NOMINAL + approachDrop - visitLift + nearest.bandBias * proximity, HEAD_BAND_MIN, HEAD_BAND_MAX);
-}
 
 export function createRibbonController({
   root,
@@ -61,6 +39,7 @@ export function createRibbonController({
   openingLocalY,
   sampleSpacing,
   stops,
+  markers,
   taper,
   reducedMotion,
   onReveal,
@@ -68,7 +47,9 @@ export function createRibbonController({
   const rootRect = root.getBoundingClientRect();
   const rootDocumentTop = window.scrollY + rootRect.top;
   const lookup = buildPathLookup(measurementPath, svg, rootDocumentTop, sampleSpacing);
-  const openingFloor = Math.min(lookup.totalLength, resolveLengthForDocumentY(lookup, rootDocumentTop + openingLocalY));
+  const pacingAnchors = buildRibbonPacingAnchors({ lookup, markers, stops, viewportHeight: Math.max(1, window.innerHeight) });
+  const openingFloor = pacingAnchors.find((anchor) => anchor.id === 'openingExit')?.pathLength
+    ?? Math.min(lookup.totalLength, resolveLengthForDocumentY(lookup, rootDocumentTop + openingLocalY));
   const taperStartLength = taper
     ? resolveLengthForDocumentY(lookup, rootDocumentTop + taper.startLocalY)
     : lookup.totalLength;
@@ -101,9 +82,31 @@ export function createRibbonController({
   };
 
   let latestResolvedLength = 0;
-  let latestTargetDocumentY = rootDocumentTop;
   let raf = 0;
   const introState = { opening: openingPlayed || reducedMotion ? openingFloor : 0 };
+  const drawState = { visibleLength: openingPlayed || reducedMotion ? openingFloor : 0 };
+  const scrubSeconds = window.innerWidth <= 720 ? 0.14 : 0.18;
+  let scrubTween: gsap.core.Tween | null = null;
+
+  const applyVisibleLength = (length: number) => {
+    drawState.visibleLength = length;
+    setVisibleLength(length);
+  };
+
+  const scrubTo = (targetLength: number) => {
+    scrubTween?.kill();
+    if (reducedMotion) {
+      applyVisibleLength(targetLength);
+      return;
+    }
+    scrubTween = gsap.to(drawState, {
+      visibleLength: targetLength,
+      duration: scrubSeconds,
+      ease: 'power1.out',
+      overwrite: true,
+      onUpdate: () => setVisibleLength(drawState.visibleLength),
+    });
+  };
 
   const revealReachedStops = (viewportHeight: number) => {
     for (const id of Object.keys(stops) as JourneyStopId[]) {
@@ -120,13 +123,9 @@ export function createRibbonController({
     raf = 0;
     const viewportHeight = Math.max(1, window.innerHeight);
     const travel = Math.max(0, window.scrollY - initialScrollY);
-    const acquisition = reducedMotion ? 1 : smoothstep(travel / Math.max(1, viewportHeight * ACQUISITION_DISTANCE));
-    const trackedRatio = centerBandRatio(window.scrollY, viewportHeight, rootDocumentTop, stops);
-    const desiredViewportRatio = ACQUISITION_START + (trackedRatio - ACQUISITION_START) * acquisition;
-    latestTargetDocumentY = window.scrollY + viewportHeight * desiredViewportRatio;
-    latestResolvedLength = travel > 1 ? resolveLengthForDocumentY(lookup, latestTargetDocumentY) : 0;
+    latestResolvedLength = travel > 1 ? resolvePacedLength(pacingAnchors, travel) : 0;
     const opening = root.dataset.ribbonOpened === 'true' ? openingFloor : introState.opening;
-    setVisibleLength(Math.max(opening, latestResolvedLength));
+    scrubTo(Math.max(opening, latestResolvedLength));
     if (travel > 1) revealReachedStops(viewportHeight);
   };
 
@@ -139,7 +138,7 @@ export function createRibbonController({
   let introTween: gsap.core.Tween | null = null;
   if (openingPlayed || reducedMotion) {
     root.dataset.ribbonOpened = 'true';
-    setVisibleLength(Math.max(openingFloor, latestResolvedLength));
+    applyVisibleLength(Math.max(openingFloor, latestResolvedLength));
     queueRender();
   } else {
     setVisibleLength(0);
@@ -147,7 +146,7 @@ export function createRibbonController({
       opening: openingFloor,
       duration: 0.82,
       ease: 'power2.out',
-      onUpdate: () => setVisibleLength(Math.max(introState.opening, latestResolvedLength)),
+      onUpdate: () => applyVisibleLength(Math.max(introState.opening, latestResolvedLength)),
       onComplete: () => {
         root.dataset.ribbonOpened = 'true';
         queueRender();
@@ -158,6 +157,7 @@ export function createRibbonController({
   return () => {
     window.removeEventListener('scroll', handleScroll);
     if (raf) window.cancelAnimationFrame(raf);
+    scrubTween?.kill();
     introTween?.kill();
   };
 }
