@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
@@ -69,4 +69,11 @@ test('adjacent semantic curves preserve their shared tangent', async () => {
     const enter = Math.atan2(next.control1.y - next.start.y, next.control1.x - next.start.x);
     assert.ok(angleDelta(exit, enter) < 0.16, `${segment.id} → ${next.id} breaks tangent continuity`);
   }
+});
+
+test('the production journey uses the semantic builder instead of dense point smoothing', () => {
+  const source = readFileSync(resolve(root, 'src/components/MainSite/PostExploreNarrative/buildJourneyPath.ts'), 'utf8');
+  assert.match(source, /new RibbonCurveBuilder/);
+  assert.match(source, /builder\.toPathD\(\)/);
+  assert.doesNotMatch(source, /smoothRibbonPath|appendGentleBend|appendGlyphPairLoops/);
 });

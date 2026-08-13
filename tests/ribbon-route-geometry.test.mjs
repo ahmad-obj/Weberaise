@@ -41,6 +41,21 @@ test('art-directed path remains one continuous cubic route', () => {
   assert.ok(built.openingLocalY > 120);
   assert.ok(built.stops.q3.localY >= geometry.o1.top - 80);
   assert.ok(built.stops.q3.localY <= geometry.o1.bottom + 160);
+  assert.ok(built.segments.length >= 22);
+  assert.deepEqual(Object.keys(built.markers), [
+    'openingExit', 'q1Approach', 'q1WrapFront', 'q1WrapBack', 'q1WrapExit',
+    'q2BendExit', 'q3Approach', 'q3FirstLoopComplete', 'q3SecondLoopComplete',
+    'reassuranceApproach', 'reassuranceLoopComplete', 'taperEnd',
+  ]);
+  for (let index = 0; index < built.segments.length - 1; index += 1) {
+    const segment = built.segments[index];
+    const next = built.segments[index + 1];
+    const exit = Math.atan2(segment.end.y - segment.control2.y, segment.end.x - segment.control2.x);
+    const enter = Math.atan2(next.control1.y - next.start.y, next.control1.x - next.start.x);
+    let delta = Math.abs(exit - enter);
+    if (delta > Math.PI) delta = Math.PI * 2 - delta;
+    assert.ok(delta < 0.18, `${segment.id} → ${next.id} tangent delta ${delta}`);
+  }
 });
 
 test('q2 calm bend stays in the measured artwork-to-text gap at text height', () => {

@@ -61,6 +61,13 @@ test('Q2 bend is one calm monotonic sweep instead of an S-curve', async () => {
   assert.ok(maxTurn(points) < 0.55, `Q2 bend max turn ${maxTurn(points)}`);
 });
 
+test('production Q2 is authored as exactly two long semantic cubics', async () => {
+  const source = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../src/components/MainSite/PostExploreNarrative/buildJourneyPath.ts', import.meta.url), 'utf8'));
+  assert.match(source, /'q2-calm-entry'/);
+  assert.match(source, /'q2-calm-exit'/);
+  assert.doesNotMatch(source, /appendGentleBend/);
+});
+
 test('glyph loop reads as a clean oval trace', async () => {
   const { appendGlyphLoop } = await import(modulePath);
   const points = [{ x: 300, y: 900 }];

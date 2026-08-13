@@ -7,7 +7,13 @@ export type JourneyRouteConfig = {
   opening: { lead: number; loopRadiusX: number; loopRadiusY: number; exitRun: number };
   q1: { clearance: number; wrapScale: number };
   q2: { bendWidth: number; bendBias: number };
-  q3: { glyphScaleX: number; glyphScaleY: number };
+  q3: {
+    glyphScaleX: number;
+    glyphScaleY: number;
+    offsetX?: number;
+    offsetY?: number;
+    approachClearance?: number;
+  };
   reassurance: {
     paddingX: number;
     paddingY: number;
@@ -26,7 +32,7 @@ const DESKTOP_ROUTE: JourneyRouteConfig = {
   opening: { lead: 220, loopRadiusX: 88, loopRadiusY: 54, exitRun: 132 },
   q1: { clearance: 78, wrapScale: 1 },
   q2: { bendWidth: 460, bendBias: 0 },
-  q3: { glyphScaleX: 1.22, glyphScaleY: 1.1 },
+  q3: { glyphScaleX: 1.14, glyphScaleY: 1.08, offsetX: -0.03, offsetY: 0.02, approachClearance: 0.72 },
   reassurance: {
     paddingX: 82,
     paddingY: 54,
@@ -45,7 +51,7 @@ const MOBILE_ROUTE: JourneyRouteConfig = {
   opening: { lead: 118, loopRadiusX: 54, loopRadiusY: 34, exitRun: 76 },
   q1: { clearance: 34, wrapScale: 0.88 },
   q2: { bendWidth: 188, bendBias: 0 },
-  q3: { glyphScaleX: 1.18, glyphScaleY: 1.06 },
+  q3: { glyphScaleX: 1.14, glyphScaleY: 1.08, offsetX: -0.03, offsetY: 0.02, approachClearance: 0.72 },
   reassurance: {
     paddingX: 30,
     paddingY: 34,
