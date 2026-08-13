@@ -23,32 +23,77 @@ test('services page establishes the dedicated route and locked service model', (
   assert.doesNotMatch(model, /PROJECT ONE|CLIENT|AWARD/);
 });
 
-test('services opening preserves the SERVICES word and docks it with GSAP Flip', () => {
+test('opening preserves the SERVICES word as the same DOM node', () => {
   const component = read('src/components/ServicesPage/ServicesPage.tsx');
   assert.match(component, /SO, WHAT/);
   assert.match(component, /SERVICES/);
   assert.match(component, /DO WE PROVIDE\?/);
-  assert.match(component, /SO, WHAT SERVICES DO WE PROVIDE\?/);
-  assert.match(component, /Flip\.getState/);
-  assert.match(component, /servicesLabelSlotRef/);
-  assert.match(component, /appendChild\(servicesWord\)/);
-  assert.match(component, /Flip\.from/);
-  assert.doesNotMatch(component, /canvas|WebGL|shader/i);
+  assert.match(component, /Flip\.getState\(servicesWord/);
+  assert.match(component, /servicesLabelSlot\.appendChild\(servicesWord\)/);
+  assert.match(component, /Flip\.from\(flipState/);
 });
 
-test('service rows expand through physical block relocation with accessible controls', () => {
+test('service index mirrors the Codrops menu-row geometry instead of a custom editorial dashboard', () => {
   const component = read('src/components/ServicesPage/ServicesPage.tsx');
-  assert.match(component, /aria-expanded/);
-  assert.match(component, /aria-controls/);
-  assert.match(component, /role="dialog"/);
-  assert.match(component, /aria-modal="true"/);
+  const css = read('src/components/ServicesPage/ServicesPage.module.css');
+
+  assert.match(css, /--tile-gap:\s*1vw/);
+  assert.match(css, /--tile-gap-large:\s*2vw/);
+  assert.match(css, /--tile-size:\s*5vw/);
+  assert.match(css, /--tile-size-large:\s*14vw/);
+  assert.match(css, /\.content\s*\{[\s\S]*z-index:\s*100/);
+  assert.match(css, /\.row\s*\{[\s\S]*grid-template-rows:\s*var\(--tile-size\)[\s\S]*grid-template-columns:\s*auto 1fr/);
+  assert.match(css, /\.row\[data-current='true'\][\s\S]*z-index:\s*11/);
+  assert.match(css, /\.cover\s*\{[\s\S]*z-index:\s*10/);
+  assert.match(css, /\.previewLayer\s*\{[\s\S]*z-index:\s*200/);
+  assert.match(css, /\.rowTile\s*\{[\s\S]*opacity:\s*0/);
+  assert.match(css, /\.rowTitle[\s\S]*clamp\(27px,\s*4vw,\s*43px\)/);
+
+  assert.doesNotMatch(component, /SELECT A SERVICE/);
+  assert.doesNotMatch(component, /previewLead|previewHeader/);
+  assert.doesNotMatch(css, /repeat\(12/);
+});
+
+test('row hover choreography follows the reference thumbnail and title-switch motion', () => {
+  const component = read('src/components/ServicesPage/ServicesPage.tsx');
+
+  assert.match(component, /scale:\s*0\.8/);
+  assert.match(component, /xPercent:\s*20/);
+  assert.match(component, /stagger:\s*-0\.035/);
+  assert.match(component, /duration:\s*0\.1[\s\S]*yPercent:\s*-100/);
+  assert.match(component, /startAt:\s*\{[\s\S]*yPercent:\s*100[\s\S]*rotation:\s*15/);
+  assert.match(component, /dataset\.switched\s*=\s*'true'/);
+  assert.match(component, /delete title\.dataset\.switched/);
+});
+
+test('click transition mirrors Codrops cover stacking, Flip relocation, and 4x2 preview grid', () => {
+  const component = read('src/components/ServicesPage/ServicesPage.tsx');
+  const css = read('src/components/ServicesPage/ServicesPage.module.css');
+
+  assert.match(component, /row\.dataset\.current\s*=\s*'true'/);
+  assert.match(component, /height:\s*Math\.max\(1,\s*row\.offsetHeight\s*-\s*1\)/);
+  assert.match(component, /top:\s*rowRect\.top/);
   assert.match(component, /previewGrid\.prepend\(\.\.\.primaryBlocks\)/);
-  assert.match(component, /originBlocks\.append\(\.\.\.primaryBlocks\)/);
+  assert.match(component, /Flip\.from\(flipState/);
+  assert.match(component, /gsap\.utils\.random\(0,\s*200\)/);
+  assert.match(component, /scale:\s*0[\s\S]*opacity:\s*1[\s\S]*stagger:\s*0\.04/);
+  assert.match(css, /grid-template-columns:\s*repeat\(4,\s*var\(--tile-size-large\)\)/);
+  assert.match(css, /grid-template-rows:\s*repeat\(2,\s*var\(--tile-size-large\)\)/);
+});
+
+test('close transition shrinks the full preview grid, returns transferred blocks, and restores rows', () => {
+  const component = read('src/components/ServicesPage/ServicesPage.tsx');
+
+  assert.match(component, /const gridItems = \[\.\.\.primaryBlocks, \.\.\.secondaryBlocks\]/);
+  assert.match(component, /scale:\s*0,[\s\S]*opacity:\s*0,[\s\S]*stagger:\s*0\.04/);
+  assert.match(component, /originBlocks\.prepend\(\.\.\.primaryBlocks\)/);
+  assert.match(component, /height:\s*0,[\s\S]*top:\s*rowRect\.top\s*\+\s*row\.offsetHeight\s*\/\s*2/);
+  assert.match(component, /stagger:\s*\{[\s\S]*each:\s*0\.03[\s\S]*from:\s*index/);
   assert.match(component, /event\.key === 'Escape'/);
   assert.match(component, /originButtonRef\.current\?\.focus/);
 });
 
-test('services styling includes responsive, focus-visible, and reduced-motion behavior', () => {
+test('services styling keeps responsive, focus, and reduced-motion behavior', () => {
   const css = read('src/components/ServicesPage/ServicesPage.module.css');
   assert.match(css, /@media \(max-width: 900px\)/);
   assert.match(css, /@media \(max-width: 640px\)/);
