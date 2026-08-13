@@ -185,8 +185,18 @@ export function appendGlyphPairLoops(
   const secondRy = Math.max(10, secondRect.height * 0.5 * scaleY);
   const seam = { x: firstCenter.x + firstRx, y: centerY };
   const approachLift = Math.max(14, Math.min(firstRy, secondRy) * 0.7);
+  const sideClearance = Math.max(18, firstRect.height * 0.62);
+  const sideApproach = {
+    x: firstCenter.x - firstRx - sideClearance,
+    y: firstRect.top - Math.max(18, firstRect.height * 0.72),
+  };
 
-  appendFlow(points, { x: seam.x, y: seam.y - approachLift }, 0);
+  appendFlow(points, sideApproach, -Math.min(48, sideClearance * 0.8));
+  appendFlow(
+    points,
+    { x: seam.x, y: seam.y - approachLift },
+    Math.min(18, sideClearance * 0.45),
+  );
   push(points, seam.x, seam.y);
 
   const steps = 24;
