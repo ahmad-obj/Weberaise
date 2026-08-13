@@ -118,59 +118,65 @@
   position: relative;
   z-index: 2;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1.28 / 1;
   margin: 0;
-  border: 1px solid rgb(96 165 250 / 0.18);
-  border-radius: clamp(22px, 2.2vw, 34px);
-  overflow: hidden;
-  background: #0a0f18;
-  box-shadow: 0 24px 70px rgb(0 0 0 / 0.34), inset 0 1px 0 rgb(255 255 255 / 0.035);
+  overflow: visible;
 }
 
-.journeyArtworkSurface {
+.journeyArtworkQ2 { aspect-ratio: 1.34 / 1; }
+.journeyArtworkQ3 { aspect-ratio: 1.25 / 1; }
+
+.artworkScene {
   position: absolute;
   inset: 0;
+  isolation: isolate;
+}
+
+.artworkLayer {
+  position: absolute;
+  display: block;
+  height: auto;
+  max-width: none;
+  object-fit: contain;
+  transform-origin: 50% 60%;
+  filter: drop-shadow(0 18px 18px rgb(0 0 0 / 0.2));
+}
+
+/* Q1 — established business surrounded by disconnected digital pieces. */
+.q1Island { z-index: 2; left: 17%; top: 43%; width: 66%; }
+.q1Storefront { z-index: 4; left: 31%; top: 26%; width: 39%; }
+.q1Nav { z-index: 5; left: 4%; top: 4%; width: 38%; transform: rotate(-4deg); }
+.q1ImageCard { z-index: 5; left: 1%; top: 25%; width: 31%; transform: rotate(-2deg); }
+.q1Cta { z-index: 6; left: 8%; top: 58%; width: 17%; transform: rotate(-7deg); }
+.q1BrowserLarge { z-index: 5; right: 1%; top: 8%; width: 33%; transform: rotate(2deg); }
+.q1BrowserSmall { z-index: 5; right: 2%; top: 47%; width: 24%; transform: rotate(3deg); }
+
+/* Q2 — stable browser plane with a perceptually clean final arrangement. */
+.q2BrowserShell { z-index: 1; left: 10%; top: 14%; width: 78%; }
+.q2Nav { z-index: 3; left: 9%; top: 11%; width: 64%; transform: rotate(0deg); }
+.q2Media { z-index: 4; left: 21%; top: 34%; width: 29%; transform: rotate(0deg); }
+.q2TextCluster { z-index: 3; left: 49%; top: 30%; width: 31%; transform: rotate(0deg); }
+.q2Cta { z-index: 4; left: 47%; top: 63%; width: 34%; transform: scale(0.82); }
+.q2ProfileA { z-index: 5; right: 0; top: 14%; width: 22%; transform: rotate(1deg); }
+.q2ProfileB { z-index: 5; left: 0; top: 57%; width: 22%; transform: rotate(-1deg); }
+.q2Search { z-index: 5; right: -1%; top: 48%; width: 24%; transform: rotate(-1deg); }
+
+/* Q3 — direct whole-character movement into a controlled spotlight. */
+.q3Scene {
   overflow: hidden;
-  background:
-    radial-gradient(circle at 72% 24%, rgb(96 165 250 / 0.16), transparent 31%),
-    radial-gradient(circle at 28% 74%, rgb(37 99 235 / 0.16), transparent 34%),
-    linear-gradient(145deg, #0d111a, #090d14 58%, #0b1220);
+  border: 1px solid rgb(96 165 250 / 0.1);
+  border-radius: clamp(22px, 2vw, 32px);
+  background: radial-gradient(circle at 63% 56%, #111b2c 0%, #07101d 52%, #03070d 100%);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 0.32), inset 0 1px 0 rgb(255 255 255 / 0.025);
 }
-
-.journeyArtworkOrb {
-  position: absolute;
-  width: 46%;
-  aspect-ratio: 1;
-  left: 27%;
-  top: 25%;
-  border: 1px solid rgb(96 165 250 / 0.28);
-  border-radius: 42% 58% 52% 48% / 57% 44% 56% 43%;
-  background: linear-gradient(145deg, rgb(59 130 246 / 0.23), rgb(18 24 38 / 0.24));
-  transform: rotate(-13deg);
-  box-shadow: inset 18px -20px 44px rgb(0 0 0 / 0.2);
-}
-
-.journeyArtworkGrid {
-  position: absolute;
-  inset: 0;
-  opacity: 0.12;
-  background-image:
-    linear-gradient(rgb(167 176 192 / 0.28) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(167 176 192 / 0.28) 1px, transparent 1px);
-  background-size: 38px 38px;
-  mask-image: linear-gradient(to bottom right, transparent, black 25%, black 70%, transparent);
-}
-
-.journeyArtworkBadge {
-  position: absolute;
-  left: 22px;
-  bottom: 18px;
-  color: rgb(245 247 250 / 0.48);
-  font-family: var(--font-body), Arial, sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-}
+.q3Beam { z-index: 1; left: 12%; top: -4%; width: 82%; filter: none; }
+.q3FloorPool { z-index: 2; left: 26%; bottom: 4%; width: 61%; filter: none; }
+.q3Shadow { z-index: 3; left: 24%; bottom: 12%; width: 28%; filter: none; }
+.q3Character { z-index: 5; left: 25%; bottom: 13%; width: 27%; }
+.q3WebsiteCard { z-index: 6; left: 48%; top: 42%; width: 31%; transform: rotate(1deg); }
+.q3ProfileCard { z-index: 5; right: 5%; top: 18%; width: 28%; transform: rotate(2deg); }
+.q3BrandTile { z-index: 7; left: 58%; top: 68%; width: 14%; transform: rotate(3deg); }
+.q3SecondaryTile { z-index: 5; right: 6%; top: 54%; width: 13%; transform: rotate(3deg); }
 
 .reassuranceHeading {
   position: relative;

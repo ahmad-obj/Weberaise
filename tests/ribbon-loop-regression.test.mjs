@@ -198,6 +198,27 @@ test('LOOK paired trace has no eyeglass-style horizontal bridge', async () => {
   assert.ok(maxTurnInRange(points, start) < 1.05, `LOOK transition max turn ${maxTurnInRange(points, start)}`);
 });
 
+test('mobile LOOK trace approaches from the side instead of drawing a long vertical stem through the word', async () => {
+  const { appendGlyphPairLoops } = await import(modulePath);
+  const first = { left: 154, top: 2289.578125, right: 174.203125, bottom: 2323.65625, width: 20.203125, height: 34.078125 };
+  const second = { left: 174.203125, top: 2289.578125, right: 194.40625, bottom: 2323.65625, width: 20.203125, height: 34.078125 };
+  const points = [{ x: 155.69, y: 1945.95 }];
+  const start = points.length;
+
+  appendGlyphPairLoops(points, first, second, 1.18, 1.06);
+
+  const approach = points.slice(start).filter((point) => (
+    point.y >= first.top - first.height * 3
+    && point.y <= first.top - first.height * 0.55
+  ));
+  assert.ok(approach.length > 0, 'LOOK trace should expose a short side-approach staging point');
+  assert.ok(
+    approach.some((point) => point.x <= first.left - first.height * 0.55),
+    `mobile LOOK approach stayed vertically aligned at x=${Math.min(...approach.map((point) => point.x)).toFixed(2)}`,
+  );
+  assert.deepEqual(strictSegmentCrossings(points), []);
+});
+
 test('mobile opening never reverses back through its own oval', () => {
   const rect = (left, top, width, height) => ({ left, top, right: left + width, bottom: top + height, width, height });
   const geometry = {

@@ -1,0 +1,43 @@
+{
+  "Q1": {
+    "master_reference": "assets/Q1/master_reference.png",
+    "original_zip": "assets/Q1/q1.zip",
+    "layers": [
+      "01_island_platform.png",
+      "02_storefront.png",
+      "03_floating_nav_strip.png",
+      "04_image_content_card.png",
+      "05_cta_chip.png",
+      "06_browser_content_card_large.png",
+      "07_browser_content_card_small.png"
+    ]
+  },
+  "Q2": {
+    "master_reference": "assets/Q2/master_reference.png",
+    "original_zip": "assets/Q2/Q2.zip",
+    "layers": [
+      "01_browser_base_shell.png",
+      "02_nav_header_strip.png",
+      "03_image_media_block.png",
+      "04_text_layout_fragments_cluster.png",
+      "05_oversized_cta.png",
+      "06_profile_card_a.png",
+      "07_profile_card_b.png",
+      "08_detached_search_input.png"
+    ]
+  },
+  "Q3": {
+    "master_reference": "assets/Q3/master_reference.png",
+    "original_zip": "assets/Q3/Q3.zip",
+    "layers": [
+      "01_character.png",
+      "02_spotlight_beam.png",
+      "03_spotlight_floor_pool.png",
+      "04_character_ground_shadow.png",
+      "05_main_website_card.png",
+      "06_profile_search_card.png",
+      "07_brand_media_tile.png",
+      "08_secondary_blue_tile.png"
+    ]
+  }
+}
