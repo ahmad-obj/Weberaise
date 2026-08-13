@@ -57,7 +57,7 @@ test('route geometry measures real artwork glyph and reassurance targets', () =>
   assert.match(builder, /data-ribbon-artwork/);
   assert.match(builder, /data-ribbon-glyph/);
   assert.match(builder, /data-reassurance-text/);
-  assert.match(builder, /appendReassuranceLoop/);
+  assert.match(builder, /builder\.ellipse\(['"]reassurance-loop['"]/);
   assert.doesNotMatch(builder, /strokeDashoffset/);
 });
 

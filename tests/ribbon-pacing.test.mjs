@@ -67,3 +67,37 @@ test('paced length interpolation remains bounded and reversible', async () => {
   assert.equal(resolvePacedLength(anchors, -1000), anchors[0].pathLength);
   assert.equal(resolvePacedLength(anchors, 100000), anchors.at(-1).pathLength);
 });
+
+test('shared OO seam resolves first and second completion to different loop passes', async () => {
+  const { resolveMarkerLengths } = await import(modulePath);
+  const seam = { x: 10, y: 10 };
+  const lookup = {
+    totalLength: 350,
+    samples: [
+      { length: 0, localX: 0, localY: 0, documentY: 0 },
+      { length: 5, localX: 0, localY: 10, documentY: 5 },
+      { length: 10, localX: 10, localY: 10, documentY: 10 },
+      { length: 20, localX: 10, localY: 10, documentY: 20 },
+      { length: 40, localX: 0, localY: 10, documentY: 40 },
+      { length: 100, localX: 10, localY: 10, documentY: 100 },
+      { length: 140, localX: 0, localY: 10, documentY: 140 },
+      { length: 200, localX: 10, localY: 10, documentY: 200 },
+      { length: 230, localX: 20, localY: 10, documentY: 230 },
+      { length: 260, localX: 10, localY: 10, documentY: 260 },
+      { length: 280, localX: 30, localY: 10, documentY: 280 },
+      { length: 300, localX: 10, localY: 10, documentY: 300 },
+      { length: 320, localX: 30, localY: 10, documentY: 320 },
+      { length: 350, localX: 40, localY: 20, documentY: 350 },
+    ],
+  };
+  const ordered = [
+    { id: 'q3Approach', point: { x: 0, y: 10 } },
+    { id: 'q3FirstLoopComplete', point: seam },
+    { id: 'q3SecondLoopComplete', point: seam },
+    { id: 'reassuranceApproach', point: { x: 30, y: 10 } },
+  ];
+  const lengths = resolveMarkerLengths(lookup, ordered);
+
+  assert.equal(lengths.q3FirstLoopComplete, 100);
+  assert.equal(lengths.q3SecondLoopComplete, 200);
+});

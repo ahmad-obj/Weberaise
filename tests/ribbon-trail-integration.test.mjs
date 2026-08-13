@@ -72,3 +72,13 @@ test('controller paces semantic arc length through one short overwrite scrub', (
   assert.match(controller, /scrubTween\?\.kill\(\)/);
   assert.match(narrative, /markers:\s*geometry\.markers/);
 });
+
+test('controller restores document-relative progress and reveals after a geometry rebuild', () => {
+  const controller = read(`${featureDir}/ribbonController.ts`);
+  assert.match(controller, /scrollLocalY\s*=\s*Math\.max\(0,\s*window\.scrollY\s*-\s*rootDocumentTop\)/);
+  assert.match(controller, /resolvePacedLength\(pacingAnchors,\s*scrollLocalY\)/);
+  assert.doesNotMatch(controller, /initialScrollY/);
+  assert.doesNotMatch(controller, /travel\s*>\s*1/);
+  assert.match(controller, /scrubTo\(Math\.max\(opening,\s*latestResolvedLength\)\);\s*revealReachedStops\(viewportHeight\);/s);
+  assert.match(controller, /if \(openingPlayed \|\| reducedMotion\)[\s\S]*renderFromScroll\(\)/);
+});

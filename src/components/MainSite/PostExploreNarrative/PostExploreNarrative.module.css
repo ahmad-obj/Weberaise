@@ -208,8 +208,8 @@
 .q2Scene .artworkPlacement:not(.q2BrowserShell) .artworkImage { transition-duration: 1.15s; }
 
 /* Q1 — established business surrounded by disconnected digital pieces. */
-.journeyBeatQ1 .journeyArtwork { width: 118%; transform: translateX(7%); }
-.journeyBeatQ2 .journeyArtwork { width: 114%; transform: translateX(-8%); }
+.journeyBeatQ1 .journeyArtwork { width: 118%; transform: translateX(-5.5%); }
+.journeyBeatQ2 .journeyArtwork { width: 114%; transform: translateX(-1%); }
 
 .q1Island { z-index: 2; left: 8%; top: 48%; width: 84%; }
 .q1Storefront { z-index: 4; left: 29%; top: 25%; width: 45%; }
@@ -440,10 +440,9 @@
   .journeyArtwork { width: min(88vw, 520px); }
   .journeyBeatTextLeft .journeyArtwork { justify-self: end; }
   .journeyBeatTextRight .journeyArtwork { justify-self: start; }
-  .journeyBeatQ1 .journeyArtwork,
-  .journeyBeatQ2 .journeyArtwork { width: min(94vw, 540px); }
+  .journeyBeatQ1 .journeyArtwork { width: min(94vw, 540px); }
+  .journeyBeatQ2 .journeyArtwork { width: min(86vw, 540px); transform: translateX(0); }
   .journeyBeatQ1 .journeyArtwork { transform: translateX(3vw); }
-  .journeyBeatQ2 .journeyArtwork { transform: translateX(-3vw); }
   .journeyQuestionQ3 {
     width: min(96vw, 100%);
     max-width: 100%;

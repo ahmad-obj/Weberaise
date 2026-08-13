@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildJourneyPath } from '../src/components/MainSite/PostExploreNarrative/buildJourneyPath.ts';
+import { sampleCurveSegments } from '../src/components/MainSite/PostExploreNarrative/ribbonCurveBuilder.ts';
+import { RIBBON_MARKER_ORDER, resolveMarkerLengths } from '../src/components/MainSite/PostExploreNarrative/ribbonPacing.ts';
 
 const modulePath = '../src/components/MainSite/PostExploreNarrative/ribbonPrimitives.ts';
 
@@ -225,12 +227,14 @@ test('mobile opening never reverses back through its own oval', () => {
     q1: rect(18, 618.625, 354, 349.46875), q2: rect(18, 1462.625, 354, 349.46875), q3: rect(18, 2289.578125, 354, 383.546875),
     artQ1: rect(28.8125, 710.703125, 343.1875, 257.390625), artQ2: rect(18, 1462.625, 343.1875, 257.390625), artQ3: rect(28.8125, 2415.734375, 343.1875, 257.390625),
     q2Text: rect(100.5, 1778.015625, 271.5, 34.078125), o1: rect(154, 2289.578125, 20.203125, 34.078125), o2: rect(174.203125, 2289.578125, 20.203125, 34.078125),
+    q3Finish: rect(75, 2323.65625, 240, 34.078125),
     reassuranceText: rect(18, 3296.65625, 354.890625, 57.40625),
   };
   const selectors = new Map([
     ['[data-journey-stop="q1"]', geometry.q1], ['[data-journey-stop="q2"]', geometry.q2], ['[data-journey-stop="q3"]', geometry.q3],
     ['[data-ribbon-artwork="q1"]', geometry.artQ1], ['[data-ribbon-artwork="q2"]', geometry.artQ2], ['[data-ribbon-artwork="q3"]', geometry.artQ3],
     ['[data-ribbon-question="q2"]', geometry.q2Text], ['[data-ribbon-glyph="look-o-1"]', geometry.o1], ['[data-ribbon-glyph="look-o-2"]', geometry.o2],
+    ['[data-q3-finish-copy]', geometry.q3Finish],
     ['[data-reassurance-text]', geometry.reassuranceText],
   ]);
   const root = {
@@ -255,6 +259,7 @@ const desktopGeometry = {
   q1: desktopRect(52, 650, 1336, 430), q2: desktopRect(52, 1500, 1336, 430), q3: desktopRect(52, 2350, 1336, 430),
   artQ1: desktopRect(830, 700, 470, 350), artQ2: desktopRect(120, 1540, 470, 350), artQ3: desktopRect(830, 2390, 470, 350),
   q2Text: desktopRect(719, 1669, 649, 73), o1: desktopRect(330, 2510, 62, 86), o2: desktopRect(393, 2510, 62, 86),
+  q3Finish: desktopRect(330, 2596, 780, 86),
   reassuranceText: desktopRect(58, 3330, 1324, 188),
 };
 const desktopRootRect = desktopRect(0, 0, 1440, 4300);
@@ -262,6 +267,7 @@ const desktopLookup = new Map([
   ['[data-journey-stop="q1"]', desktopGeometry.q1], ['[data-journey-stop="q2"]', desktopGeometry.q2], ['[data-journey-stop="q3"]', desktopGeometry.q3],
   ['[data-ribbon-artwork="q1"]', desktopGeometry.artQ1], ['[data-ribbon-artwork="q2"]', desktopGeometry.artQ2], ['[data-ribbon-artwork="q3"]', desktopGeometry.artQ3],
   ['[data-ribbon-question="q2"]', desktopGeometry.q2Text], ['[data-ribbon-glyph="look-o-1"]', desktopGeometry.o1], ['[data-ribbon-glyph="look-o-2"]', desktopGeometry.o2],
+  ['[data-q3-finish-copy]', desktopGeometry.q3Finish],
   ['[data-reassurance-text]', desktopGeometry.reassuranceText],
 ]);
 const desktopRoot = {
@@ -288,6 +294,56 @@ test('built LOOK route uses the crossing-free paired OO trace', () => {
     && point.x <= desktopGeometry.o2.right + 100
   ));
   assert.deepEqual(strictSegmentCrossings(points), []);
+});
+
+test('built LOOK route exits around the text block instead of descending through line two', () => {
+  const built = buildJourneyPath(desktopRoot, desktopConfig);
+  const shoulder = built.segments.find((segment) => segment.id === 'q3-outside-shoulder');
+  const exit = built.segments.find((segment) => segment.id === 'q3-outside-exit');
+
+  assert.ok(shoulder, 'Q3 route must include an outside shoulder after the OO loops');
+  assert.ok(exit, 'Q3 route must include an outside exit after the OO loops');
+  assert.ok(shoulder.end.x > desktopGeometry.q3Finish.right + 20, `Q3 shoulder overlaps text at x=${shoulder.end.x}`);
+  assert.ok(shoulder.end.y < desktopGeometry.o2.top - 12, `Q3 shoulder is not above LOOK at y=${shoulder.end.y}`);
+  assert.ok(exit.end.x > desktopGeometry.q3Finish.right + 20, `Q3 exit overlaps line two at x=${exit.end.x}`);
+  assert.ok(exit.end.y > desktopGeometry.q3Finish.bottom + 20, `Q3 exit does not clear line two at y=${exit.end.y}`);
+  const outsidePoints = sampleCurveSegments([shoulder, exit], 40);
+  assert.equal(outsidePoints.some((point) => (
+    point.x >= desktopGeometry.q3Finish.left
+    && point.x <= desktopGeometry.q3Finish.right
+    && point.y >= desktopGeometry.q3Finish.top
+    && point.y <= desktopGeometry.q3Finish.bottom
+  )), false, 'Q3 post-loop route crosses line two');
+});
+
+test('production route resolves OO pacing markers to the two loop completions, not later seam minima', () => {
+  const built = buildJourneyPath(desktopRoot, desktopConfig);
+  const samplesPerSegment = 40;
+  const points = sampleCurveSegments(built.segments, samplesPerSegment);
+  let cumulativeLength = 0;
+  const samples = points.map((point, index) => {
+    if (index > 0) cumulativeLength += Math.hypot(point.x - points[index - 1].x, point.y - points[index - 1].y);
+    return { length: cumulativeLength, localX: point.x, localY: point.y, documentY: point.y };
+  });
+  const lookup = { totalLength: cumulativeLength, samples };
+  const resolved = resolveMarkerLengths(
+    lookup,
+    RIBBON_MARKER_ORDER.map((id) => ({ id, point: built.markers[id] })),
+  );
+  const segmentEndLength = (id) => {
+    const index = built.segments.findIndex((segment) => segment.id === id);
+    assert.ok(index >= 0, `missing ${id}`);
+    return samples[(index + 1) * samplesPerSegment].length;
+  };
+  const expectedFirst = segmentEndLength('q3-first-o-4');
+  const expectedSecond = segmentEndLength('q3-second-o-4');
+  const expectedFirstStart = segmentEndLength('q3-seam-entry');
+  const expectedSecondStart = expectedFirst;
+  assert.ok(resolved.q3FirstLoopComplete > expectedFirstStart + (expectedFirst - expectedFirstStart) * 0.45, `first loop resolved too early at ${resolved.q3FirstLoopComplete}`);
+  assert.ok(resolved.q3FirstLoopComplete <= expectedFirst + 1, `first loop resolved past its boundary at ${resolved.q3FirstLoopComplete}`);
+  assert.ok(resolved.q3SecondLoopComplete > expectedSecondStart + (expectedSecond - expectedSecondStart) * 0.45, `second loop resolved too early at ${resolved.q3SecondLoopComplete}`);
+  assert.ok(resolved.q3SecondLoopComplete <= expectedSecond + 1, `second loop resolved past its boundary at ${resolved.q3SecondLoopComplete}`);
+  assert.ok(resolved.q3SecondLoopComplete - resolved.q3FirstLoopComplete > 100, 'OO completion markers need a visible arc-length budget');
 });
 
 test('reassurance route stays inside the document so its exit and taper remain visible', () => {

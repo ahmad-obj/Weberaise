@@ -104,6 +104,7 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   const q2Text = measure(root, rootRect, '[data-ribbon-question="q2"]');
   const o1 = measure(root, rootRect, '[data-ribbon-glyph="look-o-1"]');
   const o2 = measure(root, rootRect, '[data-ribbon-glyph="look-o-2"]');
+  const q3Finish = measureOptional(root, rootRect, '[data-q3-finish-copy]', relativeRect(q3, 0.12, 0.5, 0.76, 0.28));
   const reassuranceText = measure(root, rootRect, '[data-reassurance-text]');
 
   const frontClipRects: RibbonClipRect[] = [];
@@ -213,9 +214,8 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   const firstLoopCenter = { x: firstCenter.x, y: pairCenterY };
   const secondLoopCenter = { x: secondCenter.x, y: pairCenterY };
   const q3Seam = { x: firstLoopCenter.x + firstRadiusX, y: pairCenterY };
-  const q3ApproachClearance = config.q3.approachClearance ?? 0.72;
   const q3Approach = {
-    x: q3Seam.x + Math.max(18, firstRadiusX * 0.56),
+    x: q3Seam.x + Math.max(18, firstRadiusX * (config.q3.approachClearance ?? 0.72)),
     y: pairCenterY - Math.max(firstRadiusY, secondRadiusY) - Math.max(16, o1.height * 0.3),
   };
 
@@ -242,20 +242,27 @@ export function buildJourneyPath(root: HTMLElement, config: JourneyRouteConfig):
   curveTo(builder, 'q2-calm-exit', q3Approach, q3EntryDirection, Math.max(110, q2.height * 0.26), Math.max(70, o1.height * 1.2));
   builder.mark('q3Approach');
 
-  // Q3: enter from a broad upper approach, trace both O glyphs from their shared seam, exit down-right.
-  curveTo(builder, 'q3-seam-entry', q3Seam, { x: 0, y: 1 }, Math.max(28, firstRadiusY * 0.62), Math.max(26, firstRadiusY * 0.62));
-  builder.ellipse('q3-first-o', firstLoopCenter, firstRadiusX, firstRadiusY, 0, Math.PI * 2).mark('q3FirstLoopComplete');
-  builder.ellipse('q3-second-o', secondLoopCenter, secondRadiusX, secondRadiusY, Math.PI, -Math.PI * 2).mark('q3SecondLoopComplete');
-  const q3ClearBelow = {
-    x: q3Seam.x - Math.max(18, firstRadiusX * 0.62),
-    y: pairCenterY + Math.max(firstRadiusY, secondRadiusY) + Math.max(20, o2.height * 0.36),
+  // Q3: enter from a broad upper approach, trace both O glyphs from their shared seam,
+  // then take the ribbon above and around the copy before descending outside line two.
+  curveTo(builder, 'q3-seam-entry', q3Seam, { x: 0, y: -1 }, Math.max(28, firstRadiusY * 0.62), Math.max(26, firstRadiusY * 0.62));
+  builder.ellipse('q3-first-o', firstLoopCenter, firstRadiusX, firstRadiusY, 0, -Math.PI * 2).mark('q3FirstLoopComplete');
+  builder.ellipse('q3-second-o', secondLoopCenter, secondRadiusX, secondRadiusY, Math.PI, Math.PI * 2).mark('q3SecondLoopComplete');
+  const outsideClearance = Math.max(22, Math.min(42, width * 0.026));
+  const outsideX = clamp(
+    Math.max(o2.right + Math.max(24, o2.width * 0.58), q3Finish.right + outsideClearance),
+    config.edgeInset,
+    width - config.edgeInset,
+  );
+  const q3OutsideShoulder = {
+    x: outsideX,
+    y: Math.min(o1.top, o2.top) - Math.max(22, o2.height * 0.34),
   };
-  curveTo(builder, 'q3-clear-below', q3ClearBelow, { x: 1, y: 0.1 }, Math.max(28, secondRadiusY * 0.7), Math.max(26, o2.height * 0.46));
+  curveTo(builder, 'q3-outside-shoulder', q3OutsideShoulder, { x: 0.28, y: 1 }, Math.max(26, secondRadiusY * 0.62), Math.max(30, o2.width * 0.52));
   const q3Exit = {
-    x: o2.right + Math.max(20, o2.width * 0.62),
-    y: pairCenterY + Math.max(firstRadiusY, secondRadiusY) + Math.max(42, o2.height * 0.72),
+    x: outsideX,
+    y: q3Finish.bottom + Math.max(30, o2.height * 0.44),
   };
-  curveTo(builder, 'q3-downward-exit', q3Exit, { x: 0.34, y: 1 }, Math.max(28, secondRadiusY * 0.7), Math.max(36, o2.height * 0.65));
+  curveTo(builder, 'q3-outside-exit', q3Exit, { x: 0.12, y: 1 }, Math.max(32, o2.width * 0.58), Math.max(42, o2.height * 0.58));
   const lookBounds: RibbonRect = {
     left: Math.min(o1.left, o2.left), top: Math.min(o1.top, o2.top), right: Math.max(o1.right, o2.right), bottom: Math.max(o1.bottom, o2.bottom),
     width: Math.max(o1.right, o2.right) - Math.min(o1.left, o2.left), height: Math.max(o1.bottom, o2.bottom) - Math.min(o1.top, o2.top),

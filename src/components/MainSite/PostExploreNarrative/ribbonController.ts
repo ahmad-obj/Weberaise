@@ -55,7 +55,6 @@ export function createRibbonController({
     ? Math.max(0, lookup.totalLength - taperTotalLength)
     : lookup.totalLength;
   const canonicalTaperLength = Math.max(0.0001, lookup.totalLength - taperStartLength);
-  const initialScrollY = window.scrollY;
   const openingPlayed = root.dataset.ribbonOpened === 'true';
   const revealedStops = new Set<JourneyStopId>();
 
@@ -122,11 +121,11 @@ export function createRibbonController({
   const renderFromScroll = () => {
     raf = 0;
     const viewportHeight = Math.max(1, window.innerHeight);
-    const travel = Math.max(0, window.scrollY - initialScrollY);
-    latestResolvedLength = travel > 1 ? resolvePacedLength(pacingAnchors, travel) : 0;
+    const scrollLocalY = Math.max(0, window.scrollY - rootDocumentTop);
+    latestResolvedLength = scrollLocalY > 1 ? resolvePacedLength(pacingAnchors, scrollLocalY) : 0;
     const opening = root.dataset.ribbonOpened === 'true' ? openingFloor : introState.opening;
     scrubTo(Math.max(opening, latestResolvedLength));
-    if (travel > 1) revealReachedStops(viewportHeight);
+    revealReachedStops(viewportHeight);
   };
 
   const queueRender = () => {
@@ -138,8 +137,7 @@ export function createRibbonController({
   let introTween: gsap.core.Tween | null = null;
   if (openingPlayed || reducedMotion) {
     root.dataset.ribbonOpened = 'true';
-    applyVisibleLength(Math.max(openingFloor, latestResolvedLength));
-    queueRender();
+    renderFromScroll();
   } else {
     setVisibleLength(0);
     introTween = gsap.to(introState, {
@@ -152,6 +150,7 @@ export function createRibbonController({
         queueRender();
       },
     });
+    queueRender();
   }
 
   return () => {

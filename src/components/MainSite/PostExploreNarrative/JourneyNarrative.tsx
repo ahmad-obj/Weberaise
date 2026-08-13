@@ -20,7 +20,7 @@ function LookQuestion() {
       <span className={styles.q3Line} data-q3-line="lead">
         Need to <span className={styles.lookWord} data-look-word>L<span data-ribbon-glyph="look-o-1">O</span><span data-ribbon-glyph="look-o-2">O</span>K</span>
       </span>
-      <span className={styles.q3Line} data-q3-line="finish">better online?</span>
+      <span className={styles.q3Line} data-q3-line="finish"><span data-q3-finish-copy>better online?</span></span>
     </>
   );
 }
@@ -147,8 +147,8 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
       <RibbonBackLayer d={pathD} width={width} height={height} svgRef={backSvgRef} backBasePathRef={backBasePathRef} backHighlightPathRef={backHighlightPathRef} taperRevealPathRef={taperRevealPathRef} taper={taper} />
       <div className={styles.journeyContent}>
         <div className={styles.journeyLead} aria-hidden="true" />
-        <JourneyStop id="q1" align="left"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft} ${styles.journeyBeatQ1}`}><h2 className={styles.journeyQuestion} data-journey-question>{questions[0]}</h2><JourneyArtwork id="q1" label="Website concept artwork placeholder" /></div></JourneyStop>
-        <JourneyStop id="q2" align="right"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextRight} ${styles.journeyBeatQ2}`}><JourneyArtwork id="q2" label="Website redesign artwork placeholder" /><h2 className={styles.journeyQuestion} data-journey-question data-ribbon-question="q2">{questions[1]}</h2></div></JourneyStop>
+        <JourneyStop id="q1" align="left"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft} ${styles.journeyBeatQ1}`}><h2 className={styles.journeyQuestion} data-journey-question>{questions[0]}</h2><JourneyArtwork id="q1" label="Layered website concept with a storefront on its platform" /></div></JourneyStop>
+        <JourneyStop id="q2" align="right"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextRight} ${styles.journeyBeatQ2}`}><JourneyArtwork id="q2" label="Layered website redesign composition" /><h2 className={styles.journeyQuestion} data-journey-question data-ribbon-question="q2">{questions[1]}</h2></div></JourneyStop>
         <JourneyStop id="q3" align="center"><div className={styles.journeyBeatQ3}><h2 className={`${styles.journeyQuestion} ${styles.journeyQuestionQ3}`} data-journey-question><LookQuestion /></h2></div></JourneyStop>
         <JourneyStop id="reassurance" align="center"><h2 className={styles.reassuranceHeading} data-reassurance-text aria-label={reassurance}><ShutterText lines={['DONT WORRY.', 'WE GOT YOU']} active={reassuranceActive} /></h2></JourneyStop>
       </div>

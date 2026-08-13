@@ -61,13 +61,29 @@ export function resolveMarkerLengths(
 ): Record<RibbonMarkerId, number> {
   const result = {} as Record<RibbonMarkerId, number>;
   let previousLength = -1;
+  let sharedQ3SecondPass: PathSample | undefined;
 
   for (let index = 0; index < orderedMarkers.length; index += 1) {
     const marker = orderedMarkers[index]!;
     const minima = localMinimaAfter(lookup.samples, marker.point, previousLength);
-    const skipEntryPass = marker.id === 'q3FirstLoopComplete'
+    const beginsSharedQ3Seam = marker.id === 'q3FirstLoopComplete'
       && samePoint(marker.point, orderedMarkers[index + 1]?.point);
-    let sample: PathSample | undefined = minima[skipEntryPass ? 1 : 0];
+    const endsSharedQ3Seam = marker.id === 'q3SecondLoopComplete'
+      && samePoint(marker.point, orderedMarkers[index - 1]?.point);
+    let sample: PathSample | undefined;
+
+    if (beginsSharedQ3Seam) {
+      const approachPoint = orderedMarkers[index - 1]?.point;
+      const approachDistance = approachPoint
+        ? Math.hypot(marker.point.x - approachPoint.x, marker.point.y - approachPoint.y)
+        : 0;
+      const seamTolerance = Math.max(4, Math.min(8, approachDistance * 0.12));
+      const seamPasses = minima.filter((candidate) => distance(candidate, marker.point) <= seamTolerance);
+      sample = seamPasses[2] ?? seamPasses[1] ?? seamPasses[0] ?? minima[0];
+      sharedQ3SecondPass = seamPasses[3];
+    } else if (endsSharedQ3Seam && sharedQ3SecondPass && sharedQ3SecondPass.length > previousLength + 0.001) {
+      sample = sharedQ3SecondPass;
+    } else sample = minima[0];
 
     if (!sample) {
       sample = lookup.samples
