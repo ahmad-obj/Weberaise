@@ -11,6 +11,9 @@ type VideoWithFrameCallback = HTMLVideoElement & {
 type LiveSlot = {
   texture: WebGLTexture;
   video: VideoWithFrameCallback;
+  placeholderCanvas: HTMLCanvasElement;
+  placeholderContext: CanvasRenderingContext2D;
+  placeholderActive: boolean;
   assignedSlotId: number;
   assignedProjectIndex: number;
   dirty: boolean;
@@ -71,10 +74,10 @@ export class WorkPreviewMediaPool {
     const ranked = initialPriorityIds.map((slotId, rank) => ({ slotId, rank }));
     this.updatePriorities(ranked);
 
-    const primary = this.liveSlots[0]?.video;
-    if (!primary || !primary.src) return;
+    const primary = this.liveSlots[0];
+    if (!primary || primary.placeholderActive || !primary.video.src) return;
     await Promise.race([
-      this.waitForCurrentData(primary),
+      this.waitForCurrentData(primary.video),
       new Promise<void>(resolve => window.setTimeout(resolve, 1200)),
     ]);
   }
@@ -104,7 +107,9 @@ export class WorkPreviewMediaPool {
     }
     for (const { live, slotId } of nextAssignments) {
       if (live.assignedSlotId !== slotId) this.assign(live, slotId);
-      if (this.allowPlayback) void live.video.play().catch(() => undefined);
+      if (!live.placeholderActive && this.allowPlayback) {
+        void live.video.play().catch(() => undefined);
+      }
     }
   }
 
@@ -114,8 +119,46 @@ export class WorkPreviewMediaPool {
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
 
     for (const live of this.liveSlots) {
+      if (live.assignedSlotId < 0) continue;
+
+      if (live.placeholderActive) {
+        this.renderPlaceholderFrame(live, performance.now());
+        gl.bindTexture(gl.TEXTURE_2D, live.texture);
+        try {
+          if (
+            live.textureWidth !== live.placeholderCanvas.width
+            || live.textureHeight !== live.placeholderCanvas.height
+          ) {
+            gl.texImage2D(
+              gl.TEXTURE_2D,
+              0,
+              gl.RGBA,
+              gl.RGBA,
+              gl.UNSIGNED_BYTE,
+              live.placeholderCanvas,
+            );
+            live.textureWidth = live.placeholderCanvas.width;
+            live.textureHeight = live.placeholderCanvas.height;
+          } else {
+            gl.texSubImage2D(
+              gl.TEXTURE_2D,
+              0,
+              0,
+              0,
+              gl.RGBA,
+              gl.UNSIGNED_BYTE,
+              live.placeholderCanvas,
+            );
+          }
+          live.hasFrame = true;
+        } catch {
+          live.hasFrame = false;
+        }
+        continue;
+      }
+
       const video = live.video;
-      if (live.assignedSlotId < 0 || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) continue;
+      if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) continue;
       if (!video.requestVideoFrameCallback && video.currentTime !== live.lastTime) {
         live.dirty = true;
         live.lastTime = video.currentTime;
@@ -165,7 +208,9 @@ export class WorkPreviewMediaPool {
   resumePriority() {
     if (!this.allowPlayback) return;
     for (const live of this.liveSlots) {
-      if (live.assignedSlotId >= 0) void live.video.play().catch(() => undefined);
+      if (live.assignedSlotId >= 0 && !live.placeholderActive) {
+        void live.video.play().catch(() => undefined);
+      }
     }
   }
 
@@ -199,7 +244,17 @@ export class WorkPreviewMediaPool {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([7, 10, 15, 255]));
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      1,
+      1,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      new Uint8Array([7, 10, 15, 255]),
+    );
     return texture;
   }
 
@@ -209,9 +264,19 @@ export class WorkPreviewMediaPool {
     video.loop = true;
     video.playsInline = true;
     video.preload = 'auto';
+
+    const placeholderCanvas = document.createElement('canvas');
+    placeholderCanvas.width = 640;
+    placeholderCanvas.height = 400;
+    const placeholderContext = placeholderCanvas.getContext('2d');
+    if (!placeholderContext) throw new Error('Unable to create Work placeholder preview canvas.');
+
     return {
       texture: this.createTexture(),
       video,
+      placeholderCanvas,
+      placeholderContext,
+      placeholderActive: false,
       assignedSlotId: -1,
       assignedProjectIndex: -1,
       dirty: false,
@@ -284,6 +349,7 @@ export class WorkPreviewMediaPool {
     if (!project) return this.unassign(live);
 
     live.video.pause();
+    live.video.removeAttribute('src');
     live.assignedSlotId = slotId;
     live.assignedProjectIndex = slot.projectIndex;
     live.dirty = false;
@@ -291,6 +357,13 @@ export class WorkPreviewMediaPool {
     live.textureWidth = 1;
     live.textureHeight = 1;
     live.lastTime = -1;
+    live.placeholderActive = Boolean(project.placeholder);
+
+    if (project.placeholder) {
+      this.renderPlaceholderFrame(live, performance.now());
+      return;
+    }
+
     live.video.src = project.media.browsePreview;
     live.video.load();
     this.scheduleFrameCallback(live);
@@ -301,11 +374,88 @@ export class WorkPreviewMediaPool {
     live.video.pause();
     live.video.removeAttribute('src');
     live.video.load();
+    live.placeholderActive = false;
     live.assignedSlotId = -1;
     live.assignedProjectIndex = -1;
     live.dirty = false;
     live.hasFrame = false;
+    live.textureWidth = 1;
+    live.textureHeight = 1;
     live.lastTime = -1;
+  }
+
+  private renderPlaceholderFrame(live: LiveSlot, nowMs: number) {
+    const context = live.placeholderContext;
+    const width = live.placeholderCanvas.width;
+    const height = live.placeholderCanvas.height;
+    const projectIndex = Math.max(0, live.assignedProjectIndex);
+    const time = nowMs * 0.00012 + projectIndex * 0.16;
+    const progress = time - Math.floor(time);
+    const scroll = progress * 188;
+    const accentHues = ['#3b82f6', '#60a5fa', '#2563eb', '#7db3ff', '#4f8cff', '#2f6fe8'];
+    const accent = accentHues[projectIndex % accentHues.length];
+
+    context.clearRect(0, 0, width, height);
+    context.fillStyle = projectIndex % 2 === 0 ? '#070a0f' : '#f5f7fa';
+    context.fillRect(0, 0, width, height);
+
+    const light = projectIndex % 2 !== 0;
+    const foreground = light ? '#11151d' : '#f5f7fa';
+    const muted = light ? '#747d8b' : '#8f9aac';
+    const surface = light ? '#ffffff' : '#121826';
+
+    context.fillStyle = foreground;
+    context.font = '700 15px Arial, sans-serif';
+    context.fillText(`P${String(projectIndex + 1).padStart(2, '0')}`, 24, 32);
+
+    context.fillStyle = muted;
+    for (let index = 0; index < 3; index += 1) {
+      context.fillRect(width - 176 + index * 48, 24, 28, 4);
+    }
+
+    const heroY = 74 - scroll * 0.14;
+    context.fillStyle = foreground;
+    context.font = '800 34px Arial, sans-serif';
+    context.fillText('PLACEHOLDER', 24, heroY + 26);
+    context.fillStyle = accent;
+    context.fillText('WEBSITE PREVIEW', 24, heroY + 66);
+    context.fillRect(24, heroY + 91, 154, 32);
+
+    const panelX = width - 248;
+    const panelY = 74 - scroll * 0.08;
+    context.fillStyle = surface;
+    context.fillRect(panelX, panelY, 224, 142);
+    context.strokeStyle = accent;
+    context.lineWidth = 2;
+    context.strokeRect(panelX, panelY, 224, 142);
+    context.fillStyle = accent;
+    const pulse = Math.sin(nowMs * 0.002 + projectIndex) * 10;
+    context.beginPath();
+    context.arc(panelX + 58 + pulse, panelY + 58, 30, 0, Math.PI * 2);
+    context.fill();
+
+    context.fillStyle = muted;
+    for (let row = 0; row < 4; row += 1) {
+      context.fillRect(panelX + 112, panelY + 34 + row * 23, 76 - (row % 2) * 18, 6);
+    }
+
+    const contentStart = 242 - scroll;
+    for (let row = 0; row < 4; row += 1) {
+      const y = contentStart + row * 92;
+      if (y < -80 || y > height) continue;
+      context.fillStyle = surface;
+      context.fillRect(24, y, width - 48, 72);
+      context.fillStyle = accent;
+      context.fillRect(40, y + 14, 46, 44);
+      context.fillStyle = foreground;
+      context.fillRect(108, y + 18, width - 180, 7);
+      context.fillStyle = muted;
+      context.fillRect(108, y + 39, width - 286, 6);
+    }
+
+    context.fillStyle = muted;
+    context.font = '12px Arial, sans-serif';
+    context.fillText('DEV PLACEHOLDER', width - 128, height - 16);
   }
 
   private scheduleFrameCallback(live: LiveSlot) {
