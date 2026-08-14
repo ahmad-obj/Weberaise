@@ -33,15 +33,12 @@ export function WorkPage({ projects }: WorkPageProps) {
   const [sphereReady, setSphereReady] = useState(false);
   const [capabilityFailed, setCapabilityFailed] = useState(false);
   const [activeSlotId, setActiveSlotId] = useState(0);
-  const [hoverSlotId, setHoverSlotId] = useState<number | null>(null);
   const [moving, setMoving] = useState(false);
   const reducedMotion = useMemo(readReducedMotion, []);
   const slots = useMemo(() => buildProjectSlots(projects.length), [projects.length]);
   const sphereRef = useRef<WorkSphereHandle>(null);
-  const semanticRefs = useRef(new Map<number, HTMLButtonElement>());
 
-  const browseSlotId = hoverSlotId ?? activeSlotId;
-  const browseSlot = slots.find(slot => slot.id === browseSlotId);
+  const browseSlot = slots.find(slot => slot.id === activeSlotId);
   const browseProject = browseSlot ? projects[browseSlot.projectIndex] ?? null : null;
   const fallbackActive = capabilityFailed && state.phase !== 'opening';
 
@@ -133,7 +130,6 @@ export function WorkPage({ projects }: WorkPageProps) {
               className={styles.sphereCanvas}
               onReady={() => setSphereReady(true)}
               onActiveSlotChange={setActiveSlotId}
-              onHoverSlotChange={setHoverSlotId}
               onMovementChange={setMoving}
               onCapabilityFailure={() => {
                 setCapabilityFailed(true);
@@ -165,10 +161,6 @@ export function WorkPage({ projects }: WorkPageProps) {
               return (
                 <button
                   key={project.slug}
-                  ref={node => {
-                    if (node) semanticRefs.current.set(projectIndex, node);
-                    else semanticRefs.current.delete(projectIndex);
-                  }}
                   type="button"
                   className={styles.semanticButton}
                   data-work-semantic-project
