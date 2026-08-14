@@ -2,7 +2,9 @@
 
 **Branch:** `feature/work-spherical-showcase`  
 **Design:** `docs/superpowers/specs/2026-08-14-work-infinite-menu-sphere-rework-design.md`  
+**No-wiggle optimization:** `docs/superpowers/specs/2026-08-14-work-sphere-no-tile-wiggle-design.md`  
 **Plan:** `docs/superpowers/plans/2026-08-14-work-infinite-menu-sphere-rework.md`  
+**Optimization plan:** `docs/superpowers/plans/2026-08-14-work-sphere-no-tile-wiggle.md`  
 **Locked decisions:** `docs/superpowers/plans/2026-08-14-work-infinite-menu-sphere-rework-locked-decisions.md`  
 **Date:** 2026-08-14
 
@@ -37,7 +39,8 @@ Phase 1 is intentionally limited to the **browse sphere**. The previously built 
 - triangle winding faces +Z before tangent placement so front-facing instances survive WebGL back-face culling;
 - surface base scale is locked at `0.34` for the first visual comparison;
 - depth scaling follows the reference `abs(z / radius) * 0.6 + 0.4` model;
-- every deformed rectangular-mesh vertex is re-projected to the instance sphere radius in the vertex shader, so tiles read as part of one sphere rather than rigid cards floating around it;
+- every rectangular-mesh vertex is re-projected to the instance sphere radius in the vertex shader, so tiles read as part of one sphere rather than rigid cards floating around it;
+- project surfaces are now **rigid relative to the sphere**: rotational-velocity stretch/wiggle deformation has been removed;
 - corners are only mildly rounded;
 - 16:10 website media is center-cropped into the 4:3 surface instead of stretched.
 
@@ -47,15 +50,15 @@ Phase 1 is intentionally limited to the **browse sphere**. The previously built 
 - reference pointer delta intensity and angle amplification;
 - quaternion accumulation and normalization;
 - reference pointer-rotation release slerp;
-- smoothed combined quaternion for rotation-axis/velocity derivation;
 - reference snap direction `[0, 0, -1]`;
 - nearest-vertex lookup uses inverse orientation, matching Infinite Menu;
 - distance-sensitive magnetic snap behavior;
 - camera resting Z is `3 * scaleFactor`;
-- energetic drag adds `rotationVelocity * 80 + 2.5` to camera target Z;
+- energetic drag still adds `rotationVelocity * 80 + 2.5` to camera target Z;
 - drag/rest camera damping follows the reference 7/5 time-scaled behavior;
-- velocity-based surface deformation remains present;
-- depth alpha follows the reference front/back fade character.
+- sphere inertia/release behavior remains unchanged;
+- depth alpha follows the reference front/back fade character;
+- per-tile velocity deformation is intentionally removed while the spatial motion remains unchanged.
 
 ### Phase 1 interaction scope
 - pointer/touch performs sphere drag only;
@@ -79,12 +82,13 @@ Phase 1 is intentionally limited to the **browse sphere**. The previously built 
 - procedural development previews use the same bounded live-texture slots;
 - procedural placeholder texture updates are capped at 24fps;
 - reduced-motion placeholder previews hold after their initial frame;
-- hidden tabs pause RAF/media work.
+- hidden tabs pause RAF/media work;
+- rotational-velocity stretch math and its WebGL uniforms were removed from every rendered surface vertex, reducing unnecessary GPU work without lowering density or preview quality.
 
 ### Responsive/accessibility
 - desktop, tablet and mobile retain the same true 42-position sphere model;
 - mobile changes camera/quality profile rather than degrading to 2–3 cards;
-- reduced motion keeps the dense sphere but removes aggressive deformation/inertial behavior;
+- reduced motion keeps the dense sphere while reducing aggressive inertial behavior;
 - no-WebGL fallback remains a usable static project gallery and no longer exposes the rejected Phase 2 showcase;
 - canvas remains decorative to assistive technology;
 - semantic project controls remain available for keyboard/screen-reader navigation and only snap the sphere in Phase 1.
@@ -99,7 +103,18 @@ Phase 1 is intentionally limited to the **browse sphere**. The previously built 
 
 Full Next.js verification is not available in this execution environment because the repository cannot be cloned/network-installed here. Chromium is installed, but this container also fails to initialize EGL/SwiftShader, so browser WebGL shader compile/link could not be meaningfully executed.
 
-Fresh isolated checks performed against the rewritten core:
+Fresh branch/source checks after the no-wiggle optimization:
+
+- shader still contains spherical reprojection `worldPosition.xyz = radius * normalize(worldPosition.xyz)`: **PASS**;
+- shader still contains depth alpha and rounded-surface masking: **PASS**;
+- shader no longer contains `uRotationAxisVelocity`, `uDeformation`, or `stretchDir`: **PASS**;
+- engine no longer queries/uploads deformation-only uniforms: **PASS**;
+- quality/types no longer contain the deformation profile field: **PASS**;
+- engine still uses `snapshot.rotationVelocity` for movement state and dynamic camera pull-back: **PASS**;
+- exact 42-slot geometry/repetition code remains untouched by this optimization;
+- arcball, snap, camera and media implementations remain otherwise untouched by this optimization.
+
+Earlier Phase 1 core checks remain the baseline evidence:
 
 - one-subdivision icosphere produces exactly 42 positions: **PASS**;
 - every sphere position has radius 2: **PASS**;
@@ -112,13 +127,9 @@ Fresh isolated checks performed against the rewritten core:
 - nearest-vertex magnetic snap converges to reference `-Z`: **PASS**;
 - dynamic camera pulls outward under motion and returns toward rest: **PASS**;
 - 42-slot keyboard wrapping: **PASS**;
-- repeated-project live-source deduplication: **PASS**;
-- desktop projection/framing simulation shows a dense field (roughly 18 instance centers within the expanded viewport region while the rest continue around/offscreen): **PASS**;
-- source scan confirms no `createProjectQuad`, `onProjectActivate`, or `projectOpening` live references: **PASS**.
+- repeated-project live-source deduplication: **PASS**.
 
-WebGL shader source now contains the required spherical reprojection/deformation/depth-alpha mechanics, but **GLSL compile/link is not claimed as verified** because the container cannot establish a WebGL/EGL context.
-
-GitHub has no status checks attached to this branch, so CI provides no additional evidence.
+**GLSL compile/link and full Next.js test/typecheck/build are not claimed as verified in this environment.** GitHub currently has no status checks attached to this branch.
 
 ## Required User-Machine Verification
 
@@ -132,20 +143,15 @@ npm run build
 npm run dev
 ```
 
-Then inspect `/work` primarily against the ReactBits Infinite Menu reference. Phase 1 visual acceptance asks only:
-
-> Does this now feel like ReactBits Infinite Menu with 4:3 website previews instead of circular photos?
-
-Judge:
+Then inspect `/work` against the ReactBits Infinite Menu reference. Confirm:
 - sphere density/repetition;
-- drag weight;
-- release/inertia character;
+- drag weight and release/inertia character;
 - camera pull-back;
 - snap behavior;
 - spherical curvature;
 - tile size/collision balance;
 - depth scale/fade;
-- velocity deformation;
+- **individual project tiles no longer wiggle/stretch during motion**;
 - desktop/mobile framing.
 
 Do **not** judge project opening yet: clicking/expansion is intentionally disabled until Phase 2 is separately designed.
