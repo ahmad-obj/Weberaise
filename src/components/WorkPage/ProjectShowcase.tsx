@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef } from 'react';
 import type { WorkProject } from '@/content/workProjects';
 import styles from './WorkPage.module.css';
