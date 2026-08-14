@@ -40,6 +40,7 @@ export function WorkPage({ projects }: WorkPageProps) {
   const [moving, setMoving] = useState(false);
   const [transitionRect, setTransitionRect] = useState<ScreenBounds | null>(null);
   const [restoringSphere, setRestoringSphere] = useState(false);
+  const [returnViewHidden, setReturnViewHidden] = useState(false);
   const [fallbackProjectIndex, setFallbackProjectIndex] = useState<number | null>(null);
   const reducedMotion = useMemo(readReducedMotion, []);
   const slots = useMemo(() => buildProjectSlots(projects.length), [projects.length]);
@@ -66,7 +67,9 @@ export function WorkPage({ projects }: WorkPageProps) {
     return () => document.documentElement.classList.remove('work-page-scroll-locked');
   }, [fallbackActive, state.phase]);
 
-  useEffect(() => () => returnTweenRef.current?.kill(), []);
+  useEffect(() => () => {
+    returnTweenRef.current?.kill();
+  }, []);
 
   const handleOpeningComplete = useCallback(() => {
     if (!projects.length) dispatch({ type: 'EMPTY_PROJECTS' });
@@ -109,6 +112,7 @@ export function WorkPage({ projects }: WorkPageProps) {
     resolvedSnapshotRef.current = null;
     resolvedRectRef.current = null;
     setTransitionRect(null);
+    setReturnViewHidden(false);
     sphere.setInteractive(false);
     sphere.setProjectOpenProgress(0);
     sphere.setSelectedSlotHidden(null);
@@ -170,6 +174,7 @@ export function WorkPage({ projects }: WorkPageProps) {
     sphereRef.current?.setProjectOpenProgress(1);
     sphereRef.current?.stop();
     setTransitionRect(null);
+    setReturnViewHidden(false);
     window.scrollTo({ top: 0, behavior: 'auto' });
     dispatch({ type: 'PROJECT_EXPANDED' });
   }, []);
@@ -206,6 +211,7 @@ export function WorkPage({ projects }: WorkPageProps) {
     const sphere = sphereRef.current;
     const resolvedSnapshot = resolvedSnapshotRef.current;
     if (!sphere || !resolvedSnapshot) {
+      setReturnViewHidden(false);
       dispatch({ type: 'PROJECT_RETURNED' });
       return undefined;
     }
@@ -220,6 +226,7 @@ export function WorkPage({ projects }: WorkPageProps) {
       const rect = sphere.getSlotScreenBounds(state.selection!.slotId) ?? resolvedRectRef.current;
       if (rect) {
         resolvedRectRef.current = rect;
+        setReturnViewHidden(true);
         setTransitionRect(rect);
       } else {
         const preOpen = preOpenSnapshotRef.current;
@@ -227,6 +234,7 @@ export function WorkPage({ projects }: WorkPageProps) {
         sphere.setSelectedSlotHidden(null);
         sphere.setProjectOpenProgress(0);
         sphere.setInteractive(true);
+        setReturnViewHidden(false);
         dispatch({ type: 'PROJECT_RETURNED' });
       }
     });
@@ -245,6 +253,7 @@ export function WorkPage({ projects }: WorkPageProps) {
     const sphere = sphereRef.current;
     const preOpen = preOpenSnapshotRef.current;
     if (!sphere || !preOpen) {
+      setReturnViewHidden(false);
       dispatch({ type: 'PROJECT_RETURNED' });
       return;
     }
@@ -269,6 +278,7 @@ export function WorkPage({ projects }: WorkPageProps) {
           sphere.setProjectOpenProgress(0);
           sphere.setInteractive(true);
           const slotId = state.selection?.slotId;
+          setReturnViewHidden(false);
           dispatch({ type: 'PROJECT_RETURNED' });
           requestAnimationFrame(() => semanticButtonRefs.current.get(slotId ?? -1)?.focus());
         },
@@ -418,7 +428,7 @@ export function WorkPage({ projects }: WorkPageProps) {
       {(projectViewing || projectReturning) && selectedProject && (
         <div
           className={styles.projectViewShell}
-          data-returning={projectReturning && transitionRect ? 'true' : 'false'}
+          data-returning={returnViewHidden ? 'true' : 'false'}
         >
           <WorkProjectView
             project={selectedProject}
