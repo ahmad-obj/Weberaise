@@ -10,19 +10,13 @@ import {
 import type { WorkProject } from '@/content/workProjects';
 import { chooseWorkQuality } from '@/webgl/workSphere/quality';
 import { WorkSphereEngine } from '@/webgl/workSphere/WorkSphereEngine';
-import type { ScreenBounds, WorkSphereSnapshot } from '@/webgl/workSphere/types';
 
 export type WorkSphereHandle = {
   start(): void;
   stop(): void;
   setInteractive(value: boolean): void;
   setEntranceProgress(progress: number): void;
-  setProjectOpening(slotId: number, progress: number): void;
-  setSelectedHidden(hidden: boolean): void;
   snapToSlot(slotId: number): void;
-  getSlotScreenBounds(slotId: number): ScreenBounds | null;
-  getOrientationSnapshot(): WorkSphereSnapshot | null;
-  restoreOrientation(snapshot: WorkSphereSnapshot): void;
   getProjectIndexForSlot(slotId: number): number;
 };
 
@@ -35,7 +29,6 @@ type WorkSphereCanvasProps = {
   onActiveSlotChange(slotId: number): void;
   onHoverSlotChange(slotId: number | null): void;
   onMovementChange(moving: boolean): void;
-  onProjectActivate(slotId: number): void;
   onCapabilityFailure(error: Error): void;
 };
 
@@ -50,7 +43,6 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
       onActiveSlotChange,
       onHoverSlotChange,
       onMovementChange,
-      onProjectActivate,
       onCapabilityFailure,
     },
     ref,
@@ -63,7 +55,6 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
       onActiveSlotChange,
       onHoverSlotChange,
       onMovementChange,
-      onProjectActivate,
       onCapabilityFailure,
     });
 
@@ -72,7 +63,6 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
       onActiveSlotChange,
       onHoverSlotChange,
       onMovementChange,
-      onProjectActivate,
       onCapabilityFailure,
     };
 
@@ -81,12 +71,7 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
       stop: () => engineRef.current?.stop(),
       setInteractive: value => engineRef.current?.setInteractive(value),
       setEntranceProgress: progress => engineRef.current?.setEntranceProgress(progress),
-      setProjectOpening: (slotId, progress) => engineRef.current?.setProjectOpening(slotId, progress),
-      setSelectedHidden: hidden => engineRef.current?.setSelectedHidden(hidden),
       snapToSlot: slotId => engineRef.current?.snapToSlot(slotId),
-      getSlotScreenBounds: slotId => engineRef.current?.getSlotScreenBounds(slotId) ?? null,
-      getOrientationSnapshot: () => engineRef.current?.getOrientationSnapshot() ?? null,
-      restoreOrientation: snapshot => engineRef.current?.restoreOrientation(snapshot),
       getProjectIndexForSlot: slotId => engineRef.current?.getProjectIndexForSlot(slotId) ?? -1,
     }), []);
 
@@ -110,7 +95,6 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
             onActiveSlotChange: slotId => callbacksRef.current.onActiveSlotChange(slotId),
             onHoverSlotChange: slotId => callbacksRef.current.onHoverSlotChange(slotId),
             onMovementChange: moving => callbacksRef.current.onMovementChange(moving),
-            onProjectActivate: slotId => callbacksRef.current.onProjectActivate(slotId),
             onCapabilityFailure: error => callbacksRef.current.onCapabilityFailure(error),
           },
           { reducedMotion, quality },
@@ -129,7 +113,7 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
         engineRef.current?.destroy();
         engineRef.current = null;
       };
-      // The project-key is the engine identity boundary; live callbacks are refs.
+      // The project key is the engine identity boundary; live callbacks are refs.
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [projectKey, reducedMotion]);
 
