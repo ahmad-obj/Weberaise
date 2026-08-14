@@ -20,24 +20,24 @@ test('work styling contains reduced-motion and scroll-lock contracts', () => {
   assert.match(css, /work-page-scroll-locked/);
 });
 
-test('sphere engine is direct WebGL with instanced rectangular rendering', () => {
-  const engine = read('src/webgl/workSphere/WorkSphereEngine.ts');
-  const shaders = read('src/webgl/workSphere/shaders.ts');
-  assert.match(engine, /getContext\(['"]webgl2/);
-  assert.match(engine, /drawElementsInstanced/);
-  assert.match(engine, /getSlotScreenBounds/);
-  assert.match(engine, /pointerdown/);
-  assert.match(engine, /pointermove/);
-  assert.match(engine, /setHoverSlot/);
-  assert.match(shaders, /rounded/i);
-  assert.doesNotMatch(shaders, /DiscGeometry/);
+test('phase one browse route cannot open project showcase', () => {
+  const page = read('src/components/WorkPage/WorkPage.tsx');
+  const canvas = read('src/components/WorkPage/WorkSphereCanvas.tsx');
+  assert.doesNotMatch(page, /ProjectTransitionBridge/);
+  assert.doesNotMatch(page, /ProjectShowcase/);
+  assert.doesNotMatch(page, /activateSlot/);
+  assert.doesNotMatch(canvas, /onProjectActivate/);
 });
 
-test('sphere callbacks stay live without recreating the WebGL engine', () => {
+test('sphere engine stays direct WebGL with instanced rendering', () => {
+  const engine = read('src/webgl/workSphere/WorkSphereEngine.ts');
+  assert.match(engine, /getContext\(['"]webgl2/);
+  assert.match(engine, /drawElementsInstanced/);
+});
+
+test('sphere adapter keeps callbacks live without recreating the WebGL engine for interactivity changes', () => {
   const adapter = read('src/components/WorkPage/WorkSphereCanvas.tsx');
   assert.match(adapter, /callbacksRef/);
-  assert.match(adapter, /callbacksRef\.current\.onProjectActivate/);
-  assert.match(adapter, /\[projectKey, reducedMotion\]/);
   assert.doesNotMatch(adapter, /\[interactive, projectKey/);
 });
 
@@ -50,16 +50,6 @@ test('browse metadata is deliberately minimal', () => {
   const meta = read('src/components/WorkPage/WorkBrowseMeta.tsx');
   assert.match(meta, /category/);
   assert.doesNotMatch(meta, /brief|year|services/);
-});
-
-test('project showcase uses explicit full-video controls and minimal facts', () => {
-  const showcase = read('src/components/WorkPage/ProjectShowcase.tsx');
-  assert.match(showcase, /controls/);
-  assert.match(showcase, /preload="metadata"/);
-  assert.match(showcase, /Visit Website/);
-  assert.match(showcase, /services/);
-  assert.match(showcase, /year/);
-  assert.doesNotMatch(showcase, /tech stack|testimonial|conversion rate/i);
 });
 
 test('quality and no-WebGL fallback are explicit', () => {
