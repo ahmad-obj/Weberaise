@@ -11,6 +11,9 @@ layout(location = 6) in vec2 aInstanceMeta;
 
 uniform mat4 uViewMatrix;
 uniform mat4 uProjectionMatrix;
+uniform int uSelectedSlotId;
+uniform int uSelectedSlotHidden;
+uniform float uProjectOpenProgress;
 
 out vec2 vUv;
 out float vAlpha;
@@ -18,18 +21,32 @@ flat out int vProjectIndex;
 flat out int vSlotId;
 
 void main() {
+  int slotId = int(aInstanceMeta.y + 0.5);
   mat4 instanceMatrix = mat4(aInstance0, aInstance1, aInstance2, aInstance3);
   vec4 worldPosition = instanceMatrix * vec4(aPosition, 1.0);
   vec3 centerPos = (instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
   float radius = max(0.0001, length(centerPos));
+  float peelAlpha = 1.0;
+
+  if (slotId != uSelectedSlotId && uProjectOpenProgress > 0.00001) {
+    float progress = clamp(uProjectOpenProgress, 0.0, 1.0);
+    vec3 relativeVertex = worldPosition.xyz - centerPos;
+    float radiusScale = 1.0 + 0.48 * progress;
+    float surfaceScale = 1.0 - 0.32 * progress;
+    centerPos *= radiusScale;
+    worldPosition.xyz = centerPos + relativeVertex * surfaceScale;
+    radius = max(0.0001, length(centerPos));
+    peelAlpha = 1.0 - smoothstep(0.08, 0.92, progress);
+  }
 
   worldPosition.xyz = radius * normalize(worldPosition.xyz);
 
   gl_Position = uProjectionMatrix * uViewMatrix * worldPosition;
-  vAlpha = smoothstep(0.5, 1.0, normalize(worldPosition.xyz).z) * 0.9 + 0.1;
+  vAlpha = (smoothstep(0.5, 1.0, normalize(worldPosition.xyz).z) * 0.9 + 0.1) * peelAlpha;
+  if (slotId == uSelectedSlotId && uSelectedSlotHidden == 1) vAlpha = 0.0;
   vUv = aUv;
   vProjectIndex = int(aInstanceMeta.x + 0.5);
-  vSlotId = int(aInstanceMeta.y + 0.5);
+  vSlotId = slotId;
 }
 `;
 
