@@ -10,14 +10,8 @@ type CenterNavClusterProps = {
 export function CenterNavCluster({ onNavigate }: CenterNavClusterProps) {
   return (
     <div className={styles.centerCluster} data-center-nav-cluster>
-      {CENTER_NAV_ITEMS.map((item) => (
-        <span
-          className={styles.navItemSlot}
-          data-nav-item={item.key}
-          data-nav-label={item.label}
-          data-nav-detach-anchor={item.key === 'services' ? '' : undefined}
-          key={item.key}
-        >
+      {CENTER_NAV_ITEMS.map((item) => {
+        const link = (
           <a
             className={`${styles.pill} ${styles.centerPill} ${styles.pillFlood}`}
             href={item.href}
@@ -38,8 +32,24 @@ export function CenterNavCluster({ onNavigate }: CenterNavClusterProps) {
               {item.label}
             </span>
           </a>
-        </span>
-      ))}
+        );
+
+        return (
+          <span
+            className={styles.navItemSlot}
+            data-nav-item={item.key}
+            data-nav-label={item.label}
+            data-nav-detach-anchor={item.key === 'services' ? '' : undefined}
+            key={item.key}
+          >
+            {item.key === 'services' ? (
+              <span className={styles.servicesDetachable} data-services-detachable>
+                {link}
+              </span>
+            ) : link}
+          </span>
+        );
+      })}
     </div>
   );
 }
