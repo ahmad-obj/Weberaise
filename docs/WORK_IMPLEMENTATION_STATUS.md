@@ -1,108 +1,128 @@
-# Weberaise Work Page — Implementation Status
+# Weberaise Work Page — Phase 1 Infinite Menu Rework Status
 
 **Branch:** `feature/work-spherical-showcase`  
-**Design:** `docs/superpowers/specs/2026-08-13-work-spherical-showcase-design.md`  
-**Plan:** `docs/superpowers/plans/2026-08-13-work-spherical-showcase.md`  
-**Date:** 2026-08-13
+**Design:** `docs/superpowers/specs/2026-08-14-work-infinite-menu-sphere-rework-design.md`  
+**Plan:** `docs/superpowers/plans/2026-08-14-work-infinite-menu-sphere-rework.md`  
+**Locked decisions:** `docs/superpowers/plans/2026-08-14-work-infinite-menu-sphere-rework-locked-decisions.md`  
+**Date:** 2026-08-14
+
+## Current Phase
+
+Phase 1 is intentionally limited to the **browse sphere**. The previously built project-opening/showcase/return system was rejected and has been removed from the live implementation. Project selection/expansion will be redesigned only after the sphere itself is visually accepted.
 
 ## Implemented
 
-### Route and experience state
-- dedicated `/work` App Router route;
-- explicit phases: opening, empty, sphere entering, interactive sphere, project opening, project showcase, project return;
-- `OUR WORKS` is the only visible opening content;
-- WebGL/media warm-up runs while the opening remains visually clean;
-- no spinner, percentage, fake progress or project artwork visible during the opening;
-- opening exits through a restrained clipped text transition;
-- normal page scroll stays locked until a project showcase or honest empty/fallback state owns the page.
+### Opening and page shell
+- dedicated `/work` route;
+- `OUR WORKS` remains the only visible opening content;
+- sphere/media preparation stays hidden behind that opening;
+- dense sphere enters through the approved oversized-to-normal `5 → 1` establishing scale;
+- full-viewport fixed canvas with no card-grid/container constraint;
+- scroll remains locked while the sphere owns the viewport.
 
-### Spherical project world
-- direct WebGL2 renderer with one instanced rectangular project draw;
-- dependency-free Weberaise vector/quaternion/matrix math;
-- 12 stable icosahedron-derived directions with antipodal repetition for small project sets;
-- large landscape project surfaces with shader-based rounded corners;
-- enlarged sphere radius / restrained deformation so websites remain readable;
-- free arcball drag in both axes;
-- time-based inertia with reduced mobile/lite strength;
-- soft nearest-project magnetic snapping;
-- active project follows the nearest front slot;
-- fine-pointer hover can override inspection, stop residual motion and receive preview priority;
-- drag-vs-click thresholds prevent accidental project opening;
-- coarse-pointer off-center tap selects/snaps first, then active tap opens;
-- keyboard arrow navigation uses the same sphere snap path;
-- page/tab visibility pauses RAF and preview work.
+### Infinite Menu sphere core
+- direct WebGL2 renderer with a single instanced draw;
+- exact full icosahedron base from the supplied ReactBits Infinite Menu source;
+- one shared-edge subdivision creates exactly **42 unique sphere positions**;
+- every position is spherized to radius **2**;
+- sphere density is completely independent of project count;
+- project identity is `instanceId % projectCount`;
+- one project therefore repeats across all 42 positions;
+- six projects repeat cyclically across the full 42-position sphere;
+- no sparse 12-slot mode remains.
 
-### Browse media
-- all projects remain poster-ready through a poster atlas;
-- full desktop profile caps live browse previews at three;
-- weaker/mobile profiles reduce the live-preview pool before reducing active-project sharpness;
-- hover receives media priority without increasing the pool cap;
-- real project video uses `requestVideoFrameCallback` when supported;
-- real video textures upload only when a decoded frame advances;
-- first real video frame must be uploaded before the shader switches away from the sharp poster;
-- reassignment clears old-frame state so a new project cannot briefly show another project's video;
-- temporary development placeholders use procedural canvas frames through the **same bounded live texture slots** rather than requesting fake video files;
-- procedural placeholder previews are capped to a 24fps texture-update cadence;
-- reduced-motion placeholders hold after the first procedural frame until direct interaction;
-- media derivative contract for real projects is documented in `public/work/README.md`.
+### 4:3 website surfaces
+- circular discs are replaced by a fixed **4:3** website surface;
+- each surface is a 6 × 4 cell mesh: 35 vertices / 48 triangles / 144 indices;
+- triangle winding faces +Z before tangent placement so front-facing instances survive WebGL back-face culling;
+- surface base scale is locked at `0.34` for the first visual comparison;
+- depth scaling follows the reference `abs(z / radius) * 0.6 + 0.4` model;
+- every deformed rectangular-mesh vertex is re-projected to the instance sphere radius in the vertex shader, so tiles read as part of one sphere rather than rigid cards floating around it;
+- corners are only mildly rounded;
+- 16:10 website media is center-cropped into the 4:3 surface instead of stretched.
 
-### Project showcase transition
-- selected WebGL project bounds are projected into CSS screen coordinates;
-- fixed DOM transition bridge starts at the clicked project's real on-screen footprint;
-- selected canvas surface is hidden only when the bridge visually owns it;
-- surrounding sphere projects recede while selection opens;
-- real project full view uses native DOM/video rather than stretching the WebGL texture;
-- real full video has explicit controls and does not autoplay;
-- development placeholders use a paused-by-default full showcase simulation with explicit Play/Pause control so the complete interaction can be inspected before real media exists;
-- project details are limited to name, category, short brief, services, year and live-site link/placeholder slot;
-- sphere render/preview work stops while the full showcase owns the viewport;
-- Escape or Back to Work restores the stored sphere orientation and selected project;
-- return bridge hands visual ownership back to the original sphere slot and restores focus.
+### Reference interaction mechanics
+- dependency-free port of the supplied ReactBits arcball behavior;
+- reference virtual-sphere pointer projection with radius 2;
+- reference pointer delta intensity and angle amplification;
+- quaternion accumulation and normalization;
+- reference pointer-rotation release slerp;
+- smoothed combined quaternion for rotation-axis/velocity derivation;
+- reference snap direction `[0, 0, -1]`;
+- nearest-vertex lookup uses inverse orientation, matching Infinite Menu;
+- distance-sensitive magnetic snap behavior;
+- camera resting Z is `3 * scaleFactor`;
+- energetic drag adds `rotationVelocity * 80 + 2.5` to camera target Z;
+- drag/rest camera damping follows the reference 7/5 time-scaled behavior;
+- velocity-based surface deformation remains present;
+- depth alpha follows the reference front/back fade character.
 
-### Responsive / accessibility / fallback
-- adaptive full/lite/mobile/reduced quality profiles;
-- DPR caps and live-preview-slot caps are explicit;
-- reduced motion removes inertia and large motion while preserving content;
-- WebGL capability failure falls back to an intentional responsive poster gallery;
-- fallback projects open the same compact `ProjectShowcase` component;
-- canvas is decorative to assistive technology;
-- semantic DOM project buttons remain available to keyboard/screen-reader users;
-- focused project controls become visibly discoverable;
-- no hover dependency for core access.
+### Phase 1 interaction scope
+- pointer/touch performs sphere drag only;
+- pointer release only ends arcball interaction;
+- project picking is removed;
+- project activation is removed;
+- old transition bridge is removed;
+- old project showcase component is removed;
+- old showcase placeholder styles are removed;
+- old screen-projection bridge helper is removed;
+- active metadata follows the sphere's nearest focused instance only; there is no hover-override path;
+- arrow-key/semantic navigation snaps to sphere instances without opening projects.
 
-### Development placeholders / data integrity
-- `WORK_PROJECTS` currently contains six explicit `PLACEHOLDER 01`–`PLACEHOLDER 06` development fixtures so the complete Work experience is visible before client media is ready;
-- each fixture is marked `placeholder: true` and is clearly labeled as development content;
-- placeholders are not client claims and must be replaced before production portfolio launch;
-- project validation still rejects missing content/media, invalid year, or non-http(s) live URLs;
-- no fabricated clients, metrics, testimonials, awards or results are presented as real proof;
-- removing the six temporary fixtures returns the page to its honest empty-state path.
+### Media/performance
+- all 42 instances can display project posters without creating 42 decoders;
+- full desktop profile still caps live browse sources at three;
+- repeated instances are **project-deduplicated** when allocating live preview sources;
+- 1 project repeated 42× consumes at most 1 live source;
+- 2 projects consume at most 2;
+- 6+ projects consume at most 3 on the full desktop profile;
+- procedural development previews use the same bounded live-texture slots;
+- procedural placeholder texture updates are capped at 24fps;
+- reduced-motion placeholder previews hold after their initial frame;
+- hidden tabs pause RAF/media work.
 
-## Verification performed in this implementation session
+### Responsive/accessibility
+- desktop, tablet and mobile retain the same true 42-position sphere model;
+- mobile changes camera/quality profile rather than degrading to 2–3 cards;
+- reduced motion keeps the dense sphere but removes aggressive deformation/inertial behavior;
+- no-WebGL fallback remains a usable static project gallery and no longer exposes the rejected Phase 2 showcase;
+- canvas remains decorative to assistive technology;
+- semantic project controls remain available for keyboard/screen-reader navigation and only snap the sphere in Phase 1.
 
-Because the execution environment could not clone the networked repository or install project dependencies, full Next.js verification could not be run here.
+### Development placeholders
+- six clearly labeled `PLACEHOLDER 01`–`PLACEHOLDER 06` records remain so the dense repeated sphere can be inspected immediately;
+- they are development fixtures, not client claims;
+- the six identities repeat over all 42 sphere instances automatically;
+- removing all fixtures still returns the page to the honest empty state.
 
-A dependency-free isolated verification harness was built for the new sphere core using the same math/geometry/control code. Results:
+## Verification Evidence
 
-- strict TypeScript compile of sphere constants, math, geometry, selection, arcball and projection: **PASS**;
-- normalized/antipodal sphere directions: **PASS**;
-- rectangular project quad contract: **PASS**;
-- inertial decay + reduced-motion stop: **PASS**;
-- deterministic keyboard wrapping: **PASS**;
-- arcball orientation normalization after movement: **PASS**;
-- front-project matrix/projection produces a centered landscape screen footprint: **PASS**;
-- soft magnetic snapping converges the chosen sphere direction to the front target: **PASS**;
-- focused sphere-core tests: **7/7 PASS**;
-- placeholder source/effect contract harness: **6/6 PASS**;
-- strict TypeScript compile of the procedural placeholder media-pool subset: **PASS**.
+Full Next.js verification is not available in this execution environment because the repository cannot be cloned/network-installed here. Chromium is installed, but this container also fails to initialize EGL/SwiftShader, so browser WebGL shader compile/link could not be meaningfully executed.
 
-Repository diff inspection confirms this branch adds Work-specific source/tests/docs and does not edit homepage or Services implementation files.
+Fresh isolated checks performed against the rewritten core:
 
-GitHub currently has no status checks attached to the branch head, so CI provides no additional verification evidence.
+- one-subdivision icosphere produces exactly 42 positions: **PASS**;
+- every sphere position has radius 2: **PASS**;
+- sphere density is independent of 1 / 6 / 17 project counts: **PASS**;
+- 1-project and 6-project modulo repetition: **PASS**;
+- 4:3 mesh has 35 vertices and 144 indices: **PASS**;
+- front-facing mesh winding: **PASS**;
+- arcball movement changes a normalized orientation quaternion: **PASS**;
+- released pointer rotation settles: **PASS**;
+- nearest-vertex magnetic snap converges to reference `-Z`: **PASS**;
+- dynamic camera pulls outward under motion and returns toward rest: **PASS**;
+- 42-slot keyboard wrapping: **PASS**;
+- repeated-project live-source deduplication: **PASS**;
+- desktop projection/framing simulation shows a dense field (roughly 18 instance centers within the expanded viewport region while the rest continue around/offscreen): **PASS**;
+- source scan confirms no `createProjectQuad`, `onProjectActivate`, or `projectOpening` live references: **PASS**.
 
-## Verification required on a normal checkout before integration
+WebGL shader source now contains the required spherical reprojection/deformation/depth-alpha mechanics, but **GLSL compile/link is not claimed as verified** because the container cannot establish a WebGL/EGL context.
 
-Run:
+GitHub has no status checks attached to this branch, so CI provides no additional evidence.
+
+## Required User-Machine Verification
+
+After pulling this branch, run:
 
 ```bash
 npm install
@@ -112,20 +132,24 @@ npm run build
 npm run dev
 ```
 
-Then visually verify `/work` on:
+Then inspect `/work` primarily against the ReactBits Infinite Menu reference. Phase 1 visual acceptance asks only:
 
-- desktop fine-pointer;
-- tablet/coarse pointer;
-- narrow mobile;
-- `prefers-reduced-motion: reduce`;
-- browser/device where WebGL2 is disabled to inspect fallback.
+> Does this now feel like ReactBits Infinite Menu with 4:3 website previews instead of circular photos?
 
-With current fixtures, visual QA should cover the entire `OUR WORKS → sphere → drag/snap/hover → project expansion → Play/Pause showcase → return` sequence immediately.
+Judge:
+- sphere density/repetition;
+- drag weight;
+- release/inertia character;
+- camera pull-back;
+- snap behavior;
+- spherical curvature;
+- tile size/collision balance;
+- depth scale/fade;
+- velocity deformation;
+- desktop/mobile framing.
 
-## Real media still required
+Do **not** judge project opening yet: clicking/expansion is intentionally disabled until Phase 2 is separately designed.
 
-The current fixtures exist only to make the interaction visible. For each real project, add the media set described in `public/work/README.md`, replace the corresponding placeholder record in `src/content/workProjects.ts`, and remove the development fixture when no longer needed.
+## Parallel-Branch Constraint
 
-## Parallel-branch note
-
-`feature/signature-intro`, floating navigation, Services, and Work have continued independently. Reconcile/rebase this Work branch against the final chosen integration branch only after those parallel changes are settled; do not resolve that by copying stale navigation/homepage files into Work.
+Homepage, floating navigation, Services and Work continue independently. This Work branch must be reconciled against the final integration branch only after those parallel changes settle; do not copy stale homepage/navigation/Services files into Work.
