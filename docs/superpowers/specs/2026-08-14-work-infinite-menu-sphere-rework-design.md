@@ -42,14 +42,13 @@ The supplied ReactBits source is the behavioral authority for this phase.
 
 Reference behavior:
 
-- `IcosahedronGeometry()` creates the base polyhedron;
-- `.subdivide(1)` increases vertex density;
-- `.spherize(SPHERE_RADIUS)` projects all resulting vertices onto the sphere;
-- all resulting vertices become instance positions.
+- `IcosahedronGeometry()` creates the 12-vertex base polyhedron;
+- `.subdivide(1)` adds one midpoint for each of the 30 unique edges;
+- the resulting geometry therefore has **exactly 42 instance vertices**;
+- `.spherize(SPHERE_RADIUS)` projects those vertices onto the sphere;
+- all 42 vertices become surface-instance positions.
 
-Expected density is roughly 42 surface positions after one subdivision.
-
-This is the density target for the first Weberaise rework. It may be tuned only if necessary after visual comparison, but project count must never reduce density.
+The Weberaise Phase 1 sphere therefore uses **42 instance slots**. Project count must never reduce this density.
 
 ### 3.2 Repetition rule
 
@@ -63,10 +62,10 @@ Weberaise must preserve the same semantic rule.
 
 Examples:
 
-- 1 project → the same project repeats across every sphere slot;
-- 2 projects → alternating/repeating across all slots;
+- 1 project → the same project repeats across all 42 sphere slots;
+- 2 projects → alternating/repeating across all 42 slots;
 - 6 projects → repeated cyclically throughout the globe;
-- 40+ projects → instances continue mapping through the project set using modulo logic.
+- 42+ projects → instances map through the project set using modulo logic.
 
 No sparse mode exists.
 
@@ -104,7 +103,7 @@ The camera is part of the interaction, not a fixed observer.
 Reference behavior to preserve:
 
 - resting camera Z is `3 * scaleFactor`;
-- while dragging, camera target Z increases based on rotation velocity plus an offset;
+- while dragging, camera target Z increases by the reference pattern based on rotation velocity plus its movement offset;
 - the camera therefore pulls backward during energetic movement;
 - after release it settles back inward;
 - the effect contributes heavily to the perceived elasticity and depth of Infinite Menu.
@@ -158,9 +157,9 @@ Locked choice: **A — 4:3-ish landscape rectangle**.
 
 Target aspect ratio:
 
-- approximately `1.30:1` to `1.35:1`;
+- exactly `4:3` for the Phase 1 baseline (`1.3333:1`);
 - enough horizontal space to resemble a website viewport;
-- compact enough that 40+ instances still form a convincing dense globe.
+- compact enough that 42 instances still form a convincing dense globe.
 
 Do not use 16:9 or very wide browser-card proportions in Phase 1 because that would create collisions and weaken the spherical rhythm.
 
@@ -175,9 +174,14 @@ Do not use 16:9 or very wide browser-card proportions in Phase 1 because that wo
 
 A single four-vertex quad is insufficient if we want the same surface-conforming behavior as the reference.
 
-The rectangle should be built as a small subdivided grid mesh, for example several columns and rows of vertices.
+The Phase 1 rectangle uses a fixed **6 × 4 cell grid**:
 
-Every vertex then participates in the reference-style sphere reprojection:
+- 7 vertices across;
+- 5 vertices down;
+- 35 vertices total per instance before instancing;
+- 48 triangles per rectangular surface.
+
+Every vertex participates in the reference-style sphere reprojection:
 
 ```glsl
 worldPosition.xyz = radius * normalize(worldPosition.xyz);
@@ -241,9 +245,7 @@ Phase 1 preserves only the reference-like active-item behavior.
 - Browse metadata can continue showing project name/category.
 - Metadata should fade or soften while the sphere is moving, comparable to the reference's active/inactive overlays.
 
-Do not implement click expansion in Phase 1.
-
-Click/tap may be temporarily disabled or no-op while the sphere is being evaluated.
+**Project opening is disabled in Phase 1.** Clicking/tapping a tile must not start the existing bridge/showcase transition. The only pointer gesture with sphere-side behavior in this phase is navigation/dragging plus active-item tracking.
 
 ## 7. Entrance behavior
 
@@ -261,7 +263,7 @@ The sphere entrance must reveal the complete dense globe immediately, not gradua
 
 ### Desktop
 
-- full dense sphere;
+- full 42-slot dense sphere;
 - roughly reference-like camera/framing;
 - fine-pointer drag;
 - high-quality front preview;
@@ -269,18 +271,18 @@ The sphere entrance must reveal the complete dense globe immediately, not gradua
 
 ### Tablet / coarse pointer
 
-- preserve same sphere model;
+- preserve the same 42-slot sphere model;
 - no fallback carousel/list merely because pointer is coarse;
 - touch drag uses the same arcball system;
 - tune scale/camera only as required to avoid clipping.
 
 ### Mobile
 
-- still a true dense sphere;
+- still a true dense 42-slot sphere;
 - same repeated instance principle;
 - camera/framing can pull back slightly;
 - live media count can be reduced;
-- geometry density should remain high enough that it unmistakably reads as Infinite Menu.
+- geometry density remains unchanged so it unmistakably reads as Infinite Menu.
 
 Do not reduce mobile to 2–3 cards.
 
@@ -301,6 +303,7 @@ The rework must retain premium visual fidelity without unnecessary GPU/decoder c
 Required principles:
 
 - one instanced WebGL draw for the repeated rectangular geometry;
+- 42 geometry instances do not imply 42 media decoders;
 - bounded texture/video pool independent of sphere instance count;
 - poster atlas or equivalent efficient project texture source;
 - DPR cap appropriate to device capability;
@@ -318,7 +321,7 @@ Phase 1 may delete or replace any of the following where they conflict with the 
 - current custom arcball mechanics;
 - current custom fixed camera behavior;
 - current sparse scaling/deformation logic;
-- any interaction logic whose purpose exists only for the current project-opening bridge.
+- click/open bridge hooks from the sphere interaction path.
 
 Do not preserve flawed code merely because it already exists.
 
@@ -342,12 +345,13 @@ These will be redesigned only after the base sphere is visually accepted.
 
 Verify:
 
-- one subdivision creates the expected dense vertex count;
+- one subdivision produces exactly 42 instance vertices;
 - all instance positions lie on the target sphere radius;
-- instance count remains constant regardless of project count;
+- instance count remains 42 regardless of project count;
 - modulo mapping repeats project identities correctly;
-- 1 project fills every slot;
-- 6 projects repeat cyclically across the full slot set.
+- 1 project fills all 42 slots;
+- 6 projects repeat cyclically across all 42 slots;
+- rectangular surface mesh is exactly 6 × 4 cells / 35 vertices / 48 triangles.
 
 ### Control tests
 
@@ -363,8 +367,8 @@ Verify:
 
 Verify:
 
-- rectangular surface aspect is approximately 4:3;
-- rectangular mesh contains interior/subdivision vertices, not only four corners;
+- rectangular surface aspect is exactly 4:3 at baseline;
+- rectangular mesh contains the fixed interior subdivision grid;
 - deformation preserves sphere-radius projection;
 - depth scaling and alpha remain bounded;
 - velocity deformation is disabled/reduced in reduced-motion mode.
@@ -377,6 +381,13 @@ Verify:
 - active/front project receives live-preview priority;
 - static copies use poster data cleanly;
 - project repetition does not duplicate project metadata incorrectly.
+
+### Interaction-scope tests
+
+Verify:
+
+- Phase 1 tile clicks/taps cannot enter `project-opening` or `project-showcase` state;
+- sphere dragging, snapping and active-project tracking remain functional.
 
 ## 14. Visual acceptance checklist
 
@@ -393,7 +404,7 @@ Phase 1 is accepted only if all are true:
 - magnetic snap settles smoothly on the nearest item;
 - depth scale/fade matches the reference character;
 - motion deformation is visible but controlled;
-- no project-opening glitches can occur because project opening is disabled for this phase;
+- project opening cannot interfere because it is disabled for this phase;
 - desktop, touch and mobile all preserve the same conceptual sphere.
 
 ## 15. Phase 1 completion condition
