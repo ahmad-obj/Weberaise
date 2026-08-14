@@ -1,8 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
 import { CENTER_NAV_ITEMS } from './navigationModel';
-import { createCenterHoverMotion } from './centerHoverMotion';
 import styles from './Navigation.module.css';
 
 type CenterNavClusterProps = {
@@ -10,18 +8,8 @@ type CenterNavClusterProps = {
 };
 
 export function CenterNavCluster({ onNavigate }: CenterNavClusterProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    const root = rootRef.current;
-    if (!root) return undefined;
-
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    return createCenterHoverMotion(root, reducedMotion);
-  }, []);
-
   return (
-    <div ref={rootRef} className={styles.centerCluster} data-center-nav-cluster>
+    <div className={styles.centerCluster} data-center-nav-cluster>
       {CENTER_NAV_ITEMS.map((item) => (
         <span
           className={styles.navItemSlot}
@@ -31,9 +19,10 @@ export function CenterNavCluster({ onNavigate }: CenterNavClusterProps) {
           key={item.key}
         >
           <a
-            className={`${styles.pill} ${styles.centerPill}`}
+            className={`${styles.pill} ${styles.centerPill} ${styles.pillFlood}`}
             href={item.href}
             data-center-nav-link
+            data-pill-flood
             onClick={onNavigate
               ? (event) => {
                   event.preventDefault();
@@ -41,19 +30,11 @@ export function CenterNavCluster({ onNavigate }: CenterNavClusterProps) {
                 }
               : undefined}
           >
-            <span
-              className={styles.centerPillSurface}
-              data-center-pill-surface
-              aria-hidden="true"
-            />
-            <span className={styles.centerPillLabel} data-center-pill-label>
+            <span className={styles.pillFloodSurface} data-pill-flood-surface aria-hidden="true" />
+            <span className={styles.pillFloodBase} data-pill-flood-base>
               {item.label}
             </span>
-            <span
-              className={styles.centerPillLabelHover}
-              data-center-pill-label-hover
-              aria-hidden="true"
-            >
+            <span className={styles.pillFloodReveal} data-pill-flood-reveal aria-hidden="true">
               {item.label}
             </span>
           </a>

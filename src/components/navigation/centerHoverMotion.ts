@@ -5,8 +5,8 @@ import gsap from 'gsap';
 type PillMotionState = {
   link: HTMLElement;
   surface: HTMLElement;
-  baseLabel: HTMLElement;
-  hoverLabel: HTMLElement;
+  baseContent: HTMLElement;
+  revealContent: HTMLElement;
   timeline: gsap.core.Timeline | null;
   activeTween: gsap.core.Tween | null;
   pointerActive: boolean;
@@ -16,6 +16,7 @@ type PillMotionState = {
 const ENTER_DURATION = 0.46;
 const LEAVE_DURATION = 0.36;
 const MIN_INTERRUPT_RATIO = 0.18;
+const FLOOD_OVERSCAN = 6;
 
 function buildTimeline(state: PillMotionState) {
   const previousProgress = state.timeline?.progress() ?? 0;
@@ -23,31 +24,28 @@ function buildTimeline(state: PillMotionState) {
   state.timeline?.kill();
 
   const rect = state.link.getBoundingClientRect();
-  const width = Math.max(1, rect.width);
-  const height = Math.max(1, rect.height);
-  const radius = ((width * width) / 4 + height * height) / (2 * height);
-  const diameter = Math.ceil(radius * 2) + 2;
-  const delta = Math.ceil(
-    radius - Math.sqrt(Math.max(0, radius * radius - (width * width) / 4)),
-  ) + 1;
-  const originY = diameter - delta;
+  const width = Math.max(1, state.link.offsetWidth || rect.width);
+  const height = Math.max(1, state.link.offsetHeight || rect.height);
+  const radius = Math.hypot(width * 0.5, height) + FLOOD_OVERSCAN;
+  const diameter = Math.ceil(radius * 2);
+  const centeredRadius = diameter * 0.5;
 
   state.surface.style.width = `${diameter}px`;
   state.surface.style.height = `${diameter}px`;
-  state.surface.style.bottom = `-${delta}px`;
+  state.surface.style.bottom = `-${centeredRadius}px`;
 
   gsap.set(state.surface, {
     xPercent: -50,
     scale: 0,
-    transformOrigin: `50% ${originY}px`,
+    transformOrigin: '50% 50%',
   });
-  gsap.set(state.baseLabel, { y: 0, opacity: 1 });
-  gsap.set(state.hoverLabel, { y: Math.ceil(height + 12), opacity: 0 });
+  gsap.set(state.baseContent, { y: 0, opacity: 1 });
+  gsap.set(state.revealContent, { y: Math.ceil(height + 12), opacity: 0 });
 
   const timeline = gsap.timeline({ paused: true });
-  timeline.to(state.surface, { scale: 1.18, duration: 1, ease: 'none' }, 0);
-  timeline.to(state.baseLabel, { y: -(height + 6), duration: 1, ease: 'none' }, 0);
-  timeline.to(state.hoverLabel, { y: 0, opacity: 1, duration: 1, ease: 'none' }, 0);
+  timeline.to(state.surface, { scale: 1, duration: 1, ease: 'none' }, 0);
+  timeline.to(state.baseContent, { y: -(height + 6), duration: 1, ease: 'none' }, 0);
+  timeline.to(state.revealContent, { y: 0, opacity: 1, duration: 1, ease: 'none' }, 0);
   timeline.progress(previousProgress);
 
   state.timeline = timeline;
@@ -79,21 +77,21 @@ function animateState(state: PillMotionState, active: boolean, reducedMotion: bo
 }
 
 export function createCenterHoverMotion(root: HTMLElement, reducedMotion: boolean): () => void {
-  const links = Array.from(root.querySelectorAll<HTMLElement>('[data-center-nav-link]'));
+  const links = Array.from(root.querySelectorAll<HTMLElement>('[data-pill-flood]'));
   const states: PillMotionState[] = [];
   let disposed = false;
 
   for (const link of links) {
-    const surface = link.querySelector<HTMLElement>('[data-center-pill-surface]');
-    const baseLabel = link.querySelector<HTMLElement>('[data-center-pill-label]');
-    const hoverLabel = link.querySelector<HTMLElement>('[data-center-pill-label-hover]');
-    if (!surface || !baseLabel || !hoverLabel) continue;
+    const surface = link.querySelector<HTMLElement>('[data-pill-flood-surface]');
+    const baseContent = link.querySelector<HTMLElement>('[data-pill-flood-base]');
+    const revealContent = link.querySelector<HTMLElement>('[data-pill-flood-reveal]');
+    if (!surface || !baseContent || !revealContent) continue;
 
     states.push({
       link,
       surface,
-      baseLabel,
-      hoverLabel,
+      baseContent,
+      revealContent,
       timeline: null,
       activeTween: null,
       pointerActive: false,

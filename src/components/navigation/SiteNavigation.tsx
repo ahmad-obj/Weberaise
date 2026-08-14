@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { CenterNavCluster } from './CenterNavCluster';
 import { GooeyTalkButton } from './GooeyTalkButton';
+import { createCenterHoverMotion } from './centerHoverMotion';
 import { type NavigationMode } from './navigationModel';
 import { useNavigationThemes } from './useNavigationTheme';
 import styles from './Navigation.module.css';
@@ -21,6 +22,14 @@ export function SiteNavigation({
 }: SiteNavigationProps) {
   const rootRef = useRef<HTMLElement>(null);
   const themes = useNavigationThemes(mode === 'main', rootRef);
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return undefined;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return createCenterHoverMotion(root, reducedMotion);
+  }, []);
 
   useLayoutEffect(() => {
     if (mode !== 'hero' || !rootRef.current) return undefined;
@@ -67,8 +76,19 @@ export function SiteNavigation({
         data-nav-zone="logo"
         data-nav-theme={mode === 'main' ? themes.logo : undefined}
       >
-        <a className={`${styles.pill} ${styles.logoPill}`} href="/" aria-label="Weberaise home">
-          <span className={styles.logoMark} aria-hidden="true" />
+        <a
+          className={`${styles.pill} ${styles.logoPill} ${styles.pillFlood}`}
+          href="/"
+          aria-label="Weberaise home"
+          data-pill-flood
+        >
+          <span className={styles.pillFloodSurface} data-pill-flood-surface aria-hidden="true" />
+          <span className={styles.pillFloodBase} data-pill-flood-base aria-hidden="true">
+            <span className={styles.logoMark} />
+          </span>
+          <span className={styles.pillFloodReveal} data-pill-flood-reveal aria-hidden="true">
+            <span className={styles.logoMark} />
+          </span>
         </a>
       </div>
 
