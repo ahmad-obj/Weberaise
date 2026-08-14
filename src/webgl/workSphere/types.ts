@@ -1,5 +1,5 @@
-import type { quat } from 'gl-matrix';
 import type { WorkProject } from '@/content/workProjects';
+import type { Quat } from './math';
 
 export type Vec3 = [number, number, number];
 
@@ -26,7 +26,7 @@ export type WorkQualityProfile = {
 };
 
 export type WorkSphereSnapshot = {
-  orientation: quat;
+  orientation: Quat;
   activeSlotId: number;
 };
 
