@@ -20,3 +20,19 @@ test('placeholder data uses the explicit procedural media sentinel', () => {
   assert.match(source, /placeholder:\/\/procedural-preview/);
   assert.match(source, /placeholder:\/\/procedural-showcase/);
 });
+
+test('sphere placeholders animate procedurally instead of requesting fake video files', () => {
+  const shader = read('src/webgl/workSphere/shaders.ts');
+  const engine = read('src/webgl/workSphere/WorkSphereEngine.ts');
+  assert.match(shader, /uTime/);
+  assert.match(shader, /vPlaceholder/);
+  assert.match(shader, /proceduralPlaceholder/);
+  assert.match(engine, /project\.placeholder/);
+});
+
+test('expanded placeholder exposes an explicit play pause showcase simulation', () => {
+  const showcase = read('src/components/WorkPage/ProjectShowcase.tsx');
+  assert.match(showcase, /project\.placeholder/);
+  assert.match(showcase, /placeholderShowcase/);
+  assert.match(showcase, /Play full placeholder showcase/);
+});
