@@ -9,16 +9,16 @@ The final composition uses the approved large minimal statement:
 `WHAT CAN WE`
 `BUILD FOR YOU?`
 
-The SERVICES pill settles centered beneath the statement and becomes the final services CTA. Minimal footer metadata sits near the bottom edge: `WEBERAISE` on the left and `© 2026` on the right. The section remains typography-led, spacious, dark, and premium.
+The SERVICES pill settles exactly centered beneath the statement and becomes the final services CTA. At the landed state it is approximately twice its navbar size (`2.0x` transform scale). Minimal footer metadata sits near the bottom edge: `WEBERAISE` on the left and `© 2026` on the right. The section remains typography-led, spacious, dark, and premium.
 
 ## Scroll choreography
 - The footer enters normally with the rest of the page.
 - Its inner stage becomes sticky for a short final hold rather than a long scroll-jacked sequence.
 - The SERVICES pill stays completely normal in the navbar until the final stage has meaningfully entered the viewport.
 - During the pinned portion, the real SERVICES pill peels out from its exact navigation position and follows a smooth downward curved path toward a dedicated landing dock below the headline.
-- The pill enlarges only slightly during travel/settle; no bounce, spin, overshoot, or theatrical elastic motion.
-- At the final scroll position the pill is visually centered in its footer dock and remains fully interactive.
-- Scrolling upward reverses the exact motion continuously. The pill lifts from the footer, follows the same path backward, and visually reattaches to the navbar.
+- The pill scales continuously from `1.0x` at the navbar to `2.0x` at the footer dock; no bounce, spin, overshoot, or theatrical elastic motion.
+- At the final scroll position the pill center is aligned exactly to the center of its footer dock and remains fully interactive.
+- Scrolling upward reverses the exact motion continuously. The pill lifts from the footer, shrinks back toward `1.0x`, follows the same path backward, and visually reattaches to the navbar.
 - The sequence is scrubbed by scroll progress; there is no one-way state that gets stuck after first execution.
 
 ## Navbar behavior
@@ -45,7 +45,9 @@ A small controller coordinates the footer and nav through stable DOM data attrib
 - footer section: `[data-closing-footer]`
 - footer dock: `[data-services-footer-dock]`
 
-At geometry refresh, measure the origin shell and footer dock. During the active scroll range, compute a normalized progress and apply a `translate3d(...) scale(...)` transform to the moving shell. Use a cubic Bezier-style interpolation with a gentle downward arc rather than a straight diagonal.
+The footer exists before the main navigation is mounted during the intro/hero state. Therefore the detach controller must not permanently fail when the navbar is absent at its first lifecycle pass. It should try to connect immediately and, if the main navbar is not yet present, observe DOM insertion only until the required elements appear, connect once, then disconnect that waiting observer.
+
+At geometry refresh, measure the stable origin slot and footer dock. During the active scroll range, compute a normalized progress and apply a `translate3d(...) scale(...)` transform to the moving shell. Use a cubic Bezier-style interpolation with a gentle downward arc rather than a straight diagonal. Endpoint geometry must use center-to-center alignment between the origin slot and footer dock.
 
 Because both the navbar and sticky footer stage are stable in viewport coordinates during the choreography, the scroll loop should perform arithmetic and transform writes only. Geometry reads happen only on setup/resize/font/layout refresh, not every scroll frame.
 
@@ -53,7 +55,7 @@ Because both the navbar and sticky footer stage are stable in viewport coordinat
 - Smooth, composed, premium.
 - Short pin duration; the user should not feel trapped in the footer.
 - Curved travel path with most horizontal correction happening gradually rather than snapping near the end.
-- Slight scale increase only, approximately 1.0 to ~1.1–1.15 depending on final responsive tuning.
+- Scale from `1.0x` to `2.0x` continuously with scroll progress.
 - No rotation.
 - No opacity fade on the real pill.
 - The footer headline does not need a competing complex entrance; the detached SERVICES pill is the hero motion.
@@ -64,12 +66,13 @@ Desktop and mobile use the same physical continuity.
 On each layout size:
 - origin and destination are measured from actual rendered geometry;
 - the route is recalculated on resize/orientation/font completion;
-- the final CTA remains centered beneath the statement;
+- the final CTA remains exactly centered beneath the statement;
+- the final CTA still reaches `2.0x` scale relative to its rendered navbar size;
 - headline sizing uses responsive `clamp()` typography and retains the two-line hierarchy where space permits;
 - on narrow screens the footer metadata remains readable without crowding the CTA.
 
 ## Reduced motion
-For `prefers-reduced-motion: reduce`, preserve the semantic state change without the long curved travel. The SERVICES pill transitions between origin and footer destination with minimal or immediate transform progress tied to the same scroll range. No content is hidden and the CTA remains accessible.
+For `prefers-reduced-motion: reduce`, preserve the semantic state change without the long curved travel. The SERVICES pill resolves between `1.0x` at origin and `2.0x` at the centered footer destination with minimal or immediate transform progress tied to the same scroll range. No content is hidden and the CTA remains accessible.
 
 ## Navigation destination
 The SERVICES CTA represents navigation to the dedicated Services page. Its canonical destination should be `/services` once this footer choreography is implemented, so the same physical button has one meaning before, during, and after detachment.
@@ -80,6 +83,7 @@ The SERVICES CTA represents navigation to the dedicated Services page. Its canon
 - No React state updates on every scroll frame.
 - Use one passive scroll listener plus requestAnimationFrame batching, or equivalent existing scroll infrastructure.
 - Only the detachable shell gets the transform write.
+- Any mount-order observer exists only until the main navigation appears, then disconnects.
 - Preserve the recent navbar performance optimizations.
 - No reduction to visual quality, ribbon quality, WebGL quality, or current hover quality.
 
@@ -90,6 +94,9 @@ Regression coverage must verify:
 - the footer provides a stable destination dock;
 - the slot remains in layout while the shell moves;
 - motion is reversible from scroll progress rather than one-time state;
+- final scale is exactly `2.0x`;
+- endpoint coordinates are center-to-center aligned with the footer dock;
+- controller binds even when the footer mounts before the main navbar;
 - scroll-time code avoids layout reads/DOM hit-testing;
 - `/services` is the canonical SERVICES destination;
 - existing flood hover markup remains on the moving pill;
