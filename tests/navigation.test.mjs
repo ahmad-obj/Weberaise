@@ -52,17 +52,30 @@ test('hero navigation is rendered before the reveal canvas and survives EXPLORE 
   assert.match(component, /gsap\.fromTo/);
 });
 
-test('center navigation uses one measured inverse hover plate across separate pills', () => {
+test('center navigation uses independent measured inverse floods with gentle reversible motion', () => {
   const component = read(`${navDir}/CenterNavCluster.tsx`);
   const motion = read(`${navDir}/centerHoverMotion.ts`);
+  const css = read(`${navDir}/Navigation.module.css`);
 
   assert.match(component, /data-center-nav-cluster/);
-  assert.match(component, /data-center-hover-plate/);
+  assert.match(component, /data-center-pill-surface/);
+  assert.match(component, /data-center-pill-label/);
+  assert.match(component, /data-center-pill-label-hover/);
+  assert.doesNotMatch(component, /data-center-hover-plate/);
   assert.match(component, /data-nav-item=\{item\.key\}/);
   assert.match(read(`${navDir}/navigationModel.ts`), /key: 'services'/);
+
   assert.match(motion, /getBoundingClientRect\(\)/);
   assert.match(motion, /ResizeObserver/);
-  assert.match(motion, /gsap\.to/);
+  assert.match(motion, /gsap\.timeline/);
+  assert.match(motion, /0\.46/);
+  assert.match(motion, /0\.36/);
+  assert.match(motion, /tweenTo/);
+  assert.match(motion, /Math\.sqrt/);
+  assert.doesNotMatch(motion, /data-center-hover-plate/);
+
+  assert.match(css, /\.centerPillSurface\s*\{[^}]*background:\s*var\(--nav-pill-fg\)/s);
+  assert.match(css, /\.centerPillLabelHover\s*\{[^}]*color:\s*var\(--nav-pill-bg\)/s);
 });
 
 test('services stays detach-ready and the center cluster does not clip item slots', () => {
@@ -132,7 +145,7 @@ test('navigation preserves all destinations on mobile and supports reduced motio
 test('goo transform motion is not overwritten by main theme transitions', () => {
   const css = read(`${navDir}/Navigation.module.css`);
   assert.match(css, /\.gooCore\s*\{[\s\S]*transform 280ms/);
-  assert.doesNotMatch(css, /\.pill,\s*\.centerHoverPlate,\s*\.gooCore/);
+  assert.doesNotMatch(css, /\.pill,\s*\.centerPillSurface,\s*\.gooCore/);
 });
 
 test('services exposes a stable future detach seam without implementing detachment', () => {
