@@ -1,10 +1,10 @@
 import type { WorkQualityName, WorkQualityProfile } from './types';
 
 export const WORK_QUALITY_PROFILES: Record<WorkQualityName, WorkQualityProfile> = {
-  full: { dprCap: 1.5, liveVideoSlots: 3, deformation: 1, inertia: 1 },
-  lite: { dprCap: 1.2, liveVideoSlots: 2, deformation: 0.45, inertia: 0.8 },
-  mobile: { dprCap: 1.15, liveVideoSlots: 1, deformation: 0.2, inertia: 0.62 },
-  reduced: { dprCap: 1, liveVideoSlots: 1, deformation: 0, inertia: 0 },
+  full: { dprCap: 1.5, liveVideoSlots: 3, inertia: 1 },
+  lite: { dprCap: 1.2, liveVideoSlots: 2, inertia: 0.8 },
+  mobile: { dprCap: 1.15, liveVideoSlots: 1, inertia: 0.62 },
+  reduced: { dprCap: 1, liveVideoSlots: 1, inertia: 0 },
 };
 
 export function chooseWorkQuality(options?: {
