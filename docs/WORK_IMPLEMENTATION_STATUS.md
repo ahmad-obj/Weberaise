@@ -43,6 +43,7 @@
 - reassignment clears old-frame state so a new project cannot briefly show another project's video;
 - temporary development placeholders use procedural canvas frames through the **same bounded live texture slots** rather than requesting fake video files;
 - procedural placeholder previews are capped to a 24fps texture-update cadence;
+- reduced-motion placeholders hold after the first procedural frame until direct interaction;
 - media derivative contract for real projects is documented in `public/work/README.md`.
 
 ### Project showcase transition
@@ -92,7 +93,7 @@ A dependency-free isolated verification harness was built for the new sphere cor
 - front-project matrix/projection produces a centered landscape screen footprint: **PASS**;
 - soft magnetic snapping converges the chosen sphere direction to the front target: **PASS**;
 - focused sphere-core tests: **7/7 PASS**;
-- placeholder source/effect contract harness: **5/5 PASS**;
+- placeholder source/effect contract harness: **6/6 PASS**;
 - strict TypeScript compile of the procedural placeholder media-pool subset: **PASS**.
 
 Repository diff inspection confirms this branch adds Work-specific source/tests/docs and does not edit homepage or Services implementation files.
