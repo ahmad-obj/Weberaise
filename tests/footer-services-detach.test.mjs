@@ -82,3 +82,14 @@ test('hero navigation distinguishes page routes from in-page hash targets after 
   assert.match(hero, /window\.location\.assign\(target\)/);
   assert.match(hero, /scrollIntoView/);
 });
+
+test('closing footer remains responsive, reduced-motion aware and does not restore placeholder sections', () => {
+  const css = read('src/components/MainSite/PostExploreNarrative/ClosingFooter.module.css');
+  const motion = read('src/components/MainSite/PostExploreNarrative/servicesDetachMotion.ts');
+  const main = read('src/components/MainSite/MainSite.tsx');
+
+  assert.match(css, /@media\s*\(max-width:/);
+  assert.match(css, /clamp\(/);
+  assert.match(motion, /prefers-reduced-motion:\s*reduce/);
+  assert.doesNotMatch(main, /id="(?:work|services|audit|about|process|proof|engagement|contact)"/);
+});
