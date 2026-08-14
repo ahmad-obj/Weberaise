@@ -47,11 +47,16 @@ export function nextKeyboardSlot(current: number, delta: number, slotCount: numb
 export function rankSlotsByFront(
   slots: readonly SphereSlot[],
   orientation: Quat,
-): Array<{ slotId: number; rank: number; depth: number }> {
+): Array<{ slotId: number; projectIndex: number; rank: number; depth: number }> {
   return slots
     .map(slot => {
       const oriented = transformVec3Quat(vec3f(), slot.direction, orientation);
-      return { slotId: slot.id, depth: -oriented[2], rank: 0 };
+      return {
+        slotId: slot.id,
+        projectIndex: slot.projectIndex,
+        depth: -oriented[2],
+        rank: 0,
+      };
     })
     .sort((a, b) => b.depth - a.depth)
     .map((entry, rank) => ({ ...entry, rank }));
