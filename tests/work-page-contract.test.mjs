@@ -42,6 +42,13 @@ test('sphere engine remains direct instanced WebGL and picking is not part of RA
   assert.doesNotMatch(frameMatch[0], /hitTestProjectedSlots/);
 });
 
+test('programmatic focus restoration does not destroy the exact pre-open sphere orientation', () => {
+  const page = read('src/components/WorkPage/WorkPage.tsx');
+  assert.match(page, /suppressSemanticSnapRef/);
+  assert.match(page, /if \(!suppressSemanticSnapRef\.current\)/);
+  assert.match(page, /suppressSemanticSnapRef\.current\s*=\s*true[\s\S]*\.focus\(\)[\s\S]*suppressSemanticSnapRef\.current\s*=\s*false/);
+});
+
 test('work sphere adds no new runtime dependency', () => {
   assert.doesNotMatch(read('package.json'), /gl-matrix/);
   assert.doesNotMatch(read('src/webgl/workSphere/math.ts'), /from ['"]gl-matrix/);
