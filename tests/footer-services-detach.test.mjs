@@ -2,6 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import {
+  clampServicesDetachProgress,
+  servicesDetachPoint,
+} from '../src/components/MainSite/PostExploreNarrative/servicesDetachMotion.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
@@ -36,4 +40,37 @@ test('closing footer provides the approved sticky stage, headline, metadata and 
   assert.match(narrative, /<ClosingFooter \/>/);
   assert.match(css, /position:\s*sticky/);
   assert.match(css, /height:\s*100svh/);
+});
+
+test('services detach path is deterministic, endpoint exact, and reversible by progress', () => {
+  assert.equal(clampServicesDetachProgress(-1), 0);
+  assert.equal(clampServicesDetachProgress(2), 1);
+
+  const start = servicesDetachPoint(0, 180, 620);
+  const end = servicesDetachPoint(1, 180, 620);
+  const middleA = servicesDetachPoint(0.42, 180, 620);
+  const middleB = servicesDetachPoint(0.42, 180, 620);
+
+  assert.deepEqual(start, { x: 0, y: 0 });
+  assert.ok(Math.abs(end.x - 180) < 0.001);
+  assert.ok(Math.abs(end.y - 620) < 0.001);
+  assert.deepEqual(middleA, middleB);
+  assert.ok(middleA.y > 0 && middleA.y < 620);
+});
+
+test('detach controller caches geometry and keeps scroll frames free of layout reads and React state', () => {
+  const motion = read('src/components/MainSite/PostExploreNarrative/servicesDetachMotion.ts');
+
+  assert.match(motion, /requestAnimationFrame/);
+  assert.match(motion, /ResizeObserver/);
+  assert.match(motion, /document\.fonts/);
+  assert.match(motion, /translate3d/);
+  assert.match(motion, /addEventListener\('scroll',[\s\S]*passive:\s*true/);
+  assert.doesNotMatch(motion, /elementsFromPoint/);
+  assert.doesNotMatch(motion, /setState|useState/);
+
+  const updateStart = motion.indexOf('const updateFromScroll');
+  const updateEnd = motion.indexOf('const scheduleScroll', updateStart);
+  const scrollBlock = motion.slice(updateStart, updateEnd);
+  assert.doesNotMatch(scrollBlock, /getBoundingClientRect|querySelector|querySelectorAll/);
 });
