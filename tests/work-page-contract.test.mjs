@@ -52,9 +52,11 @@ test('browse metadata is deliberately minimal', () => {
   assert.doesNotMatch(meta, /brief|year|services/);
 });
 
-test('quality and no-WebGL fallback are explicit', () => {
+test('quality profiles and no-WebGL fallback remain explicit without phase-two showcase behavior', () => {
   const quality = read('src/webgl/workSphere/quality.ts');
+  const fallback = read('src/components/WorkPage/WorkFallback.tsx');
   assert.match(quality, /dprCap/);
   assert.match(quality, /liveVideoSlots/);
-  assert.match(read('src/components/WorkPage/WorkFallback.tsx'), /ProjectShowcase/);
+  assert.doesNotMatch(fallback, /ProjectShowcase/);
+  assert.doesNotMatch(fallback, /setSelected|onClick/);
 });
