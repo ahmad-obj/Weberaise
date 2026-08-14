@@ -1,4 +1,5 @@
 import { CapabilitiesSection } from './CapabilitiesSection';
+import { ContactEnding } from './ContactEnding';
 import styles from './ServicesTailEnvironment.module.css';
 
 export function ServicesTailEnvironment() {
@@ -6,7 +7,7 @@ export function ServicesTailEnvironment() {
     <div id="services-tail-environment" className={styles.tail}>
       <div className={styles.transitionVeil} aria-hidden="true" />
       <CapabilitiesSection />
-      <div className={styles.contactReserve} aria-hidden="true" />
+      <ContactEnding />
     </div>
   );
 }
