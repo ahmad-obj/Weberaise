@@ -1,4 +1,4 @@
-import { quat, vec2, vec3 } from 'gl-matrix';
+import { quat, vec3 } from 'gl-matrix';
 import { WORK_SPHERE } from './constants';
 import type { Vec3 } from './types';
 
@@ -15,7 +15,7 @@ export function decayAngularVelocity(
 ): number {
   if (reducedMotion) return 0;
   const next = value * Math.exp(-deltaMs / WORK_SPHERE.inertiaTimeConstantMs);
-  return Math.abs(next) < 0.0005 ? 0 : next;
+  return Math.abs(next) < 0.004 ? 0 : next;
 }
 
 export class ArcballController {
@@ -122,11 +122,10 @@ export class ArcballController {
     const size = Math.max(this.viewportWidth, this.viewportHeight);
     const nx = (2 * x - this.viewportWidth) / size;
     const ny = (this.viewportHeight - 2 * y) / size;
-    const radius = 1;
     const d = nx * nx + ny * ny;
-    const z = d <= radius * radius * 0.5
-      ? Math.sqrt(Math.max(0, radius * radius - d))
-      : (radius * radius * 0.5) / Math.sqrt(Math.max(d, 1e-6));
+    const z = d <= 0.5
+      ? Math.sqrt(Math.max(0, 1 - d))
+      : 0.5 / Math.sqrt(Math.max(d, 1e-6));
     return vec3.normalize(vec3.create(), vec3.fromValues(nx, ny, z));
   }
 }
