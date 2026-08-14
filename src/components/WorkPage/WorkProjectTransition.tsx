@@ -69,7 +69,7 @@ export function WorkProjectTransition({
     });
 
     const timeline = gsap.timeline({
-      onComplete() {
+      onComplete: () => {
         onProgress(direction === 'open' ? 1 : 0);
         onComplete();
       },
@@ -96,8 +96,9 @@ export function WorkProjectTransition({
         borderRadius: 6,
         duration: geometryDuration,
         ease: reducedMotion ? 'power1.out' : 'power4.inOut',
-        onUpdate() {
-          onProgress(this.progress());
+        onUpdate: () => {
+          const p = Math.max(0, Math.min(1, (timeline.time() - crossfadeDuration) / geometryDuration));
+          onProgress(p);
         },
       });
     } else {
