@@ -46,3 +46,20 @@ test('website surface is exact 4:3 with 35 vertices and 144 indices', () => {
   const height = Math.max(...ys) - Math.min(...ys);
   assert.ok(Math.abs(width / height - 4 / 3) < 1e-6);
 });
+
+test('surface triangles face +Z before tangent placement so front instances survive culling', () => {
+  const mesh = createProjectSurfaceMesh();
+  const [ia, ib, ic] = mesh.indices;
+  const point = index => [
+    mesh.positions[index * 3],
+    mesh.positions[index * 3 + 1],
+    mesh.positions[index * 3 + 2],
+  ];
+  const a = point(ia);
+  const b = point(ib);
+  const c = point(ic);
+  const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+  const ac = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+  const normalZ = ab[0] * ac[1] - ab[1] * ac[0];
+  assert.ok(normalZ > 0);
+});
