@@ -74,3 +74,11 @@ test('detach controller caches geometry and keeps scroll frames free of layout r
   const scrollBlock = motion.slice(updateStart, updateEnd);
   assert.doesNotMatch(scrollBlock, /getBoundingClientRect|querySelector|querySelectorAll/);
 });
+
+test('hero navigation distinguishes page routes from in-page hash targets after Explore exit', () => {
+  const hero = read('src/components/experience/Hero/Hero.tsx');
+
+  assert.match(hero, /target\.startsWith\('#'\)/);
+  assert.match(hero, /window\.location\.assign\(target\)/);
+  assert.match(hero, /scrollIntoView/);
+});
