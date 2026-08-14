@@ -42,3 +42,8 @@ test('transition path does not use canvas readback or continuous picking', () =>
   assert.ok(frameMatch);
   assert.doesNotMatch(frameMatch[0], /hitTestProjectedSlots/);
 });
+
+test('expanded project layout avoids unsupported CSS length multiplication', () => {
+  const css = read('src/components/WorkPage/WorkPage.module.css');
+  assert.doesNotMatch(css, /calc\([^)]*\*\s*1\.6/);
+});
