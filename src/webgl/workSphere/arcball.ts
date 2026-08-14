@@ -1,9 +1,23 @@
-import { quat, vec3 } from 'gl-matrix';
 import { WORK_SPHERE } from './constants';
+import {
+  cloneQuat,
+  copyQuat,
+  multiplyQuat,
+  normalizeQuat,
+  normalizeVec3,
+  quatFromAxisAngle,
+  quatIdentity,
+  rotationToQuat,
+  slerpQuat,
+  transformVec3Quat,
+  vec3f,
+  type Quat,
+  type Vec3f,
+} from './math';
 import type { Vec3 } from './types';
 
 export type ArcballSnapshot = {
-  orientation: quat;
+  orientation: Quat;
   angularVelocity: number;
   moving: boolean;
 };
@@ -19,18 +33,21 @@ export function decayAngularVelocity(
 }
 
 export class ArcballController {
-  readonly orientation = quat.create();
+  readonly orientation = quatIdentity();
 
   private viewportWidth = 1;
   private viewportHeight = 1;
   private pointerDownState = false;
-  private previousPoint = vec3.fromValues(0, 0, 1);
+  private previousPoint = vec3f(0, 0, 1);
   private angularVelocity = 0;
-  private inertiaAxis = vec3.fromValues(0, 1, 0);
-  private snapTarget: vec3 | null = null;
+  private inertiaAxis = vec3f(0, 1, 0);
+  private snapTarget: Vec3f | null = null;
   private reducedMotion = false;
 
-  constructor(reducedMotion = false) {
+  constructor(
+    reducedMotion = false,
+    private readonly inertiaScale = 1,
+  ) {
     this.reducedMotion = reducedMotion;
   }
 
@@ -62,16 +79,18 @@ export class ArcballController {
   pointerMove(x: number, y: number) {
     if (!this.pointerDownState) return;
     const currentPoint = this.project(x, y);
-    const delta = quat.rotationTo(quat.create(), this.previousPoint, currentPoint);
-    quat.multiply(this.orientation, delta, this.orientation);
-    quat.normalize(this.orientation, this.orientation);
+    const delta = rotationToQuat(quatIdentity(), this.previousPoint, currentPoint);
+    multiplyQuat(this.orientation, delta, this.orientation);
+    normalizeQuat(this.orientation, this.orientation);
 
     const clampedW = Math.max(-1, Math.min(1, delta[3]));
     const angle = 2 * Math.acos(clampedW);
     const sinHalf = Math.sqrt(Math.max(0, 1 - clampedW * clampedW));
     if (sinHalf > 1e-5 && angle > 1e-5) {
-      vec3.set(this.inertiaAxis, delta[0] / sinHalf, delta[1] / sinHalf, delta[2] / sinHalf);
-      this.angularVelocity = Math.min(0.16, angle);
+      this.inertiaAxis[0] = delta[0] / sinHalf;
+      this.inertiaAxis[1] = delta[1] / sinHalf;
+      this.inertiaAxis[2] = delta[2] / sinHalf;
+      this.angularVelocity = Math.min(0.16, angle) * this.inertiaScale;
     }
 
     this.previousPoint = currentPoint;
@@ -83,7 +102,7 @@ export class ArcballController {
   }
 
   setSnapTarget(direction: Vec3 | null) {
-    this.snapTarget = direction ? vec3.fromValues(...direction) : null;
+    this.snapTarget = direction ? vec3f(...direction) : null;
   }
 
   stop() {
@@ -91,17 +110,17 @@ export class ArcballController {
     this.pointerDownState = false;
   }
 
-  restoreOrientation(value: quat) {
-    quat.copy(this.orientation, value);
-    quat.normalize(this.orientation, this.orientation);
+  restoreOrientation(value: Quat) {
+    copyQuat(this.orientation, value);
+    normalizeQuat(this.orientation, this.orientation);
     this.stop();
   }
 
   update(deltaMs: number): ArcballSnapshot {
     if (!this.pointerDownState && this.angularVelocity > 0) {
-      const rotation = quat.setAxisAngle(quat.create(), this.inertiaAxis, this.angularVelocity);
-      quat.multiply(this.orientation, rotation, this.orientation);
-      quat.normalize(this.orientation, this.orientation);
+      const rotation = quatFromAxisAngle(quatIdentity(), this.inertiaAxis, this.angularVelocity);
+      multiplyQuat(this.orientation, rotation, this.orientation);
+      normalizeQuat(this.orientation, this.orientation);
       this.angularVelocity = decayAngularVelocity(this.angularVelocity, deltaMs, this.reducedMotion);
     }
 
@@ -110,23 +129,24 @@ export class ArcballController {
       && this.snapTarget
       && this.angularVelocity <= WORK_SPHERE.snapVelocityThreshold
     ) {
-      const current = vec3.transformQuat(vec3.create(), this.snapTarget, this.orientation);
-      const target = vec3.fromValues(0, 0, 1);
-      const correction = quat.rotationTo(quat.create(), current, target);
-      const factor = this.reducedMotion ? 1 : 1 - Math.exp(-deltaMs / WORK_SPHERE.snapTimeConstantMs);
-      const partial = quat.slerp(quat.create(), quat.create(), correction, factor);
-      quat.multiply(this.orientation, partial, this.orientation);
-      quat.normalize(this.orientation, this.orientation);
+      const current = transformVec3Quat(vec3f(), this.snapTarget, this.orientation);
+      const correction = rotationToQuat(quatIdentity(), current, [0, 0, 1]);
+      const factor = this.reducedMotion
+        ? 1
+        : 1 - Math.exp(-deltaMs / WORK_SPHERE.snapTimeConstantMs);
+      const partial = slerpQuat(quatIdentity(), quatIdentity(), correction, factor);
+      multiplyQuat(this.orientation, partial, this.orientation);
+      normalizeQuat(this.orientation, this.orientation);
     }
 
     return {
-      orientation: quat.clone(this.orientation),
+      orientation: cloneQuat(this.orientation),
       angularVelocity: this.angularVelocity,
       moving: this.pointerDownState || this.angularVelocity > 0.004,
     };
   }
 
-  private project(x: number, y: number): vec3 {
+  private project(x: number, y: number): Vec3f {
     const size = Math.max(this.viewportWidth, this.viewportHeight);
     const nx = (2 * x - this.viewportWidth) / size;
     const ny = (this.viewportHeight - 2 * y) / size;
@@ -134,6 +154,6 @@ export class ArcballController {
     const z = d <= 0.5
       ? Math.sqrt(Math.max(0, 1 - d))
       : 0.5 / Math.sqrt(Math.max(d, 1e-6));
-    return vec3.normalize(vec3.create(), vec3.fromValues(nx, ny, z));
+    return normalizeVec3(vec3f(), [nx, ny, z]);
   }
 }
