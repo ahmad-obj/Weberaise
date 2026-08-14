@@ -29,6 +29,13 @@ test('phase one browse route cannot open project showcase', () => {
   assert.doesNotMatch(canvas, /onProjectActivate/);
 });
 
+test('phase one active project follows sphere focus without a hover override path', () => {
+  const page = read('src/components/WorkPage/WorkPage.tsx');
+  const canvas = read('src/components/WorkPage/WorkSphereCanvas.tsx');
+  assert.doesNotMatch(page, /hoverSlotId|setHoverSlotId|onHoverSlotChange/);
+  assert.doesNotMatch(canvas, /onHoverSlotChange/);
+});
+
 test('sphere engine stays direct WebGL with instanced rendering', () => {
   const engine = read('src/webgl/workSphere/WorkSphereEngine.ts');
   assert.match(engine, /getContext\(['"]webgl2/);
