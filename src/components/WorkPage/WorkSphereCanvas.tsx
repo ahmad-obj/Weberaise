@@ -8,7 +8,12 @@ import {
   useRef,
 } from 'react';
 import type { WorkProject } from '@/content/workProjects';
+import type { ScreenBounds } from '@/webgl/workSphere/activation';
 import { chooseWorkQuality } from '@/webgl/workSphere/quality';
+import type {
+  WorkResolveStatus,
+  WorkSphereTransitionSnapshot,
+} from '@/webgl/workSphere/types';
 import { WorkSphereEngine } from '@/webgl/workSphere/WorkSphereEngine';
 
 export type WorkSphereHandle = {
@@ -17,6 +22,13 @@ export type WorkSphereHandle = {
   setInteractive(value: boolean): void;
   setEntranceProgress(progress: number): void;
   snapToSlot(slotId: number): void;
+  captureTransitionSnapshot(): WorkSphereTransitionSnapshot | null;
+  beginResolveToSlot(slotId: number): void;
+  getResolveStatus(): WorkResolveStatus | null;
+  getSlotScreenBounds(slotId: number): ScreenBounds | null;
+  setSelectedSlotHidden(slotId: number | null): void;
+  setProjectOpenProgress(progress: number): void;
+  restoreTransitionSnapshot(snapshot: WorkSphereTransitionSnapshot): void;
   getProjectIndexForSlot(slotId: number): number;
 };
 
@@ -28,6 +40,7 @@ type WorkSphereCanvasProps = {
   onReady(): void;
   onActiveSlotChange(slotId: number): void;
   onMovementChange(moving: boolean): void;
+  onProjectActivate(slotId: number): void;
   onCapabilityFailure(error: Error): void;
 };
 
@@ -41,6 +54,7 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
       onReady,
       onActiveSlotChange,
       onMovementChange,
+      onProjectActivate,
       onCapabilityFailure,
     },
     ref,
@@ -52,6 +66,7 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
       onReady,
       onActiveSlotChange,
       onMovementChange,
+      onProjectActivate,
       onCapabilityFailure,
     });
 
@@ -59,6 +74,7 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
       onReady,
       onActiveSlotChange,
       onMovementChange,
+      onProjectActivate,
       onCapabilityFailure,
     };
 
@@ -68,6 +84,13 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
       setInteractive: value => engineRef.current?.setInteractive(value),
       setEntranceProgress: progress => engineRef.current?.setEntranceProgress(progress),
       snapToSlot: slotId => engineRef.current?.snapToSlot(slotId),
+      captureTransitionSnapshot: () => engineRef.current?.captureTransitionSnapshot() ?? null,
+      beginResolveToSlot: slotId => engineRef.current?.beginResolveToSlot(slotId),
+      getResolveStatus: () => engineRef.current?.getResolveStatus() ?? null,
+      getSlotScreenBounds: slotId => engineRef.current?.getSlotScreenBounds(slotId) ?? null,
+      setSelectedSlotHidden: slotId => engineRef.current?.setSelectedSlotHidden(slotId),
+      setProjectOpenProgress: progress => engineRef.current?.setProjectOpenProgress(progress),
+      restoreTransitionSnapshot: snapshot => engineRef.current?.restoreTransitionSnapshot(snapshot),
       getProjectIndexForSlot: slotId => engineRef.current?.getProjectIndexForSlot(slotId) ?? -1,
     }), []);
 
@@ -90,6 +113,7 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
             onReady: () => callbacksRef.current.onReady(),
             onActiveSlotChange: slotId => callbacksRef.current.onActiveSlotChange(slotId),
             onMovementChange: moving => callbacksRef.current.onMovementChange(moving),
+            onProjectActivate: slotId => callbacksRef.current.onProjectActivate(slotId),
             onCapabilityFailure: error => callbacksRef.current.onCapabilityFailure(error),
           },
           { reducedMotion, quality },
