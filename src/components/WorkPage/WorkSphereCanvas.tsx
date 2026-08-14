@@ -27,7 +27,6 @@ type WorkSphereCanvasProps = {
   className?: string;
   onReady(): void;
   onActiveSlotChange(slotId: number): void;
-  onHoverSlotChange(slotId: number | null): void;
   onMovementChange(moving: boolean): void;
   onCapabilityFailure(error: Error): void;
 };
@@ -41,7 +40,6 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
       className,
       onReady,
       onActiveSlotChange,
-      onHoverSlotChange,
       onMovementChange,
       onCapabilityFailure,
     },
@@ -53,7 +51,6 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
     const callbacksRef = useRef({
       onReady,
       onActiveSlotChange,
-      onHoverSlotChange,
       onMovementChange,
       onCapabilityFailure,
     });
@@ -61,7 +58,6 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
     callbacksRef.current = {
       onReady,
       onActiveSlotChange,
-      onHoverSlotChange,
       onMovementChange,
       onCapabilityFailure,
     };
@@ -93,7 +89,6 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
           {
             onReady: () => callbacksRef.current.onReady(),
             onActiveSlotChange: slotId => callbacksRef.current.onActiveSlotChange(slotId),
-            onHoverSlotChange: slotId => callbacksRef.current.onHoverSlotChange(slotId),
             onMovementChange: moving => callbacksRef.current.onMovementChange(moving),
             onCapabilityFailure: error => callbacksRef.current.onCapabilityFailure(error),
           },
