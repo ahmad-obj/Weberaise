@@ -7,14 +7,16 @@ function normalize([x, y, z]: Vec3): Vec3 {
   return [x / length, y / length, z / length];
 }
 
-const ICOSAHEDRON_BASE: readonly Vec3[] = [
+const ICOSAHEDRON_SEEDS: readonly Vec3[] = [
   [-1, PHI, 0],
   [1, PHI, 0],
   [0, -1, PHI],
   [0, 1, PHI],
   [PHI, 0, -1],
   [PHI, 0, 1],
-].map(normalize);
+];
+
+const ICOSAHEDRON_BASE: readonly Vec3[] = ICOSAHEDRON_SEEDS.map(normalize);
 
 export function createIcosahedronDirections(): readonly Vec3[] {
   const front = ICOSAHEDRON_BASE.map(direction => [...direction] as Vec3);
