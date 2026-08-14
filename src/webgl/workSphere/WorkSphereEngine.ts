@@ -337,11 +337,17 @@ export class WorkSphereEngine {
     if (!slot) return null;
     const alignmentError = frontAlignmentError(slot.direction, this.controller.orientation);
     const rotationVelocity = Math.abs(this.controller.rotationVelocity);
+    const ready = alignmentError <= 0.0025 && rotationVelocity <= 0.0035;
+    if (ready) {
+      this.controller.stop();
+      this.controller.setSnapTarget(null);
+      this.freezeOrientation = true;
+    }
     return {
       slotId: slot.id,
       alignmentError,
       rotationVelocity,
-      ready: alignmentError <= 0.0025 && rotationVelocity <= 0.0035,
+      ready,
     };
   }
 
@@ -415,6 +421,15 @@ export class WorkSphereEngine {
     if (!this.started || this.destroyed) return;
     const deltaMs = Math.min(32, Math.max(1, now - this.lastFrame));
     this.lastFrame = now;
+
+    if (!this.freezeOrientation && this.resolvingSlotId !== null) {
+      const resolvingSlot = this.slots[this.resolvingSlotId];
+      if (resolvingSlot) {
+        const world = transformVec3Quat(vec3f(), resolvingSlot.direction, this.controller.orientation);
+        this.controller.setSnapTarget(world);
+      }
+    }
+
     const snapshot = this.freezeOrientation
       ? { orientation: this.controller.orientation, rotationVelocity: 0 }
       : this.controller.update(deltaMs, WORK_SPHERE.targetFrameDurationMs);
