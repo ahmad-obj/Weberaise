@@ -1,0 +1,31 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: #000;
+  overflow: hidden;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.root[data-webgl-state='fallback'] {
+  background:
+    radial-gradient(80% 70% at 18% 26%, rgb(37 99 235 / 14%), transparent 58%),
+    radial-gradient(65% 80% at 82% 68%, rgb(59 130 246 / 9%), transparent 62%),
+    #000;
+}
+
+.root[data-webgl-state='fallback'] .canvas {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas {
+    will-change: auto;
+  }
+}

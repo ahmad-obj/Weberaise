@@ -1,6 +1,13 @@
 .route {
+  position: relative;
   min-height: 100svh;
   background: var(--wr-black);
+  isolation: isolate;
+}
+
+.upstream {
+  position: relative;
+  z-index: 2;
 }
 
 .route :global(main > section[aria-label='Services'] > div[aria-hidden='true']:last-child) {
