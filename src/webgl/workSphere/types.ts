@@ -35,7 +35,6 @@ export type WorkSphereCallbacks = {
   onActiveSlotChange?: (slotId: number) => void;
   onHoverSlotChange?: (slotId: number | null) => void;
   onMovementChange?: (moving: boolean) => void;
-  onProjectActivate?: (slotId: number) => void;
   onCapabilityFailure?: (reason: Error) => void;
 };
 
