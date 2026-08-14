@@ -14,6 +14,7 @@ uniform float uVelocity;
 uniform float uDeformation;
 uniform float uProjectOpening;
 uniform int uOpeningSlot;
+uniform int uHiddenSlot;
 
 out vec2 vUv;
 out float vDepthAlpha;
@@ -21,23 +22,29 @@ flat out int vProjectIndex;
 flat out int vSlotId;
 
 void main() {
+  int slotId = int(aInstanceMeta.y + 0.5);
+  vUv = aUv;
+  vProjectIndex = int(aInstanceMeta.x + 0.5);
+  vSlotId = slotId;
+
+  if (slotId == uHiddenSlot) {
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+    vDepthAlpha = 0.0;
+    return;
+  }
+
   mat4 instanceMatrix = mat4(aInstance0, aInstance1, aInstance2, aInstance3);
   vec3 local = aPosition;
   local.x += local.y * clamp(uVelocity, -1.0, 1.0) * uDeformation * 0.02;
 
-  int slotId = int(aInstanceMeta.y + 0.5);
   if (uOpeningSlot >= 0 && slotId != uOpeningSlot) {
     local.xy *= mix(1.0, 0.72, uProjectOpening);
   }
 
   vec4 world = instanceMatrix * vec4(local, 1.0);
   gl_Position = uViewProjection * world;
-
   float ndcDepth = gl_Position.z / max(0.0001, gl_Position.w);
   vDepthAlpha = smoothstep(1.0, -0.35, ndcDepth);
-  vUv = aUv;
-  vProjectIndex = int(aInstanceMeta.x + 0.5);
-  vSlotId = slotId;
 }
 `;
 
