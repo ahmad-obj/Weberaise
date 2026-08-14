@@ -1,7 +1,7 @@
 import type { WorkProject } from '@/content/workProjects';
 import type { SphereSlot } from './types';
 
-type RankedSlot = { slotId: number; rank: number };
+type RankedSlot = { slotId: number; projectIndex: number; rank: number };
 
 type VideoWithFrameCallback = HTMLVideoElement & {
   requestVideoFrameCallback?: (callback: (now: number, metadata: unknown) => void) => number;
@@ -35,16 +35,18 @@ export type WorkMediaUniforms = {
 export function selectLiveVideoSlots(
   ranked: readonly RankedSlot[],
   maxSlots: number,
-  hoverSlotId?: number,
 ): number[] {
+  if (maxSlots <= 0) return [];
+
   const result: number[] = [];
-  if (maxSlots <= 0) return result;
-  if (hoverSlotId !== undefined && hoverSlotId >= 0) result.push(hoverSlotId);
+  const seenProjects = new Set<number>();
   for (const item of [...ranked].sort((a, b) => a.rank - b.rank)) {
-    if (!result.includes(item.slotId)) result.push(item.slotId);
+    if (item.projectIndex < 0 || seenProjects.has(item.projectIndex)) continue;
+    seenProjects.add(item.projectIndex);
+    result.push(item.slotId);
     if (result.length >= maxSlots) break;
   }
-  return result.slice(0, maxSlots);
+  return result;
 }
 
 export class WorkPreviewMediaPool {
@@ -73,7 +75,11 @@ export class WorkPreviewMediaPool {
 
   async prepareInitial(initialPriorityIds: readonly number[]): Promise<void> {
     await this.buildPosterAtlas();
-    const ranked = initialPriorityIds.map((slotId, rank) => ({ slotId, rank }));
+    const ranked = initialPriorityIds.map((slotId, rank) => ({
+      slotId,
+      rank,
+      projectIndex: this.slotById.get(slotId)?.projectIndex ?? -1,
+    }));
     this.updatePriorities(ranked);
 
     const primary = this.liveSlots[0];
@@ -84,9 +90,9 @@ export class WorkPreviewMediaPool {
     ]);
   }
 
-  updatePriorities(ranked: readonly RankedSlot[], hoverSlotId?: number) {
+  updatePriorities(ranked: readonly RankedSlot[]) {
     if (this.destroyed) return;
-    const desired = selectLiveVideoSlots(ranked, this.liveSlots.length, hoverSlotId);
+    const desired = selectLiveVideoSlots(ranked, this.liveSlots.length);
     const existingBySlot = new Map<number, LiveSlot>();
     for (const slot of this.liveSlots) {
       if (slot.assignedSlotId >= 0) existingBySlot.set(slot.assignedSlotId, slot);
