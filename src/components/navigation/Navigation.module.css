@@ -121,7 +121,6 @@
   color: inherit;
   white-space: nowrap;
   pointer-events: none;
-  will-change: transform, opacity;
 }
 
 .pillFloodReveal {
@@ -134,7 +133,6 @@
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  will-change: transform, opacity;
 }
 
 .navRoot[data-navigation-mode='main'] [data-nav-theme='dark'] {
