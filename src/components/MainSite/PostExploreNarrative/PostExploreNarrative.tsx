@@ -1,5 +1,6 @@
 import { postExploreCopy } from '@/content/homepage';
 import { AuroraStatement } from './AuroraStatement';
+import { ClosingFooter } from './ClosingFooter';
 import { GrowthRing } from './GrowthRing';
 import { JourneyNarrative } from './JourneyNarrative';
 import styles from './PostExploreNarrative.module.css';
@@ -23,6 +24,7 @@ export function PostExploreNarrative() {
         />
         <GrowthRing text={postExploreCopy.ring} center={postExploreCopy.ringCenter} />
       </section>
+      <ClosingFooter />
     </section>
   );
 }
