@@ -31,12 +31,11 @@ test('rectangular website vertices are reprojected back onto the spherical radiu
   assert.match(shaders, /roundedRectSdf/);
 });
 
-test('preview atlas and procedural fixtures match the 4:3 surface aspect', () => {
-  const media = read('src/webgl/workSphere/mediaPool.ts');
-  assert.match(media, /cellWidth\s*=\s*1024/);
-  assert.match(media, /cellHeight\s*=\s*768/);
-  assert.match(media, /placeholderCanvas\.width\s*=\s*640/);
-  assert.match(media, /placeholderCanvas\.height\s*=\s*480/);
+test('16:10 website media is cropped into the 4:3 surface instead of stretched', () => {
+  const shaders = read('src/webgl/workSphere/shaders.ts');
+  assert.match(shaders, /fitWebsiteUv/);
+  assert.match(shaders, /sourceAspect\s*=\s*1\.6/);
+  assert.match(shaders, /targetAspect\s*=\s*4\.0\s*\/\s*3\.0/);
 });
 
 test('phase one pointer release cannot activate a project', () => {
