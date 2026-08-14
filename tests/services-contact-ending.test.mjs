@@ -17,21 +17,38 @@ test('contact ending uses direct non-persuasive section copy', () => {
   assert.doesNotMatch(source, /href=[^>]*CONTACT US|<button[^>]*>[\s\S]*CONTACT US/i);
 });
 
-test('contact details model never embeds placeholder channels', async () => {
+test('contact details match the approved current Weberaise channels', async () => {
   const model = await import(moduleUrl('src/components/ServicesPage/contactDetails.ts'));
-  const details = model.CONTACT_DETAILS;
 
-  assert.ok(Array.isArray(details));
-  for (const item of details) {
-    assert.ok(['email', 'phone', 'whatsapp', 'social'].includes(item.kind));
-    assert.equal(typeof item.label, 'string');
-    assert.equal(typeof item.value, 'string');
-    assert.equal(typeof item.href, 'string');
-    assert.ok(item.label.trim().length > 0);
-    assert.ok(item.value.trim().length > 0);
-    assert.ok(item.href.trim().length > 0);
-    assert.doesNotMatch(`${item.value} ${item.href}`, /example|placeholder|your-|000000|todo|tbd/i);
-  }
+  assert.deepEqual(model.CONTACT_DETAILS, [
+    {
+      kind: 'email',
+      label: 'EMAIL',
+      value: 'example@gmail.com',
+      href: 'mailto:example@gmail.com',
+    },
+    {
+      kind: 'whatsapp',
+      label: 'PHONE / WHATSAPP',
+      value: '+92 325 9622759',
+      href: 'https://wa.me/923259622759',
+      external: true,
+    },
+    {
+      kind: 'social',
+      label: 'INSTAGRAM',
+      value: 'Instagram',
+      href: 'https://instagram.com/weberaise',
+      external: true,
+    },
+    {
+      kind: 'social',
+      label: 'LINKEDIN',
+      value: 'LinkedIn',
+      href: 'https://www.linkedin.com/company/140193912/',
+      external: true,
+    },
+  ]);
 });
 
 test('contact ending is organized and responsive rather than scattered', () => {
