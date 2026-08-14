@@ -337,10 +337,17 @@ export class WorkSphereEngine {
     if (!slot) return null;
     const alignmentError = frontAlignmentError(slot.direction, this.controller.orientation);
     const rotationVelocity = Math.abs(this.controller.rotationVelocity);
-    const ready = alignmentError <= 0.0025 && rotationVelocity <= 0.0035;
+    const restCameraZ = WORK_SPHERE.cameraRestZ * this.scaleFactor;
+    const cameraError = Math.abs(this.cameraZ - restCameraZ);
+    const ready = alignmentError <= 0.0025
+      && rotationVelocity <= 0.0035
+      && cameraError <= 0.01;
     if (ready) {
       this.controller.stop();
       this.controller.setSnapTarget(null);
+      this.cameraZ = restCameraZ;
+      this.updateView();
+      this.updateMatrices();
       this.freezeOrientation = true;
     }
     return {
