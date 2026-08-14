@@ -48,9 +48,6 @@ void main() {
     }
   }
 
-  // This is the defining Infinite Menu surface behavior: after tangential
-  // placement/deformation, every website-mesh vertex is projected back onto
-  // the instance center's spherical radius.
   worldPosition.xyz = radius * normalize(worldPosition.xyz);
 
   gl_Position = uProjectionMatrix * uViewMatrix * worldPosition;
@@ -86,20 +83,28 @@ float roundedRectSdf(vec2 uv, float radius) {
   return length(max(p, 0.0)) + min(max(p.x, p.y), 0.0) - radius;
 }
 
-vec4 samplePoster() {
+vec2 fitWebsiteUv(vec2 uv) {
+  float sourceAspect = 1.6;
+  float targetAspect = 4.0 / 3.0;
+  float visibleWidth = targetAspect / sourceAspect;
+  return vec2((uv.x - 0.5) * visibleWidth + 0.5, uv.y);
+}
+
+vec4 samplePoster(vec2 websiteUv) {
   int grid = max(1, uAtlasGrid);
   int cellX = vProjectIndex % grid;
   int cellY = vProjectIndex / grid;
   vec2 cellSize = vec2(1.0) / float(grid);
-  vec2 atlasUv = (vec2(float(cellX), float(cellY)) + vUv) * cellSize;
+  vec2 atlasUv = (vec2(float(cellX), float(cellY)) + websiteUv) * cellSize;
   return texture(uPosterAtlas, atlasUv);
 }
 
 void main() {
-  vec4 color = samplePoster();
-  if (vSlotId == uVideoSlot0) color = texture(uVideo0, vUv);
-  else if (vSlotId == uVideoSlot1) color = texture(uVideo1, vUv);
-  else if (vSlotId == uVideoSlot2) color = texture(uVideo2, vUv);
+  vec2 websiteUv = fitWebsiteUv(vUv);
+  vec4 color = samplePoster(websiteUv);
+  if (vSlotId == uVideoSlot0) color = texture(uVideo0, websiteUv);
+  else if (vSlotId == uVideoSlot1) color = texture(uVideo1, websiteUv);
+  else if (vSlotId == uVideoSlot2) color = texture(uVideo2, websiteUv);
 
   float distanceToRounded = roundedRectSdf(vUv, uCornerRadius);
   float edge = max(fwidth(distanceToRounded) * 1.35, 0.00075);
