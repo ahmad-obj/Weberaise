@@ -35,6 +35,13 @@ test('project viewing stops WebGL and return uses resolved snapshot before pre-o
   assert.doesNotMatch(page, /router\.push|useRouter|ProjectTransitionBridge|ProjectShowcase/);
 });
 
+test('project page remains hidden for the full return restoration after DOM ownership transfers back', () => {
+  const page = read('src/components/WorkPage/WorkPage.tsx');
+  assert.match(page, /returnViewHidden/);
+  assert.match(page, /setReturnViewHidden\(true\)/);
+  assert.match(page, /data-returning=\{returnViewHidden\s*\?\s*'true'\s*:\s*'false'\}/);
+});
+
 test('transition path does not use canvas readback or continuous picking', () => {
   const engine = read('src/webgl/workSphere/WorkSphereEngine.ts');
   assert.doesNotMatch(engine, /readPixels|toDataURL|getImageData/);
@@ -47,7 +54,7 @@ test('resolve-to-front refreshes the clicked slot target every frame and freezes
   const engine = read('src/webgl/workSphere/WorkSphereEngine.ts');
   const frameMatch = engine.match(/private frame[\s\S]*?private updateView/);
   assert.ok(frameMatch);
-  assert.match(frameMatch[0], /if \(this\.resolvingSlotId !== null\)[\s\S]*transformVec3Quat[\s\S]*setSnapTarget/);
+  assert.match(frameMatch[0], /if \(!this\.freezeOrientation && this\.resolvingSlotId !== null\)[\s\S]*transformVec3Quat[\s\S]*setSnapTarget/);
   const statusMatch = engine.match(/getResolveStatus\(\)[\s\S]*?restoreTransitionSnapshot/);
   assert.ok(statusMatch);
   assert.match(statusMatch[0], /if \(ready\)[\s\S]*freezeOrientation\s*=\s*true/);
