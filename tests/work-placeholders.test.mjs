@@ -28,6 +28,12 @@ test('sphere placeholders animate through procedural live textures instead of fa
   assert.match(media, /placeholderCanvas/);
 });
 
+test('procedural placeholder preview uploads are cadence capped', () => {
+  const media = read('src/webgl/workSphere/mediaPool.ts');
+  assert.match(media, /placeholderFrameIntervalMs/);
+  assert.match(media, /1000\s*\/\s*24/);
+});
+
 test('expanded placeholder exposes an explicit play pause showcase simulation', () => {
   const showcase = read('src/components/WorkPage/ProjectShowcase.tsx');
   assert.match(showcase, /project\.placeholder/);
