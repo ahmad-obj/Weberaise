@@ -1,4 +1,9 @@
-import { mat4, vec4 } from 'gl-matrix';
+import {
+  mat4Identity,
+  multiplyMat4,
+  transformVec4Mat4,
+  type Mat4,
+} from './math';
 import type { ScreenBounds } from './types';
 
 const QUAD_CORNERS = [
@@ -9,14 +14,14 @@ const QUAD_CORNERS = [
 ] as const;
 
 export function projectQuadBounds(
-  model: mat4,
-  viewProjection: mat4,
+  model: Mat4,
+  viewProjection: Mat4,
   cssWidth: number,
   cssHeight: number,
 ): ScreenBounds | null {
-  const clipMatrix = mat4.multiply(mat4.create(), viewProjection, model);
+  const clipMatrix = multiplyMat4(mat4Identity(), viewProjection, model);
   const points = QUAD_CORNERS.map(corner => {
-    const clip = vec4.transformMat4(vec4.create(), vec4.fromValues(...corner), clipMatrix);
+    const clip = transformVec4Mat4(corner, clipMatrix);
     if (clip[3] <= 0.0001) return null;
     const x = clip[0] / clip[3];
     const y = clip[1] / clip[3];
