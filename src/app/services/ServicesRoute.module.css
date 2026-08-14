@@ -1,0 +1,8 @@
+.route {
+  min-height: 100svh;
+  background: var(--wr-black);
+}
+
+.route :global(main > section[aria-label='Services'] > div[aria-hidden='true']:last-child) {
+  display: none;
+}

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { ServicesPage } from '@/components/ServicesPage/ServicesPage';
+import { WorksBridge } from '@/components/ServicesPage/WorksBridge';
+import styles from './ServicesRoute.module.css';
 
 export const metadata: Metadata = {
   title: 'Services — WEBERAISE',
@@ -7,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function ServicesRoute() {
-  return <ServicesPage />;
+  return (
+    <div className={styles.route}>
+      <ServicesPage />
+      <WorksBridge />
+    </div>
+  );
 }
