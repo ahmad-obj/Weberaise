@@ -52,10 +52,12 @@ export function WorkProjectTransition({
   useLayoutEffect(() => {
     const frame = frameRef.current;
     if (!frame) return undefined;
+
     const destination = getWorkProjectDestination(window.innerWidth, window.innerHeight);
     const from = direction === 'open' ? sourceRect : destination;
     const to = direction === 'open' ? destination : sourceRect;
-    const duration = reducedMotion ? 0.22 : 0.82;
+    const geometryDuration = reducedMotion ? 0.22 : 0.72;
+    const crossfadeDuration = reducedMotion ? 0.06 : 0.1;
 
     gsap.set(frame, {
       left: from.left,
@@ -63,42 +65,67 @@ export function WorkProjectTransition({
       width: from.width,
       height: from.height,
       borderRadius: direction === 'open' ? 12 : 6,
-      opacity: 1,
+      opacity: direction === 'open' ? 0 : 1,
     });
 
-    let tween: gsap.core.Tween | null = null;
-    const raf = requestAnimationFrame(() => {
-      if (direction === 'open' && !ownershipSentRef.current) {
-        ownershipSentRef.current = true;
-        onOwnership();
-      }
-      tween = gsap.to(frame, {
-        left: to.left,
-        top: to.top,
-        width: to.width,
-        height: to.height,
-        borderRadius: direction === 'open' ? 6 : 12,
-        duration,
-        ease: reducedMotion ? 'power1.out' : 'power4.inOut',
-        onUpdate() {
-          const p = tween?.progress() ?? 0;
-          onProgress(direction === 'open' ? p : 1 - p);
-          if (direction === 'close' && p >= 0.86 && !ownershipSentRef.current) {
+    const timeline = gsap.timeline({
+      onComplete() {
+        onProgress(direction === 'open' ? 1 : 0);
+        onComplete();
+      },
+    });
+
+    if (direction === 'open') {
+      timeline.to(frame, {
+        opacity: 1,
+        duration: crossfadeDuration,
+        ease: 'power1.out',
+        onUpdate: () => onProgress(0),
+        onComplete: () => {
+          if (!ownershipSentRef.current) {
             ownershipSentRef.current = true;
             onOwnership();
           }
         },
-        onComplete() {
-          onProgress(direction === 'open' ? 1 : 0);
-          onComplete();
+      });
+      timeline.to(frame, {
+        left: to.left,
+        top: to.top,
+        width: to.width,
+        height: to.height,
+        borderRadius: 6,
+        duration: geometryDuration,
+        ease: reducedMotion ? 'power1.out' : 'power4.inOut',
+        onUpdate() {
+          onProgress(this.progress());
         },
       });
-    });
+    } else {
+      timeline.to(frame, {
+        left: to.left,
+        top: to.top,
+        width: to.width,
+        height: to.height,
+        borderRadius: 12,
+        duration: geometryDuration,
+        ease: reducedMotion ? 'power1.out' : 'power4.inOut',
+        onUpdate: () => onProgress(1),
+        onComplete: () => {
+          if (!ownershipSentRef.current) {
+            ownershipSentRef.current = true;
+            onOwnership();
+          }
+        },
+      });
+      timeline.to(frame, {
+        opacity: 0,
+        duration: crossfadeDuration,
+        ease: 'power1.out',
+        onUpdate: () => onProgress(1),
+      });
+    }
 
-    return () => {
-      cancelAnimationFrame(raf);
-      tween?.kill();
-    };
+    return () => timeline.kill();
   }, [direction, onComplete, onOwnership, onProgress, reducedMotion, sourceRect]);
 
   return (
