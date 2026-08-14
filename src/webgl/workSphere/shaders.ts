@@ -11,8 +11,6 @@ layout(location = 6) in vec2 aInstanceMeta;
 
 uniform mat4 uViewMatrix;
 uniform mat4 uProjectionMatrix;
-uniform vec4 uRotationAxisVelocity;
-uniform float uDeformation;
 
 out vec2 vUv;
 out float vAlpha;
@@ -24,29 +22,6 @@ void main() {
   vec4 worldPosition = instanceMatrix * vec4(aPosition, 1.0);
   vec3 centerPos = (instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
   float radius = max(0.0001, length(centerPos));
-
-  vec3 rotationAxis = uRotationAxisVelocity.xyz;
-  float axisLength = length(rotationAxis);
-  float rotationVelocity = min(0.15, abs(uRotationAxisVelocity.w) * 15.0) * uDeformation;
-
-  if (rotationVelocity > 0.00001 && axisLength > 0.00001) {
-    vec3 stretchDir = cross(centerPos, rotationAxis / axisLength);
-    float stretchLength = length(stretchDir);
-    if (stretchLength > 0.00001) {
-      stretchDir /= stretchLength;
-      vec3 relativeVertex = worldPosition.xyz - centerPos;
-      float relativeLength = length(relativeVertex);
-      if (relativeLength > 0.00001) {
-        relativeVertex /= relativeLength;
-        float strength = dot(stretchDir, relativeVertex);
-        float invAbsStrength = min(0.0, abs(strength) - 1.0);
-        strength = rotationVelocity
-          * sign(strength)
-          * abs(invAbsStrength * invAbsStrength * invAbsStrength + 1.0);
-        worldPosition.xyz += stretchDir * strength;
-      }
-    }
-  }
 
   worldPosition.xyz = radius * normalize(worldPosition.xyz);
 
