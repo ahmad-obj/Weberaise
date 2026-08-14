@@ -58,6 +58,23 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const engineRef = useRef<WorkSphereEngine | null>(null);
     const projectKey = useMemo(() => projects.map(project => project.slug).join('|'), [projects]);
+    const callbacksRef = useRef({
+      onReady,
+      onActiveSlotChange,
+      onHoverSlotChange,
+      onMovementChange,
+      onProjectActivate,
+      onCapabilityFailure,
+    });
+
+    callbacksRef.current = {
+      onReady,
+      onActiveSlotChange,
+      onHoverSlotChange,
+      onMovementChange,
+      onProjectActivate,
+      onCapabilityFailure,
+    };
 
     useImperativeHandle(ref, () => ({
       start: () => engineRef.current?.start(),
@@ -89,30 +106,30 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
           canvas,
           projects,
           {
-            onReady,
-            onActiveSlotChange,
-            onHoverSlotChange,
-            onMovementChange,
-            onProjectActivate,
-            onCapabilityFailure,
+            onReady: () => callbacksRef.current.onReady(),
+            onActiveSlotChange: slotId => callbacksRef.current.onActiveSlotChange(slotId),
+            onHoverSlotChange: slotId => callbacksRef.current.onHoverSlotChange(slotId),
+            onMovementChange: moving => callbacksRef.current.onMovementChange(moving),
+            onProjectActivate: slotId => callbacksRef.current.onProjectActivate(slotId),
+            onCapabilityFailure: error => callbacksRef.current.onCapabilityFailure(error),
           },
           { reducedMotion, quality },
         );
         engineRef.current = engine;
-        onActiveSlotChange(engine.getActiveSlotId());
+        callbacksRef.current.onActiveSlotChange(engine.getActiveSlotId());
         engine.setInteractive(interactive);
         engine.start();
       } catch (error) {
-        onCapabilityFailure(error instanceof Error ? error : new Error('Unable to initialize Work sphere.'));
+        callbacksRef.current.onCapabilityFailure(
+          error instanceof Error ? error : new Error('Unable to initialize Work sphere.'),
+        );
       }
 
       return () => {
         engineRef.current?.destroy();
         engineRef.current = null;
       };
-      // projectKey is the intentional identity boundary for the engine lifecycle.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [projectKey, reducedMotion]);
+    }, [interactive, projectKey, projects, reducedMotion]);
 
     useEffect(() => {
       engineRef.current?.setInteractive(interactive);
