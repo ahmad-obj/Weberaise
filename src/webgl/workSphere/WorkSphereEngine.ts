@@ -8,7 +8,6 @@ import {
   mat4Identity,
   multiplyMat4,
   perspectiveMat4,
-  scaleMat4,
   targetToMat4,
   transformVec3Quat,
   vec3f,
@@ -28,8 +27,6 @@ import type {
 type Uniforms = {
   viewMatrix: WebGLUniformLocation | null;
   projectionMatrix: WebGLUniformLocation | null;
-  rotationAxisVelocity: WebGLUniformLocation | null;
-  deformation: WebGLUniformLocation | null;
   cornerRadius: WebGLUniformLocation | null;
   media: WorkMediaUniforms;
 };
@@ -204,8 +201,6 @@ export class WorkSphereEngine {
     this.uniforms = {
       viewMatrix: gl.getUniformLocation(this.program, 'uViewMatrix'),
       projectionMatrix: gl.getUniformLocation(this.program, 'uProjectionMatrix'),
-      rotationAxisVelocity: gl.getUniformLocation(this.program, 'uRotationAxisVelocity'),
-      deformation: gl.getUniformLocation(this.program, 'uDeformation'),
       cornerRadius: gl.getUniformLocation(this.program, 'uCornerRadius'),
       media: {
         posterAtlas: gl.getUniformLocation(this.program, 'uPosterAtlas'),
@@ -377,7 +372,7 @@ export class WorkSphereEngine {
     this.updateView();
     this.updateMatrices();
     this.mediaPool.uploadReadyFrames();
-    this.render(snapshot.rotationAxis, snapshot.rotationVelocity);
+    this.render();
     this.scheduleFrame();
   };
 
@@ -386,7 +381,7 @@ export class WorkSphereEngine {
   }
 
   private updateMatrices() {
-    const reduced = this.profile.deformation === 0;
+    const reduced = this.profile.inertia === 0;
     const entranceScale = reduced
       ? 1.08 + (1 - 1.08) * this.entranceProgress
       : WORK_SPHERE.entranceStartScale
@@ -429,21 +424,13 @@ export class WorkSphereEngine {
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
   }
 
-  private render(rotationAxis: ArrayLike<number>, rotationVelocity: number) {
+  private render() {
     const gl = this.gl;
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(this.program);
     gl.uniformMatrix4fv(this.uniforms.viewMatrix, false, this.view);
     gl.uniformMatrix4fv(this.uniforms.projectionMatrix, false, this.projection);
-    gl.uniform4f(
-      this.uniforms.rotationAxisVelocity,
-      rotationAxis[0],
-      rotationAxis[1],
-      rotationAxis[2],
-      rotationVelocity * 1.1,
-    );
-    gl.uniform1f(this.uniforms.deformation, this.profile.deformation);
     gl.uniform1f(this.uniforms.cornerRadius, 0.045);
     this.mediaPool.bind(this.uniforms.media);
     gl.bindVertexArray(this.vao);
