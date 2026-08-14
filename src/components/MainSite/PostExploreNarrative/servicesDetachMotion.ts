@@ -7,8 +7,20 @@ type DetachGeometry = {
   deltaY: number;
 };
 
+type DetachElements = {
+  origin: HTMLElement;
+  shell: HTMLElement;
+  footer: HTMLElement;
+  stage: HTMLElement;
+  dock: HTMLElement;
+};
+
 export function clampServicesDetachProgress(value: number) {
   return Math.min(1, Math.max(0, value));
+}
+
+export function servicesDetachScale(progress: number) {
+  return 1 + clampServicesDetachProgress(progress);
 }
 
 function cubic(a: number, b: number, c: number, d: number, t: number) {
@@ -24,15 +36,24 @@ export function servicesDetachPoint(progress: number, deltaX: number, deltaY: nu
   };
 }
 
-export function createServicesDetachMotion(): () => void {
+function findDetachElements(): DetachElements | null {
   const origin = document.querySelector<HTMLElement>('[data-nav-detach-anchor]');
   const shell = document.querySelector<HTMLElement>('[data-services-detachable]');
   const footer = document.querySelector<HTMLElement>('[data-closing-footer]');
   const stage = document.querySelector<HTMLElement>('[data-closing-footer-stage]');
   const dock = document.querySelector<HTMLElement>('[data-services-footer-dock]');
 
-  if (!origin || !shell || !footer || !stage || !dock) return () => undefined;
+  if (!origin || !shell || !footer || !stage || !dock) return null;
+  return { origin, shell, footer, stage, dock };
+}
 
+function connectServicesDetachMotion({
+  origin,
+  shell,
+  footer,
+  stage,
+  dock,
+}: DetachElements): () => void {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let geometry: DetachGeometry | null = null;
   let scrollFrame = 0;
@@ -48,7 +69,7 @@ export function createServicesDetachMotion(): () => void {
     );
     const effective = reducedMotion ? (progress < 0.5 ? 0 : 1) : progress;
     const point = servicesDetachPoint(effective, geometry.deltaX, geometry.deltaY);
-    const scale = reducedMotion ? 1 : 1 + effective * 0.12;
+    const scale = servicesDetachScale(effective);
 
     shell.style.transform = `translate3d(${point.x}px, ${point.y}px, 0) scale(${scale})`;
   };
@@ -112,5 +133,37 @@ export function createServicesDetachMotion(): () => void {
     window.removeEventListener('resize', scheduleGeometry);
     window.removeEventListener('load', scheduleGeometry);
     shell.style.transform = 'translate3d(0, 0, 0) scale(1)';
+  };
+}
+
+export function createServicesDetachMotion(): () => void {
+  let disposed = false;
+  let connectedCleanup: (() => void) | null = null;
+  let waitObserver: MutationObserver | null = null;
+
+  const tryConnect = () => {
+    if (disposed || connectedCleanup) return;
+
+    const elements = findDetachElements();
+    if (!elements) return;
+
+    connectedCleanup = connectServicesDetachMotion(elements);
+    waitObserver?.disconnect();
+    waitObserver = null;
+  };
+
+  tryConnect();
+
+  if (!connectedCleanup) {
+    waitObserver = new MutationObserver(tryConnect);
+    waitObserver.observe(document.body, { childList: true, subtree: true });
+  }
+
+  return () => {
+    disposed = true;
+    waitObserver?.disconnect();
+    waitObserver = null;
+    connectedCleanup?.();
+    connectedCleanup = null;
   };
 }
