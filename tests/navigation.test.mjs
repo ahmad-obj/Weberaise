@@ -52,30 +52,29 @@ test('hero navigation is rendered before the reveal canvas and survives EXPLORE 
   assert.match(component, /gsap\.fromTo/);
 });
 
-test('center navigation uses independent measured inverse floods with gentle reversible motion', () => {
+test('center navigation uses the shared measured inverse flood system', () => {
   const component = read(`${navDir}/CenterNavCluster.tsx`);
   const motion = read(`${navDir}/centerHoverMotion.ts`);
   const css = read(`${navDir}/Navigation.module.css`);
 
   assert.match(component, /data-center-nav-cluster/);
-  assert.match(component, /data-center-pill-surface/);
-  assert.match(component, /data-center-pill-label/);
-  assert.match(component, /data-center-pill-label-hover/);
-  assert.doesNotMatch(component, /data-center-hover-plate/);
+  assert.match(component, /data-pill-flood/);
+  assert.match(component, /data-pill-flood-surface/);
+  assert.match(component, /data-pill-flood-base/);
+  assert.match(component, /data-pill-flood-reveal/);
+  assert.doesNotMatch(component, /createCenterHoverMotion/);
   assert.match(component, /data-nav-item=\{item\.key\}/);
   assert.match(read(`${navDir}/navigationModel.ts`), /key: 'services'/);
 
-  assert.match(motion, /getBoundingClientRect\(\)/);
   assert.match(motion, /ResizeObserver/);
   assert.match(motion, /gsap\.timeline/);
   assert.match(motion, /0\.46/);
   assert.match(motion, /0\.36/);
   assert.match(motion, /tweenTo/);
-  assert.match(motion, /Math\.sqrt/);
-  assert.doesNotMatch(motion, /data-center-hover-plate/);
+  assert.match(motion, /Math\.hypot\(width \* 0\.5, height\)/);
 
-  assert.match(css, /\.centerPillSurface\s*\{[^}]*background:\s*var\(--nav-pill-fg\)/s);
-  assert.match(css, /\.centerPillLabelHover\s*\{[^}]*color:\s*var\(--nav-pill-bg\)/s);
+  assert.match(css, /\.pillFloodSurface\s*\{[^}]*background:\s*var\(--nav-pill-fg\)/s);
+  assert.match(css, /\.pillFloodReveal\s*\{[^}]*color:\s*var\(--nav-pill-bg\)/s);
 });
 
 test('services stays detach-ready and the center cluster does not clip item slots', () => {
@@ -86,19 +85,17 @@ test('services stays detach-ready and the center cluster does not clip item slot
   assert.doesNotMatch(css, /\.navItemSlot\s*\{[^}]*filter:/s);
 });
 
-test('lets talk uses a deterministic hover-triggered monochrome goo system', () => {
+test('lets talk uses the same adaptive pill flood without the legacy goo burst', () => {
   const button = read(`${navDir}/GooeyTalkButton.tsx`);
-  const particles = read(`${navDir}/gooeyParticles.ts`);
   const css = read(`${navDir}/Navigation.module.css`);
 
   assert.match(button, /LET(?:'|&apos;)S TALK/);
-  assert.match(button, /onPointerEnter/);
-  assert.match(button, /onFocus/);
-  assert.match(button, /data-goo-particle/);
-  assert.doesNotMatch(particles, /Math\.random/);
-  assert.match(css, /blur\(/);
-  assert.match(css, /contrast\(/);
-  assert.match(css, /background:\s*var\(--nav-pill-fg\)/);
+  assert.match(button, /data-pill-flood/);
+  assert.match(button, /data-pill-flood-surface/);
+  assert.match(button, /data-pill-flood-base/);
+  assert.match(button, /data-pill-flood-reveal/);
+  assert.doesNotMatch(button, /GOOEY_PARTICLES|data-goo-particle|useState/);
+  assert.doesNotMatch(css, /\.gooField|\.gooParticle|@keyframes\s+wrNavGooBurst/);
 });
 
 test('main navigation is mounted only in main state and current narrative declares nav theme', () => {
@@ -142,10 +139,10 @@ test('navigation preserves all destinations on mobile and supports reduced motio
   assert.doesNotMatch(css, /\.centerZone\s*\{[^}]*transform:/s);
 });
 
-test('goo transform motion is not overwritten by main theme transitions', () => {
+test('flood transform motion is not overwritten by main theme transitions', () => {
   const css = read(`${navDir}/Navigation.module.css`);
-  assert.match(css, /\.gooCore\s*\{[\s\S]*transform 280ms/);
-  assert.doesNotMatch(css, /\.pill,\s*\.centerPillSurface,\s*\.gooCore/);
+  assert.match(css, /\.pillFloodSurface\s*\{[\s\S]*will-change:\s*transform/);
+  assert.doesNotMatch(css, /transition-property:\s*[^;]*transform/);
 });
 
 test('services exposes a stable future detach seam without implementing detachment', () => {
