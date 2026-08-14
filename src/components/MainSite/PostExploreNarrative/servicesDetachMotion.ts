@@ -1,7 +1,7 @@
 'use client';
 
 type DetachGeometry = {
-  sectionTop: number;
+  startScroll: number;
   travelRange: number;
   deltaX: number;
   deltaY: number;
@@ -65,7 +65,7 @@ function connectServicesDetachMotion({
     if (!geometry) return;
 
     const progress = clampServicesDetachProgress(
-      (window.scrollY - geometry.sectionTop) / geometry.travelRange,
+      (window.scrollY - geometry.startScroll) / geometry.travelRange,
     );
     const effective = reducedMotion ? (progress < 0.5 ? 0 : 1) : progress;
     const point = servicesDetachPoint(effective, geometry.deltaX, geometry.deltaY);
@@ -93,8 +93,8 @@ function connectServicesDetachMotion({
     const dockPinnedCenterY = dockRect.top - stageRect.top + dockRect.height * 0.5;
 
     geometry = {
-      sectionTop: footerRect.top + window.scrollY,
-      travelRange: Math.max(1, footerRect.height - window.innerHeight),
+      startScroll: footerRect.top + window.scrollY - window.innerHeight,
+      travelRange: Math.max(1, footerRect.height),
       deltaX: dockPinnedCenterX - originCenterX,
       deltaY: dockPinnedCenterY - originCenterY,
     };
