@@ -13,14 +13,14 @@ test('sphere uses the reference radius density and entrance constants', () => {
   assert.match(constants, /entranceStartScale:\s*5/);
 });
 
-test('engine renders the fixed dense instance set with reference camera response', () => {
+test('engine preserves the fixed dense instance set and reference camera response', () => {
   const engine = read('src/webgl/workSphere/WorkSphereEngine.ts');
   assert.match(engine, /buildProjectSlots\(projects\.length, WORK_SPHERE\.radius\)/);
   assert.match(engine, /cameraTargetZ/);
   assert.match(engine, /stepCameraZ/);
   assert.match(engine, /drawElementsInstanced/);
   assert.match(engine, /this\.slots\.length/);
-  assert.doesNotMatch(engine, /pickSlot|getSlotScreenBounds|setProjectOpening|onProjectActivate/);
+  assert.doesNotMatch(engine, /readPixels|toDataURL|getImageData/);
 });
 
 test('website surfaces stay curved on the sphere without velocity wiggle deformation', () => {
@@ -45,9 +45,12 @@ test('16:10 website media is cropped into the 4:3 surface instead of stretched',
   assert.match(shaders, /targetAspect\s*=\s*4\.0\s*\/\s*3\.0/);
 });
 
-test('phase one pointer release cannot activate a project', () => {
+test('Phase 2 activation remains one-shot and separate from the frame loop', () => {
   const engine = read('src/webgl/workSphere/WorkSphereEngine.ts');
   const canvas = read('src/components/WorkPage/WorkSphereCanvas.tsx');
-  assert.doesNotMatch(engine, /onProjectActivate/);
-  assert.doesNotMatch(canvas, /onProjectActivate/);
+  assert.match(engine, /onProjectActivate/);
+  assert.match(canvas, /onProjectActivate/);
+  const frameMatch = engine.match(/private frame[\s\S]*?private updateView/);
+  assert.ok(frameMatch);
+  assert.doesNotMatch(frameMatch[0], /hitTestProjectedSlots/);
 });
