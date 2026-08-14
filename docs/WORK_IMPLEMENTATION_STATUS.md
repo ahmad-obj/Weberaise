@@ -26,39 +26,41 @@
 - time-based inertia with reduced mobile/lite strength;
 - soft nearest-project magnetic snapping;
 - active project follows the nearest front slot;
-- fine-pointer hover can override inspection, stop residual motion and receive video priority;
+- fine-pointer hover can override inspection, stop residual motion and receive preview priority;
 - drag-vs-click thresholds prevent accidental project opening;
 - coarse-pointer off-center tap selects/snaps first, then active tap opens;
 - keyboard arrow navigation uses the same sphere snap path;
-- page/tab visibility pauses RAF and preview video work.
+- page/tab visibility pauses RAF and preview work.
 
 ### Browse media
 - all projects remain poster-ready through a poster atlas;
 - full desktop profile caps live browse previews at three;
-- weaker/mobile profiles reduce the live-video pool before reducing active-project sharpness;
+- weaker/mobile profiles reduce the live-preview pool before reducing active-project sharpness;
 - hover receives media priority without increasing the pool cap;
-- `requestVideoFrameCallback` is used when supported;
-- video textures upload only when a decoded frame advances;
-- first video frame must be uploaded before the shader switches away from the sharp poster;
+- real project video uses `requestVideoFrameCallback` when supported;
+- real video textures upload only when a decoded frame advances;
+- first real video frame must be uploaded before the shader switches away from the sharp poster;
 - reassignment clears old-frame state so a new project cannot briefly show another project's video;
-- browse previews are muted/looping/inline;
-- media derivative contract is documented in `public/work/README.md`.
+- temporary development placeholders use procedural canvas frames through the **same bounded live texture slots** rather than requesting fake video files;
+- procedural placeholder previews are capped to a 24fps texture-update cadence;
+- media derivative contract for real projects is documented in `public/work/README.md`.
 
 ### Project showcase transition
 - selected WebGL project bounds are projected into CSS screen coordinates;
 - fixed DOM transition bridge starts at the clicked project's real on-screen footprint;
 - selected canvas surface is hidden only when the bridge visually owns it;
 - surrounding sphere projects recede while selection opens;
-- full project view uses native DOM/video rather than stretching the WebGL texture;
-- full video has explicit controls and does not autoplay;
-- project details are limited to name, category, short brief, services, year and live-site link;
-- sphere render/video work stops while the full showcase owns the viewport;
+- real project full view uses native DOM/video rather than stretching the WebGL texture;
+- real full video has explicit controls and does not autoplay;
+- development placeholders use a paused-by-default full showcase simulation with explicit Play/Pause control so the complete interaction can be inspected before real media exists;
+- project details are limited to name, category, short brief, services, year and live-site link/placeholder slot;
+- sphere render/preview work stops while the full showcase owns the viewport;
 - Escape or Back to Work restores the stored sphere orientation and selected project;
 - return bridge hands visual ownership back to the original sphere slot and restores focus.
 
 ### Responsive / accessibility / fallback
 - adaptive full/lite/mobile/reduced quality profiles;
-- DPR caps and live-video-slot caps are explicit;
+- DPR caps and live-preview-slot caps are explicit;
 - reduced motion removes inertia and large motion while preserving content;
 - WebGL capability failure falls back to an intentional responsive poster gallery;
 - fallback projects open the same compact `ProjectShowcase` component;
@@ -67,17 +69,19 @@
 - focused project controls become visibly discoverable;
 - no hover dependency for core access.
 
-### Data integrity
-- production `WORK_PROJECTS` is intentionally empty until verified real project copy/media is supplied;
-- project validation rejects missing content/media, invalid year, or non-http(s) live URLs;
-- no fabricated clients, metrics, testimonials, awards or results are shipped;
-- when production data is empty, `/work` shows the intended opening and then an honest prepared-work message rather than fake portfolio entries.
+### Development placeholders / data integrity
+- `WORK_PROJECTS` currently contains six explicit `PLACEHOLDER 01`–`PLACEHOLDER 06` development fixtures so the complete Work experience is visible before client media is ready;
+- each fixture is marked `placeholder: true` and is clearly labeled as development content;
+- placeholders are not client claims and must be replaced before production portfolio launch;
+- project validation still rejects missing content/media, invalid year, or non-http(s) live URLs;
+- no fabricated clients, metrics, testimonials, awards or results are presented as real proof;
+- removing the six temporary fixtures returns the page to its honest empty-state path.
 
 ## Verification performed in this implementation session
 
 Because the execution environment could not clone the networked repository or install project dependencies, full Next.js verification could not be run here.
 
-A dependency-free isolated verification harness was built for the new sphere core using the same math/geometry/control code. Fresh results:
+A dependency-free isolated verification harness was built for the new sphere core using the same math/geometry/control code. Results:
 
 - strict TypeScript compile of sphere constants, math, geometry, selection, arcball and projection: **PASS**;
 - normalized/antipodal sphere directions: **PASS**;
@@ -87,7 +91,9 @@ A dependency-free isolated verification harness was built for the new sphere cor
 - arcball orientation normalization after movement: **PASS**;
 - front-project matrix/projection produces a centered landscape screen footprint: **PASS**;
 - soft magnetic snapping converges the chosen sphere direction to the front target: **PASS**;
-- focused core tests: **7/7 PASS**.
+- focused sphere-core tests: **7/7 PASS**;
+- placeholder source/effect contract harness: **5/5 PASS**;
+- strict TypeScript compile of the procedural placeholder media-pool subset: **PASS**.
 
 Repository diff inspection confirms this branch adds Work-specific source/tests/docs and does not edit homepage or Services implementation files.
 
@@ -105,7 +111,7 @@ npm run build
 npm run dev
 ```
 
-Then visually verify `/work` with real production project media on:
+Then visually verify `/work` on:
 
 - desktop fine-pointer;
 - tablet/coarse pointer;
@@ -113,11 +119,11 @@ Then visually verify `/work` with real production project media on:
 - `prefers-reduced-motion: reduce`;
 - browser/device where WebGL2 is disabled to inspect fallback.
 
+With current fixtures, visual QA should cover the entire `OUR WORKS → sphere → drag/snap/hover → project expansion → Play/Pause showcase → return` sequence immediately.
+
 ## Real media still required
 
-The sphere intentionally cannot be visually art-directed against real projects until verified project assets are supplied. For each project add the media set described in `public/work/README.md`, then add the verified record to `src/content/workProjects.ts`.
-
-Do not merge fake fixture projects into production merely to make the sphere visible.
+The current fixtures exist only to make the interaction visible. For each real project, add the media set described in `public/work/README.md`, replace the corresponding placeholder record in `src/content/workProjects.ts`, and remove the development fixture when no longer needed.
 
 ## Parallel-branch note
 
