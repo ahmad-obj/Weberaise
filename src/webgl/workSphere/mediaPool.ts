@@ -14,6 +14,7 @@ type LiveSlot = {
   placeholderCanvas: HTMLCanvasElement;
   placeholderContext: CanvasRenderingContext2D;
   placeholderActive: boolean;
+  lastPlaceholderFrameMs: number;
   assignedSlotId: number;
   assignedProjectIndex: number;
   dirty: boolean;
@@ -54,6 +55,7 @@ export class WorkPreviewMediaPool {
   private slotById: Map<number, SphereSlot>;
   private destroyed = false;
   private allowPlayback: boolean;
+  private readonly placeholderFrameIntervalMs = 1000 / 24;
 
   constructor(
     private readonly gl: WebGL2RenderingContext,
@@ -116,13 +118,21 @@ export class WorkPreviewMediaPool {
   uploadReadyFrames() {
     if (this.destroyed) return;
     const gl = this.gl;
+    const nowMs = performance.now();
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
 
     for (const live of this.liveSlots) {
       if (live.assignedSlotId < 0) continue;
 
       if (live.placeholderActive) {
-        this.renderPlaceholderFrame(live, performance.now());
+        if (
+          live.hasFrame
+          && nowMs - live.lastPlaceholderFrameMs < this.placeholderFrameIntervalMs
+        ) {
+          continue;
+        }
+        live.lastPlaceholderFrameMs = nowMs;
+        this.renderPlaceholderFrame(live, nowMs);
         gl.bindTexture(gl.TEXTURE_2D, live.texture);
         try {
           if (
@@ -277,6 +287,7 @@ export class WorkPreviewMediaPool {
       placeholderCanvas,
       placeholderContext,
       placeholderActive: false,
+      lastPlaceholderFrameMs: 0,
       assignedSlotId: -1,
       assignedProjectIndex: -1,
       dirty: false,
@@ -357,6 +368,7 @@ export class WorkPreviewMediaPool {
     live.textureWidth = 1;
     live.textureHeight = 1;
     live.lastTime = -1;
+    live.lastPlaceholderFrameMs = 0;
     live.placeholderActive = Boolean(project.placeholder);
 
     if (project.placeholder) {
@@ -375,6 +387,7 @@ export class WorkPreviewMediaPool {
     live.video.removeAttribute('src');
     live.video.load();
     live.placeholderActive = false;
+    live.lastPlaceholderFrameMs = 0;
     live.assignedSlotId = -1;
     live.assignedProjectIndex = -1;
     live.dirty = false;
