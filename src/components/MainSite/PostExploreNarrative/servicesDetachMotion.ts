@@ -37,8 +37,13 @@ export function servicesDetachPoint(progress: number, deltaX: number, deltaY: nu
 }
 
 function findDetachElements(): DetachElements | null {
-  const origin = document.querySelector<HTMLElement>('[data-nav-detach-anchor]');
-  const shell = document.querySelector<HTMLElement>('[data-services-detachable]');
+  const navigation = document.querySelector<HTMLElement>(
+    '[data-site-navigation][data-navigation-mode="main"]',
+  );
+  if (!navigation) return null;
+
+  const origin = navigation.querySelector<HTMLElement>('[data-nav-detach-anchor]');
+  const shell = navigation.querySelector<HTMLElement>('[data-services-detachable]');
   const footer = document.querySelector<HTMLElement>('[data-closing-footer]');
   const stage = document.querySelector<HTMLElement>('[data-closing-footer-stage]');
   const dock = document.querySelector<HTMLElement>('[data-services-footer-dock]');
