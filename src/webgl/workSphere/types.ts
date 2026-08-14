@@ -11,7 +11,6 @@ export type WorkQualityName = 'full' | 'lite' | 'mobile' | 'reduced';
 export type WorkQualityProfile = {
   dprCap: number;
   liveVideoSlots: number;
-  deformation: number;
   inertia: number;
 };
 
