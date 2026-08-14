@@ -1,16 +1,14 @@
 import type { WorkProject } from '@/content/workProjects';
 import { ArcballController } from './arcball';
+import { cameraTargetZ, stepCameraZ } from './camera';
 import { WORK_SPHERE } from './constants';
-import { buildProjectSlots, createProjectQuad } from './geometry';
+import { buildProjectSlots, createProjectSurfaceMesh } from './geometry';
 import {
-  cloneQuat,
   lookAtMat4,
   mat4Identity,
   multiplyMat4,
-  normalizeVec3,
   perspectiveMat4,
   scaleMat4,
-  scaleVec3,
   targetToMat4,
   transformVec3Quat,
   vec3f,
@@ -18,33 +16,20 @@ import {
   type Vec3f,
 } from './math';
 import { WorkPreviewMediaPool, type WorkMediaUniforms } from './mediaPool';
-import { projectQuadBounds, pointInBounds } from './projection';
-import { WORK_QUALITY_PROFILES } from './quality';
 import { findNearestSlot, rankSlotsByFront } from './selection';
+import { WORK_QUALITY_PROFILES } from './quality';
 import { workSphereFragmentShader, workSphereVertexShader } from './shaders';
 import type {
-  ScreenBounds,
   SphereSlot,
   WorkSphereCallbacks,
   WorkSphereOptions,
-  WorkSphereSnapshot,
 } from './types';
 
-type PointerSession = {
-  pointerId: number;
-  downX: number;
-  downY: number;
-  downAt: number;
-  pointerType: string;
-};
-
 type Uniforms = {
-  viewProjection: WebGLUniformLocation | null;
-  velocity: WebGLUniformLocation | null;
+  viewMatrix: WebGLUniformLocation | null;
+  projectionMatrix: WebGLUniformLocation | null;
+  rotationAxisVelocity: WebGLUniformLocation | null;
   deformation: WebGLUniformLocation | null;
-  projectOpening: WebGLUniformLocation | null;
-  openingSlot: WebGLUniformLocation | null;
-  hiddenSlot: WebGLUniformLocation | null;
   cornerRadius: WebGLUniformLocation | null;
   media: WorkMediaUniforms;
 };
@@ -55,7 +40,7 @@ function compileShader(gl: WebGL2RenderingContext, type: number, source: string)
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    const info = gl.getShaderInfoLog(shader) || 'Unknown shader compile error.';
+    const info = gl.getShaderInfoLog(shader) || 'Unknown Work sphere shader error.';
     gl.deleteShader(shader);
     throw new Error(info);
   }
@@ -73,15 +58,27 @@ function createProgram(gl: WebGL2RenderingContext) {
   gl.deleteShader(vertex);
   gl.deleteShader(fragment);
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    const info = gl.getProgramInfoLog(program) || 'Unknown program link error.';
+    const info = gl.getProgramInfoLog(program) || 'Unable to link Work sphere program.';
     gl.deleteProgram(program);
     throw new Error(info);
   }
   return program;
 }
 
-function clamp01(value: number) {
-  return Math.max(0, Math.min(1, value));
+function translationMatrix(x: number, y: number, z: number): Mat4 {
+  const matrix = mat4Identity();
+  matrix[12] = x;
+  matrix[13] = y;
+  matrix[14] = z;
+  return matrix;
+}
+
+function scaleMatrix(scale: number): Mat4 {
+  const matrix = mat4Identity();
+  matrix[0] = scale;
+  matrix[5] = scale;
+  matrix[10] = scale;
+  return matrix;
 }
 
 export class WorkSphereEngine {
@@ -92,7 +89,6 @@ export class WorkSphereEngine {
   private readonly vao: WebGLVertexArrayObject;
   private readonly indexCount: number;
   private readonly instanceMatrixBuffer: WebGLBuffer;
-  private readonly instanceMetaBuffer: WebGLBuffer;
   private readonly instanceMatrices: Float32Array;
   private readonly models: Mat4[];
   private readonly orientedDirections: Vec3f[];
@@ -101,24 +97,20 @@ export class WorkSphereEngine {
   private readonly uniforms: Uniforms;
   private readonly callbacks: WorkSphereCallbacks;
   private readonly profile: (typeof WORK_QUALITY_PROFILES)[keyof typeof WORK_QUALITY_PROFILES];
+  private readonly scaleFactor: number;
 
   private projection = mat4Identity();
   private view = mat4Identity();
-  private viewProjection = mat4Identity();
   private raf = 0;
   private started = false;
   private destroyed = false;
   private interactive = false;
   private entranceProgress = 0;
-  private projectOpeningProgress = 0;
-  private openingSlotId = -1;
-  private hiddenSlotId = -1;
   private activeSlotId = 0;
-  private hoverSlotId: number | null = null;
   private lastMovement = false;
   private lastFrame = performance.now();
-  private pointerSession: PointerSession | null = null;
-  private coarsePointer = false;
+  private cameraZ: number;
+  private pointerId: number | null = null;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -127,26 +119,30 @@ export class WorkSphereEngine {
     options: WorkSphereOptions = {},
   ) {
     if (!projects.length) throw new Error('Work sphere requires at least one project.');
+
     const gl = canvas.getContext('webgl2', {
-      alpha: true,
       antialias: true,
+      alpha: true,
       powerPreference: 'high-performance',
     });
     if (!gl) throw new Error('WebGL2 is not available.');
 
     this.gl = gl;
     this.callbacks = callbacks;
-    this.profile = WORK_QUALITY_PROFILES[options.quality ?? (options.reducedMotion ? 'reduced' : 'full')];
-    this.controller = new ArcballController(Boolean(options.reducedMotion), this.profile.inertia);
-    this.slots = buildProjectSlots(projects.length);
+    const qualityName = options.quality ?? (options.reducedMotion ? 'reduced' : 'full');
+    this.profile = WORK_QUALITY_PROFILES[qualityName];
+    this.scaleFactor = qualityName === 'mobile' ? 1.12 : 1;
+    this.cameraZ = WORK_SPHERE.cameraRestZ * this.scaleFactor;
+    this.controller = new ArcballController(Boolean(options.reducedMotion));
+    this.slots = buildProjectSlots(projects.length, WORK_SPHERE.radius);
     this.activeSlotId = findNearestSlot(this.slots, this.controller.orientation);
     this.models = this.slots.map(() => mat4Identity());
     this.orientedDirections = this.slots.map(() => vec3f());
     this.instanceMatrices = new Float32Array(this.slots.length * 16);
 
     this.program = createProgram(gl);
-    const quad = createProjectQuad();
-    this.indexCount = quad.indices.length;
+    const mesh = createProjectSurfaceMesh();
+    this.indexCount = mesh.indices.length;
 
     const vao = gl.createVertexArray();
     const positionBuffer = gl.createBuffer();
@@ -157,24 +153,24 @@ export class WorkSphereEngine {
     if (!vao || !positionBuffer || !uvBuffer || !indexBuffer || !matrixBuffer || !metaBuffer) {
       throw new Error('Unable to allocate Work sphere buffers.');
     }
+
     this.vao = vao;
     this.instanceMatrixBuffer = matrixBuffer;
-    this.instanceMetaBuffer = metaBuffer;
 
     gl.bindVertexArray(vao);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, quad.positions, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh.positions, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, quad.uvs, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh.uvs, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(1);
     gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, quad.indices, gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STATIC_DRAW);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this.instanceMatrices.byteLength, gl.DYNAMIC_DRAW);
@@ -206,12 +202,10 @@ export class WorkSphereEngine {
     gl.bindVertexArray(null);
 
     this.uniforms = {
-      viewProjection: gl.getUniformLocation(this.program, 'uViewProjection'),
-      velocity: gl.getUniformLocation(this.program, 'uVelocity'),
+      viewMatrix: gl.getUniformLocation(this.program, 'uViewMatrix'),
+      projectionMatrix: gl.getUniformLocation(this.program, 'uProjectionMatrix'),
+      rotationAxisVelocity: gl.getUniformLocation(this.program, 'uRotationAxisVelocity'),
       deformation: gl.getUniformLocation(this.program, 'uDeformation'),
-      projectOpening: gl.getUniformLocation(this.program, 'uProjectOpening'),
-      openingSlot: gl.getUniformLocation(this.program, 'uOpeningSlot'),
-      hiddenSlot: gl.getUniformLocation(this.program, 'uHiddenSlot'),
       cornerRadius: gl.getUniformLocation(this.program, 'uCornerRadius'),
       media: {
         posterAtlas: gl.getUniformLocation(this.program, 'uPosterAtlas'),
@@ -229,8 +223,8 @@ export class WorkSphereEngine {
       !options.reducedMotion,
     );
 
-    gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
@@ -240,7 +234,7 @@ export class WorkSphereEngine {
 
     const initialRanked = rankSlotsByFront(this.slots, this.controller.orientation);
     void this.mediaPool
-      .prepareInitial(initialRanked.slice(0, 3).map(entry => entry.slotId))
+      .prepareInitial(initialRanked.slice(0, 6).map(entry => entry.slotId))
       .catch(() => undefined)
       .finally(() => this.callbacks.onReady?.());
   }
@@ -249,8 +243,8 @@ export class WorkSphereEngine {
     if (this.destroyed || this.started) return;
     this.started = true;
     this.lastFrame = performance.now();
-    this.scheduleFrame();
     this.mediaPool.resumePriority();
+    this.scheduleFrame();
   }
 
   stop() {
@@ -267,7 +261,6 @@ export class WorkSphereEngine {
     this.unbindEvents();
     this.mediaPool.destroy();
     this.gl.deleteBuffer(this.instanceMatrixBuffer);
-    this.gl.deleteBuffer(this.instanceMetaBuffer);
     this.gl.deleteVertexArray(this.vao);
     this.gl.deleteProgram(this.program);
   }
@@ -275,72 +268,23 @@ export class WorkSphereEngine {
   setInteractive(value: boolean) {
     this.interactive = value;
     if (!value) {
-      this.pointerSession = null;
-      this.controller.stop();
-      this.setHoverSlot(null);
+      this.pointerId = null;
+      this.controller.pointerUp();
     }
   }
 
   setEntranceProgress(progress: number) {
-    this.entranceProgress = clamp01(progress);
+    this.entranceProgress = Math.max(0, Math.min(1, progress));
     this.updateMatrices();
-  }
-
-  setHoverSlot(slotId: number | null) {
-    if (this.hoverSlotId === slotId) return;
-    this.hoverSlotId = slotId;
-    if (slotId !== null) this.controller.stop();
-    this.callbacks.onHoverSlotChange?.(slotId);
-    this.refreshMediaPriorities();
   }
 
   snapToSlot(slotId: number) {
     const slot = this.slots.find(candidate => candidate.id === slotId);
     if (!slot) return;
+    const world = transformVec3Quat(vec3f(), slot.direction, this.controller.orientation);
+    this.controller.setSnapTarget(world);
     this.activeSlotId = slotId;
-    this.controller.setSnapTarget(slot.direction);
     this.callbacks.onActiveSlotChange?.(slotId);
-    this.refreshMediaPriorities();
-  }
-
-  setProjectOpening(slotId: number, progress: number) {
-    this.openingSlotId = slotId;
-    this.projectOpeningProgress = clamp01(progress);
-    this.updateMatrices();
-  }
-
-  setSelectedHidden(hidden: boolean) {
-    this.hiddenSlotId = hidden ? this.openingSlotId : -1;
-  }
-
-  getSlotScreenBounds(slotId: number): ScreenBounds | null {
-    const model = this.models[slotId];
-    if (!model) return null;
-    const local = projectQuadBounds(
-      model,
-      this.viewProjection,
-      this.canvas.clientWidth,
-      this.canvas.clientHeight,
-    );
-    if (!local) return null;
-    const rect = this.canvas.getBoundingClientRect();
-    return { ...local, left: local.left + rect.left, top: local.top + rect.top };
-  }
-
-  getOrientationSnapshot(): WorkSphereSnapshot {
-    return {
-      orientation: cloneQuat(this.controller.orientation),
-      activeSlotId: this.activeSlotId,
-    };
-  }
-
-  restoreOrientation(snapshot: WorkSphereSnapshot) {
-    this.controller.restoreOrientation(snapshot.orientation);
-    this.activeSlotId = snapshot.activeSlotId;
-    const slot = this.slots.find(candidate => candidate.id === snapshot.activeSlotId);
-    this.controller.setSnapTarget(slot?.direction ?? null);
-    this.updateMatrices();
-    this.callbacks.onActiveSlotChange?.(this.activeSlotId);
     this.refreshMediaPriorities();
   }
 
@@ -360,16 +304,28 @@ export class WorkSphereEngine {
     const cssHeight = Math.max(1, this.canvas.clientHeight || window.innerHeight);
     const width = Math.round(cssWidth * dpr);
     const height = Math.round(cssHeight * dpr);
+
     if (this.canvas.width !== width || this.canvas.height !== height) {
       this.canvas.width = width;
       this.canvas.height = height;
-      gl.viewport(0, 0, width, height);
     }
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
     this.controller.setViewport(cssWidth, cssHeight);
-    perspectiveMat4(this.projection, Math.PI / 3.05, cssWidth / cssHeight, 0.1, 60);
-    lookAtMat4(this.view, [0, 0, WORK_SPHERE.cameraZ], [0, 0, 0], [0, 1, 0]);
-    multiplyMat4(this.viewProjection, this.projection, this.view);
+    const aspect = cssWidth / cssHeight;
+    const referenceHeight = WORK_SPHERE.radius * 0.35;
+    const restDistance = WORK_SPHERE.cameraRestZ * this.scaleFactor;
+    const fov = aspect > 1
+      ? 2 * Math.atan(referenceHeight / restDistance)
+      : 2 * Math.atan(referenceHeight / aspect / restDistance);
+    perspectiveMat4(
+      this.projection,
+      fov,
+      aspect,
+      WORK_SPHERE.cameraNear,
+      WORK_SPHERE.cameraFar,
+    );
+    this.updateView();
     this.updateMatrices();
   };
 
@@ -380,72 +336,92 @@ export class WorkSphereEngine {
 
   private frame = (now: number) => {
     if (!this.started || this.destroyed) return;
-    const deltaMs = Math.min(40, Math.max(1, now - this.lastFrame));
+    const deltaMs = Math.min(32, Math.max(1, now - this.lastFrame));
     this.lastFrame = now;
 
-    const snapshot = this.controller.update(deltaMs);
-    const nearest = findNearestSlot(this.slots, snapshot.orientation);
-    if (!this.controller.isPointerDown && this.hoverSlotId === null && nearest >= 0) {
-      const slot = this.slots.find(candidate => candidate.id === nearest);
-      this.controller.setSnapTarget(slot?.direction ?? null);
+    const snapshot = this.controller.update(deltaMs, WORK_SPHERE.targetFrameDurationMs);
+
+    if (!this.controller.isPointerDown) {
+      const nearest = findNearestSlot(this.slots, snapshot.orientation);
+      if (nearest >= 0) {
+        const slot = this.slots.find(candidate => candidate.id === nearest);
+        if (slot) {
+          const world = transformVec3Quat(vec3f(), slot.direction, snapshot.orientation);
+          this.controller.setSnapTarget(world);
+        }
+        if (nearest !== this.activeSlotId) {
+          this.activeSlotId = nearest;
+          this.callbacks.onActiveSlotChange?.(nearest);
+          this.refreshMediaPriorities();
+        }
+      }
     }
 
-    if (nearest >= 0 && nearest !== this.activeSlotId) {
-      this.activeSlotId = nearest;
-      this.callbacks.onActiveSlotChange?.(nearest);
-      this.refreshMediaPriorities();
+    const moving = this.controller.isPointerDown || Math.abs(snapshot.rotationVelocity) > 0.01;
+    if (moving !== this.lastMovement) {
+      this.lastMovement = moving;
+      this.callbacks.onMovementChange?.(moving);
     }
 
-    if (snapshot.moving !== this.lastMovement) {
-      this.lastMovement = snapshot.moving;
-      this.callbacks.onMovementChange?.(snapshot.moving);
-    }
-
+    const targetZ = cameraTargetZ(
+      this.scaleFactor,
+      snapshot.rotationVelocity,
+      this.controller.isPointerDown,
+    );
+    this.cameraZ = stepCameraZ(
+      this.cameraZ,
+      targetZ,
+      deltaMs,
+      this.controller.isPointerDown,
+    );
+    this.updateView();
     this.updateMatrices();
     this.mediaPool.uploadReadyFrames();
-    this.render(snapshot.angularVelocity);
+    this.render(snapshot.rotationAxis, snapshot.rotationVelocity);
     this.scheduleFrame();
   };
 
+  private updateView() {
+    lookAtMat4(this.view, [0, 0, this.cameraZ], [0, 0, 0], [0, 1, 0]);
+  }
+
   private updateMatrices() {
-    const entranceStart = this.profile.inertia === 0 ? 1.08 : 1.9;
-    const sceneScale = entranceStart + (1 - entranceStart) * this.entranceProgress;
-    const openingSlot = this.slots.find(slot => slot.id === this.openingSlotId);
+    const reduced = this.profile.deformation === 0;
+    const entranceScale = reduced
+      ? 1.08 + (1 - 1.08) * this.entranceProgress
+      : WORK_SPHERE.entranceStartScale
+        + (1 - WORK_SPHERE.entranceStartScale) * this.entranceProgress;
+    const effectiveRadius = WORK_SPHERE.radius * entranceScale;
 
     for (const slot of this.slots) {
-      const direction = transformVec3Quat(
+      const oriented = transformVec3Quat(
         this.orientedDirections[slot.id],
         slot.direction,
         this.controller.orientation,
       );
-      normalizeVec3(direction, direction);
+      const px = oriented[0] * entranceScale;
+      const py = oriented[1] * entranceScale;
+      const pz = oriented[2] * entranceScale;
+      const depthScale =
+        (Math.abs(pz) / effectiveRadius) * WORK_SPHERE.depthScaleIntensity
+        + (1 - WORK_SPHERE.depthScaleIntensity);
+      const finalScale = WORK_SPHERE.baseSurfaceScale * depthScale * entranceScale;
 
-      const depth = clamp01((direction[2] + 1) * 0.5);
-      let sizeScale = (0.74 + depth * 0.32) * sceneScale;
-      let radius = WORK_SPHERE.radius * sceneScale;
+      const matrix = this.models[slot.id];
+      matrix.set(mat4Identity());
+      multiplyMat4(matrix, matrix, translationMatrix(-px, -py, -pz));
 
-      if (this.profile.liveVideoSlots === 1 && slot.id === this.activeSlotId) sizeScale *= 1.12;
-      if (openingSlot) {
-        if (slot.id === openingSlot.id) {
-          sizeScale *= 1 + this.projectOpeningProgress * 0.1;
-        } else {
-          sizeScale *= 1 - this.projectOpeningProgress * 0.16;
-          radius *= 1 + this.projectOpeningProgress * 0.14;
-        }
-      }
+      const facing = targetToMat4(
+        mat4Identity(),
+        [0, 0, 0],
+        [px, py, pz],
+        Math.abs(py / effectiveRadius) > 0.98 ? [1, 0, 0] : [0, 1, 0],
+      );
+      multiplyMat4(matrix, matrix, facing);
+      multiplyMat4(matrix, matrix, scaleMatrix(finalScale));
+      multiplyMat4(matrix, matrix, translationMatrix(0, 0, -effectiveRadius));
 
-      const position = scaleVec3(vec3f(), direction, radius);
-      const worldUp: [number, number, number] = Math.abs(direction[1]) > 0.94
-        ? [1, 0, 0]
-        : [0, 1, 0];
-      const model = this.models[slot.id];
-      targetToMat4(model, position, [0, 0, 0], worldUp);
-      scaleMat4(model, model, [
-        WORK_SPHERE.projectWidth * sizeScale,
-        WORK_SPHERE.projectHeight * sizeScale,
-        1,
-      ]);
-      this.instanceMatrices.set(model, slot.id * 16);
+      this.instanceMatrices.set(matrix, slot.id * 16);
     }
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.instanceMatrixBuffer);
@@ -453,18 +429,22 @@ export class WorkSphereEngine {
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
   }
 
-  private render(angularVelocity: number) {
+  private render(rotationAxis: ArrayLike<number>, rotationVelocity: number) {
     const gl = this.gl;
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(this.program);
-    gl.uniformMatrix4fv(this.uniforms.viewProjection, false, this.viewProjection);
-    gl.uniform1f(this.uniforms.velocity, angularVelocity / 0.16);
+    gl.uniformMatrix4fv(this.uniforms.viewMatrix, false, this.view);
+    gl.uniformMatrix4fv(this.uniforms.projectionMatrix, false, this.projection);
+    gl.uniform4f(
+      this.uniforms.rotationAxisVelocity,
+      rotationAxis[0],
+      rotationAxis[1],
+      rotationAxis[2],
+      rotationVelocity * 1.1,
+    );
     gl.uniform1f(this.uniforms.deformation, this.profile.deformation);
-    gl.uniform1f(this.uniforms.projectOpening, this.projectOpeningProgress);
-    gl.uniform1i(this.uniforms.openingSlot, this.openingSlotId);
-    gl.uniform1i(this.uniforms.hiddenSlot, this.hiddenSlotId);
-    gl.uniform1f(this.uniforms.cornerRadius, 0.055);
+    gl.uniform1f(this.uniforms.cornerRadius, 0.045);
     this.mediaPool.bind(this.uniforms.media);
     gl.bindVertexArray(this.vao);
     gl.drawElementsInstanced(
@@ -479,32 +459,14 @@ export class WorkSphereEngine {
 
   private refreshMediaPriorities() {
     const ranked = rankSlotsByFront(this.slots, this.controller.orientation);
-    this.mediaPool.updatePriorities(ranked, this.hoverSlotId ?? undefined);
-  }
-
-  private pickSlot(localX: number, localY: number): number | null {
-    const ordered = this.slots
-      .map(slot => ({ slot, z: this.orientedDirections[slot.id]?.[2] ?? -1 }))
-      .filter(entry => entry.z > 0.05)
-      .sort((a, b) => b.z - a.z);
-
-    for (const { slot } of ordered) {
-      const bounds = projectQuadBounds(
-        this.models[slot.id],
-        this.viewProjection,
-        this.canvas.clientWidth,
-        this.canvas.clientHeight,
-      );
-      if (pointInBounds(localX, localY, bounds)) return slot.id;
-    }
-    return null;
+    this.mediaPool.updatePriorities(ranked);
   }
 
   private bindEvents() {
     this.canvas.addEventListener('pointerdown', this.onPointerDown);
     this.canvas.addEventListener('pointermove', this.onPointerMove);
     this.canvas.addEventListener('pointerup', this.onPointerUp);
-    this.canvas.addEventListener('pointercancel', this.onPointerCancel);
+    this.canvas.addEventListener('pointercancel', this.onPointerUp);
     this.canvas.addEventListener('pointerleave', this.onPointerLeave);
     window.addEventListener('resize', this.resize);
     document.addEventListener('visibilitychange', this.onVisibilityChange);
@@ -515,7 +477,7 @@ export class WorkSphereEngine {
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     this.canvas.removeEventListener('pointermove', this.onPointerMove);
     this.canvas.removeEventListener('pointerup', this.onPointerUp);
-    this.canvas.removeEventListener('pointercancel', this.onPointerCancel);
+    this.canvas.removeEventListener('pointercancel', this.onPointerUp);
     this.canvas.removeEventListener('pointerleave', this.onPointerLeave);
     window.removeEventListener('resize', this.resize);
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
@@ -523,70 +485,37 @@ export class WorkSphereEngine {
 
   private localPoint(event: PointerEvent) {
     const rect = this.canvas.getBoundingClientRect();
-    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
   }
 
   private onPointerDown = (event: PointerEvent) => {
     if (!this.interactive) return;
     const { x, y } = this.localPoint(event);
-    this.coarsePointer = event.pointerType === 'touch'
-      || window.matchMedia('(pointer: coarse)').matches;
-    this.pointerSession = {
-      pointerId: event.pointerId,
-      downX: x,
-      downY: y,
-      downAt: performance.now(),
-      pointerType: event.pointerType,
-    };
+    this.pointerId = event.pointerId;
     this.canvas.setPointerCapture?.(event.pointerId);
-    this.setHoverSlot(null);
+    this.controller.setSnapTarget(null);
     this.controller.pointerDown(x, y);
-    if (this.profile.inertia === 0) this.mediaPool.setAutomaticPlayback(true);
   };
 
   private onPointerMove = (event: PointerEvent) => {
-    if (!this.interactive) return;
+    if (!this.interactive || this.pointerId !== event.pointerId) return;
     const { x, y } = this.localPoint(event);
-    if (this.pointerSession?.pointerId === event.pointerId) {
-      this.controller.pointerMove(x, y);
-      return;
-    }
-    if (!this.coarsePointer && event.pointerType !== 'touch') {
-      this.setHoverSlot(this.pickSlot(x, y));
-    }
+    this.controller.pointerMove(x, y);
   };
 
   private onPointerUp = (event: PointerEvent) => {
-    const session = this.pointerSession;
-    if (!session || session.pointerId !== event.pointerId) return;
-    const { x, y } = this.localPoint(event);
-    this.controller.pointerUp();
-    this.pointerSession = null;
-
-    const travel = Math.hypot(x - session.downX, y - session.downY);
-    const duration = performance.now() - session.downAt;
-    const threshold = this.coarsePointer
-      ? WORK_SPHERE.clickTravelCoarse
-      : WORK_SPHERE.clickTravelFine;
-    if (!this.interactive || travel > threshold || duration > WORK_SPHERE.clickDurationMs) return;
-
-    const slotId = this.pickSlot(x, y);
-    if (slotId === null) return;
-    if (this.coarsePointer && slotId !== this.activeSlotId) {
-      this.snapToSlot(slotId);
-      return;
-    }
-    this.callbacks.onProjectActivate?.(slotId);
-  };
-
-  private onPointerCancel = (event: PointerEvent) => {
-    if (this.pointerSession?.pointerId !== event.pointerId) return;
-    this.pointerSession = null;
+    if (this.pointerId !== event.pointerId) return;
+    this.pointerId = null;
     this.controller.pointerUp();
   };
 
   private onPointerLeave = () => {
-    if (!this.pointerSession) this.setHoverSlot(null);
+    if (this.pointerId === null) return;
+    this.pointerId = null;
+    this.controller.pointerUp();
   };
 
   private onVisibilityChange = () => {
