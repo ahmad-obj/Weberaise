@@ -6,25 +6,37 @@ import {
 } from './math';
 import type { SphereSlot, Vec3 } from './types';
 
+export const REFERENCE_SNAP_DIRECTION: Vec3 = [0, 0, -1];
+
 export function findNearestSlot(
   slots: readonly SphereSlot[],
   orientation: Quat,
-  front: Vec3 = [0, 0, 1],
+  snapDirection: Vec3 = REFERENCE_SNAP_DIRECTION,
 ): number {
   if (!slots.length) return -1;
-  let bestSlot = slots[0].id;
-  let bestDot = -Infinity;
 
+  const inverseOrientation = new Float32Array([
+    -orientation[0],
+    -orientation[1],
+    -orientation[2],
+    orientation[3],
+  ]);
+  const targetInObjectSpace = transformVec3Quat(
+    vec3f(),
+    snapDirection,
+    inverseOrientation,
+  );
+
+  let nearestSlotId = slots[0].id;
+  let bestDot = -Infinity;
   for (const slot of slots) {
-    const oriented = transformVec3Quat(vec3f(), slot.direction, orientation);
-    const dot = dotVec3(front, oriented);
+    const dot = dotVec3(targetInObjectSpace, slot.direction);
     if (dot > bestDot) {
       bestDot = dot;
-      bestSlot = slot.id;
+      nearestSlotId = slot.id;
     }
   }
-
-  return bestSlot;
+  return nearestSlotId;
 }
 
 export function nextKeyboardSlot(current: number, delta: number, slotCount: number): number {
@@ -39,7 +51,7 @@ export function rankSlotsByFront(
   return slots
     .map(slot => {
       const oriented = transformVec3Quat(vec3f(), slot.direction, orientation);
-      return { slotId: slot.id, depth: oriented[2], rank: 0 };
+      return { slotId: slot.id, depth: -oriented[2], rank: 0 };
     })
     .sort((a, b) => b.depth - a.depth)
     .map((entry, rank) => ({ ...entry, rank }));
