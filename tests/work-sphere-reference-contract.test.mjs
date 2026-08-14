@@ -23,12 +23,19 @@ test('engine renders the fixed dense instance set with reference camera response
   assert.doesNotMatch(engine, /pickSlot|getSlotScreenBounds|setProjectOpening|onProjectActivate/);
 });
 
-test('rectangular website vertices are reprojected back onto the spherical radius', () => {
+test('website surfaces stay curved on the sphere without velocity wiggle deformation', () => {
   const shaders = read('src/webgl/workSphere/shaders.ts');
+  const engine = read('src/webgl/workSphere/WorkSphereEngine.ts');
+  const quality = read('src/webgl/workSphere/quality.ts');
+  const types = read('src/webgl/workSphere/types.ts');
+
   assert.match(shaders, /worldPosition\.xyz\s*=\s*radius\s*\*\s*normalize\(worldPosition\.xyz\)/);
-  assert.match(shaders, /uRotationAxisVelocity/);
   assert.match(shaders, /smoothstep\(0\.5,\s*1\.0/);
   assert.match(shaders, /roundedRectSdf/);
+
+  for (const source of [shaders, engine, quality, types]) {
+    assert.doesNotMatch(source, /uRotationAxisVelocity|uDeformation|stretchDir|deformation:/);
+  }
 });
 
 test('16:10 website media is cropped into the 4:3 surface instead of stretched', () => {
