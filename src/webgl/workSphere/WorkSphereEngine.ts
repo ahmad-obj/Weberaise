@@ -1,9 +1,18 @@
 import type { WorkProject } from '@/content/workProjects';
 import { ArcballController } from './arcball';
+import {
+  frontAlignmentError,
+  hitTestProjectedSlots,
+  isActivationGesture,
+  projectSurfaceBounds,
+  type ScreenBounds,
+} from './activation';
 import { cameraTargetZ, stepCameraZ } from './camera';
 import { WORK_SPHERE } from './constants';
 import { buildProjectSlots, createProjectSurfaceMesh } from './geometry';
 import {
+  cloneQuat,
+  copyQuat,
   lookAtMat4,
   mat4Identity,
   multiplyMat4,
@@ -20,15 +29,29 @@ import { WORK_QUALITY_PROFILES } from './quality';
 import { workSphereFragmentShader, workSphereVertexShader } from './shaders';
 import type {
   SphereSlot,
+  WorkResolveStatus,
   WorkSphereCallbacks,
   WorkSphereOptions,
+  WorkSphereTransitionSnapshot,
 } from './types';
 
 type Uniforms = {
   viewMatrix: WebGLUniformLocation | null;
   projectionMatrix: WebGLUniformLocation | null;
+  selectedSlotId: WebGLUniformLocation | null;
+  selectedSlotHidden: WebGLUniformLocation | null;
+  projectOpenProgress: WebGLUniformLocation | null;
   cornerRadius: WebGLUniformLocation | null;
   media: WorkMediaUniforms;
+};
+
+type ActivationPointer = {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  startedAt: number;
+  candidateSlotId: number;
+  coarsePointer: boolean;
 };
 
 function compileShader(gl: WebGL2RenderingContext, type: number, source: string) {
@@ -108,6 +131,12 @@ export class WorkSphereEngine {
   private lastFrame = performance.now();
   private cameraZ: number;
   private pointerId: number | null = null;
+  private activationPointer: ActivationPointer | null = null;
+  private resolvingSlotId: number | null = null;
+  private selectedSlotId = -1;
+  private selectedSlotHidden = false;
+  private projectOpenProgress = 0;
+  private freezeOrientation = false;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -155,7 +184,6 @@ export class WorkSphereEngine {
     this.instanceMatrixBuffer = matrixBuffer;
 
     gl.bindVertexArray(vao);
-
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, mesh.positions, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0);
@@ -175,14 +203,7 @@ export class WorkSphereEngine {
     for (let column = 0; column < 4; column += 1) {
       const location = 2 + column;
       gl.enableVertexAttribArray(location);
-      gl.vertexAttribPointer(
-        location,
-        4,
-        gl.FLOAT,
-        false,
-        bytesPerMatrix,
-        column * 4 * Float32Array.BYTES_PER_ELEMENT,
-      );
+      gl.vertexAttribPointer(location, 4, gl.FLOAT, false, bytesPerMatrix, column * 4 * Float32Array.BYTES_PER_ELEMENT);
       gl.vertexAttribDivisor(location, 1);
     }
 
@@ -201,6 +222,9 @@ export class WorkSphereEngine {
     this.uniforms = {
       viewMatrix: gl.getUniformLocation(this.program, 'uViewMatrix'),
       projectionMatrix: gl.getUniformLocation(this.program, 'uProjectionMatrix'),
+      selectedSlotId: gl.getUniformLocation(this.program, 'uSelectedSlotId'),
+      selectedSlotHidden: gl.getUniformLocation(this.program, 'uSelectedSlotHidden'),
+      projectOpenProgress: gl.getUniformLocation(this.program, 'uProjectOpenProgress'),
       cornerRadius: gl.getUniformLocation(this.program, 'uCornerRadius'),
       media: {
         posterAtlas: gl.getUniformLocation(this.program, 'uPosterAtlas'),
@@ -262,8 +286,10 @@ export class WorkSphereEngine {
 
   setInteractive(value: boolean) {
     this.interactive = value;
+    if (value) this.freezeOrientation = false;
     if (!value) {
       this.pointerId = null;
+      this.activationPointer = null;
       this.controller.pointerUp();
     }
   }
@@ -283,6 +309,70 @@ export class WorkSphereEngine {
     this.refreshMediaPriorities();
   }
 
+  captureTransitionSnapshot(): WorkSphereTransitionSnapshot {
+    return {
+      orientation: cloneQuat(this.controller.orientation),
+      activeSlotId: this.activeSlotId,
+    };
+  }
+
+  beginResolveToSlot(slotId: number) {
+    const slot = this.slots.find(candidate => candidate.id === slotId);
+    if (!slot) return;
+    this.freezeOrientation = false;
+    this.controller.stop();
+    this.controller.setSnapTarget(null);
+    const world = transformVec3Quat(vec3f(), slot.direction, this.controller.orientation);
+    this.controller.setSnapTarget(world);
+    this.resolvingSlotId = slotId;
+    this.selectedSlotId = slotId;
+    this.selectedSlotHidden = false;
+    this.activeSlotId = slotId;
+    this.callbacks.onActiveSlotChange?.(slotId);
+  }
+
+  getResolveStatus(): WorkResolveStatus | null {
+    if (this.resolvingSlotId === null) return null;
+    const slot = this.slots[this.resolvingSlotId];
+    if (!slot) return null;
+    const alignmentError = frontAlignmentError(slot.direction, this.controller.orientation);
+    const rotationVelocity = Math.abs(this.controller.rotationVelocity);
+    return {
+      slotId: slot.id,
+      alignmentError,
+      rotationVelocity,
+      ready: alignmentError <= 0.0025 && rotationVelocity <= 0.0035,
+    };
+  }
+
+  restoreTransitionSnapshot(snapshot: WorkSphereTransitionSnapshot) {
+    this.controller.stop();
+    this.controller.setSnapTarget(null);
+    copyQuat(this.controller.orientation, snapshot.orientation);
+    this.activeSlotId = snapshot.activeSlotId;
+    this.resolvingSlotId = null;
+    this.freezeOrientation = true;
+    this.updateMatrices();
+    this.refreshMediaPriorities();
+    this.callbacks.onActiveSlotChange?.(this.activeSlotId);
+  }
+
+  getSlotScreenBounds(slotId: number): ScreenBounds | null {
+    const model = this.models[slotId];
+    if (!model) return null;
+    const rect = this.canvas.getBoundingClientRect();
+    return projectSurfaceBounds(model, this.view, this.projection, Math.max(1, rect.width), Math.max(1, rect.height));
+  }
+
+  setSelectedSlotHidden(slotId: number | null) {
+    if (slotId !== null) this.selectedSlotId = slotId;
+    this.selectedSlotHidden = slotId !== null;
+  }
+
+  setProjectOpenProgress(progress: number) {
+    this.projectOpenProgress = Math.max(0, Math.min(1, progress));
+  }
+
   getProjectIndexForSlot(slotId: number) {
     return this.slots.find(slot => slot.id === slotId)?.projectIndex ?? -1;
   }
@@ -299,13 +389,11 @@ export class WorkSphereEngine {
     const cssHeight = Math.max(1, this.canvas.clientHeight || window.innerHeight);
     const width = Math.round(cssWidth * dpr);
     const height = Math.round(cssHeight * dpr);
-
     if (this.canvas.width !== width || this.canvas.height !== height) {
       this.canvas.width = width;
       this.canvas.height = height;
     }
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-
     this.controller.setViewport(cssWidth, cssHeight);
     const aspect = cssWidth / cssHeight;
     const referenceHeight = WORK_SPHERE.radius * 0.35;
@@ -313,13 +401,7 @@ export class WorkSphereEngine {
     const fov = aspect > 1
       ? 2 * Math.atan(referenceHeight / restDistance)
       : 2 * Math.atan(referenceHeight / aspect / restDistance);
-    perspectiveMat4(
-      this.projection,
-      fov,
-      aspect,
-      WORK_SPHERE.cameraNear,
-      WORK_SPHERE.cameraFar,
-    );
+    perspectiveMat4(this.projection, fov, aspect, WORK_SPHERE.cameraNear, WORK_SPHERE.cameraFar);
     this.updateView();
     this.updateMatrices();
   };
@@ -333,10 +415,11 @@ export class WorkSphereEngine {
     if (!this.started || this.destroyed) return;
     const deltaMs = Math.min(32, Math.max(1, now - this.lastFrame));
     this.lastFrame = now;
+    const snapshot = this.freezeOrientation
+      ? { orientation: this.controller.orientation, rotationVelocity: 0 }
+      : this.controller.update(deltaMs, WORK_SPHERE.targetFrameDurationMs);
 
-    const snapshot = this.controller.update(deltaMs, WORK_SPHERE.targetFrameDurationMs);
-
-    if (!this.controller.isPointerDown) {
+    if (!this.freezeOrientation && !this.controller.isPointerDown && this.resolvingSlotId === null) {
       const nearest = findNearestSlot(this.slots, snapshot.orientation);
       if (nearest >= 0) {
         const slot = this.slots.find(candidate => candidate.id === nearest);
@@ -352,23 +435,15 @@ export class WorkSphereEngine {
       }
     }
 
-    const moving = this.controller.isPointerDown || Math.abs(snapshot.rotationVelocity) > 0.01;
+    const moving = !this.freezeOrientation
+      && (this.controller.isPointerDown || Math.abs(snapshot.rotationVelocity) > 0.01);
     if (moving !== this.lastMovement) {
       this.lastMovement = moving;
       this.callbacks.onMovementChange?.(moving);
     }
 
-    const targetZ = cameraTargetZ(
-      this.scaleFactor,
-      snapshot.rotationVelocity,
-      this.controller.isPointerDown,
-    );
-    this.cameraZ = stepCameraZ(
-      this.cameraZ,
-      targetZ,
-      deltaMs,
-      this.controller.isPointerDown,
-    );
+    const targetZ = cameraTargetZ(this.scaleFactor, snapshot.rotationVelocity, this.controller.isPointerDown);
+    this.cameraZ = stepCameraZ(this.cameraZ, targetZ, deltaMs, this.controller.isPointerDown);
     this.updateView();
     this.updateMatrices();
     this.mediaPool.uploadReadyFrames();
@@ -384,28 +459,21 @@ export class WorkSphereEngine {
     const reduced = this.profile.inertia === 0;
     const entranceScale = reduced
       ? 1.08 + (1 - 1.08) * this.entranceProgress
-      : WORK_SPHERE.entranceStartScale
-        + (1 - WORK_SPHERE.entranceStartScale) * this.entranceProgress;
+      : WORK_SPHERE.entranceStartScale + (1 - WORK_SPHERE.entranceStartScale) * this.entranceProgress;
     const effectiveRadius = WORK_SPHERE.radius * entranceScale;
 
     for (const slot of this.slots) {
-      const oriented = transformVec3Quat(
-        this.orientedDirections[slot.id],
-        slot.direction,
-        this.controller.orientation,
-      );
+      const oriented = transformVec3Quat(this.orientedDirections[slot.id], slot.direction, this.controller.orientation);
       const px = oriented[0] * entranceScale;
       const py = oriented[1] * entranceScale;
       const pz = oriented[2] * entranceScale;
-      const depthScale =
-        (Math.abs(pz) / effectiveRadius) * WORK_SPHERE.depthScaleIntensity
+      const depthScale = (Math.abs(pz) / effectiveRadius) * WORK_SPHERE.depthScaleIntensity
         + (1 - WORK_SPHERE.depthScaleIntensity);
       const finalScale = WORK_SPHERE.baseSurfaceScale * depthScale * entranceScale;
 
       const matrix = this.models[slot.id];
       matrix.set(mat4Identity());
       multiplyMat4(matrix, matrix, translationMatrix(-px, -py, -pz));
-
       const facing = targetToMat4(
         mat4Identity(),
         [0, 0, 0],
@@ -415,7 +483,6 @@ export class WorkSphereEngine {
       multiplyMat4(matrix, matrix, facing);
       multiplyMat4(matrix, matrix, scaleMatrix(finalScale));
       multiplyMat4(matrix, matrix, translationMatrix(0, 0, -effectiveRadius));
-
       this.instanceMatrices.set(matrix, slot.id * 16);
     }
 
@@ -431,16 +498,13 @@ export class WorkSphereEngine {
     gl.useProgram(this.program);
     gl.uniformMatrix4fv(this.uniforms.viewMatrix, false, this.view);
     gl.uniformMatrix4fv(this.uniforms.projectionMatrix, false, this.projection);
+    gl.uniform1i(this.uniforms.selectedSlotId, this.selectedSlotId);
+    gl.uniform1i(this.uniforms.selectedSlotHidden, this.selectedSlotHidden ? 1 : 0);
+    gl.uniform1f(this.uniforms.projectOpenProgress, this.projectOpenProgress);
     gl.uniform1f(this.uniforms.cornerRadius, 0.045);
     this.mediaPool.bind(this.uniforms.media);
     gl.bindVertexArray(this.vao);
-    gl.drawElementsInstanced(
-      gl.TRIANGLES,
-      this.indexCount,
-      gl.UNSIGNED_SHORT,
-      0,
-      this.slots.length,
-    );
+    gl.drawElementsInstanced(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0, this.slots.length);
     gl.bindVertexArray(null);
   }
 
@@ -449,11 +513,26 @@ export class WorkSphereEngine {
     this.mediaPool.updatePriorities(ranked);
   }
 
+  private projectedSlots() {
+    const rect = this.canvas.getBoundingClientRect();
+    return this.slots.map(slot => ({
+      slotId: slot.id,
+      bounds: projectSurfaceBounds(
+        this.models[slot.id],
+        this.view,
+        this.projection,
+        Math.max(1, rect.width),
+        Math.max(1, rect.height),
+      ),
+      depth: -this.orientedDirections[slot.id][2],
+    }));
+  }
+
   private bindEvents() {
     this.canvas.addEventListener('pointerdown', this.onPointerDown);
     this.canvas.addEventListener('pointermove', this.onPointerMove);
     this.canvas.addEventListener('pointerup', this.onPointerUp);
-    this.canvas.addEventListener('pointercancel', this.onPointerUp);
+    this.canvas.addEventListener('pointercancel', this.onPointerCancel);
     this.canvas.addEventListener('pointerleave', this.onPointerLeave);
     window.addEventListener('resize', this.resize);
     document.addEventListener('visibilitychange', this.onVisibilityChange);
@@ -464,7 +543,7 @@ export class WorkSphereEngine {
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     this.canvas.removeEventListener('pointermove', this.onPointerMove);
     this.canvas.removeEventListener('pointerup', this.onPointerUp);
-    this.canvas.removeEventListener('pointercancel', this.onPointerUp);
+    this.canvas.removeEventListener('pointercancel', this.onPointerCancel);
     this.canvas.removeEventListener('pointerleave', this.onPointerLeave);
     window.removeEventListener('resize', this.resize);
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
@@ -472,15 +551,21 @@ export class WorkSphereEngine {
 
   private localPoint(event: PointerEvent) {
     const rect = this.canvas.getBoundingClientRect();
-    return {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-    };
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   }
 
   private onPointerDown = (event: PointerEvent) => {
     if (!this.interactive) return;
     const { x, y } = this.localPoint(event);
+    const candidateSlotId = hitTestProjectedSlots(x, y, this.projectedSlots());
+    this.activationPointer = {
+      pointerId: event.pointerId,
+      startX: x,
+      startY: y,
+      startedAt: performance.now(),
+      candidateSlotId,
+      coarsePointer: event.pointerType === 'touch' || window.matchMedia('(pointer: coarse)').matches,
+    };
     this.pointerId = event.pointerId;
     this.canvas.setPointerCapture?.(event.pointerId);
     this.controller.setSnapTarget(null);
@@ -495,13 +580,37 @@ export class WorkSphereEngine {
 
   private onPointerUp = (event: PointerEvent) => {
     if (this.pointerId !== event.pointerId) return;
+    const activation = this.activationPointer;
+    const { x, y } = this.localPoint(event);
     this.pointerId = null;
+    this.activationPointer = null;
+    this.controller.pointerUp();
+    if (!activation || activation.candidateSlotId < 0) return;
+    const releaseSlotId = hitTestProjectedSlots(x, y, this.projectedSlots());
+    const validGesture = isActivationGesture({
+      startX: activation.startX,
+      startY: activation.startY,
+      endX: x,
+      endY: y,
+      durationMs: performance.now() - activation.startedAt,
+      coarsePointer: activation.coarsePointer,
+    });
+    if (validGesture && releaseSlotId === activation.candidateSlotId) {
+      this.callbacks.onProjectActivate?.(activation.candidateSlotId);
+    }
+  };
+
+  private onPointerCancel = (event: PointerEvent) => {
+    if (this.pointerId !== event.pointerId) return;
+    this.pointerId = null;
+    this.activationPointer = null;
     this.controller.pointerUp();
   };
 
   private onPointerLeave = () => {
     if (this.pointerId === null) return;
     this.pointerId = null;
+    this.activationPointer = null;
     this.controller.pointerUp();
   };
 
