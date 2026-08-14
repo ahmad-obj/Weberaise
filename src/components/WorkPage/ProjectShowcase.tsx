@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { WorkProject } from '@/content/workProjects';
 import styles from './WorkPage.module.css';
+import placeholderStyles from './PlaceholderShowcase.module.css';
 
 type ProjectShowcaseProps = {
   project: WorkProject;
@@ -15,25 +16,25 @@ function PlaceholderShowcaseMedia() {
 
   return (
     <div
-      className={styles.placeholderShowcase}
+      className={placeholderStyles.placeholderShowcase}
       data-playing={playing ? 'true' : 'false'}
       aria-label="Development placeholder full project showcase"
     >
-      <div className={styles.placeholderShowcaseViewport} aria-hidden="true">
-        <div className={styles.placeholderShowcaseChrome}>
+      <div className={placeholderStyles.placeholderShowcaseViewport} aria-hidden="true">
+        <div className={placeholderStyles.placeholderShowcaseChrome}>
           <span>PXX</span>
           <i />
           <i />
           <i />
         </div>
-        <div className={styles.placeholderShowcaseTrack}>
-          <div className={styles.placeholderShowcaseHero}>
+        <div className={placeholderStyles.placeholderShowcaseTrack}>
+          <div className={placeholderStyles.placeholderShowcaseHero}>
             <p>FULL PROJECT</p>
             <strong>PLACEHOLDER SHOWCASE</strong>
             <span />
           </div>
           {Array.from({ length: 6 }, (_, index) => (
-            <div className={styles.placeholderShowcaseRow} key={index}>
+            <div className={placeholderStyles.placeholderShowcaseRow} key={index}>
               <b />
               <span>
                 <i />
@@ -45,14 +46,14 @@ function PlaceholderShowcaseMedia() {
         </div>
       </div>
       <button
-        className={styles.placeholderPlayButton}
+        className={placeholderStyles.placeholderPlayButton}
         type="button"
         onClick={() => setPlaying(value => !value)}
         aria-pressed={playing}
       >
         {playing ? 'Pause placeholder showcase' : 'Play full placeholder showcase'}
       </button>
-      <span className={styles.placeholderMediaLabel}>DEV PLACEHOLDER</span>
+      <span className={placeholderStyles.placeholderMediaLabel}>DEV PLACEHOLDER</span>
     </div>
   );
 }
@@ -112,7 +113,11 @@ export function ProjectShowcase({
           </div>
         </dl>
         {project.placeholder ? (
-          <span className={`${styles.visitLink} ${styles.visitLinkDisabled}`} aria-disabled="true">
+          <span
+            className={styles.visitLink}
+            aria-disabled="true"
+            style={{ opacity: 0.45, cursor: 'default', borderBottomColor: 'transparent' }}
+          >
             Website placeholder <span aria-hidden="true">↗</span>
           </span>
         ) : (
