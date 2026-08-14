@@ -43,6 +43,16 @@ test('transition path does not use canvas readback or continuous picking', () =>
   assert.doesNotMatch(frameMatch[0], /hitTestProjectedSlots/);
 });
 
+test('resolve-to-front refreshes the clicked slot target every frame and freezes only after convergence', () => {
+  const engine = read('src/webgl/workSphere/WorkSphereEngine.ts');
+  const frameMatch = engine.match(/private frame[\s\S]*?private updateView/);
+  assert.ok(frameMatch);
+  assert.match(frameMatch[0], /if \(this\.resolvingSlotId !== null\)[\s\S]*transformVec3Quat[\s\S]*setSnapTarget/);
+  const statusMatch = engine.match(/getResolveStatus\(\)[\s\S]*?restoreTransitionSnapshot/);
+  assert.ok(statusMatch);
+  assert.match(statusMatch[0], /if \(ready\)[\s\S]*freezeOrientation\s*=\s*true/);
+});
+
 test('expanded project layout avoids unsupported CSS length multiplication', () => {
   const css = read('src/components/WorkPage/WorkPage.module.css');
   assert.doesNotMatch(css, /calc\([^)]*\*\s*1\.6/);
