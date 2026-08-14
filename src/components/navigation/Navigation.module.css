@@ -94,27 +94,43 @@
 .centerPill {
   position: relative;
   z-index: 1;
+  isolation: isolate;
+  overflow: hidden;
 }
 
-.centerHoverPlate {
+.centerPillSurface {
   position: absolute;
-  left: 0;
-  top: 0;
-  z-index: 3;
-  display: grid;
-  place-items: center;
-  border-radius: calc(var(--nav-pill-radius) - 3px);
+  left: 50%;
+  bottom: 0;
+  z-index: 1;
+  display: block;
+  border-radius: 50%;
   background: var(--nav-pill-fg);
-  color: var(--nav-pill-bg);
-  font-family: var(--font-body), Arial, sans-serif;
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.055em;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.centerPillLabel {
+  position: relative;
+  z-index: 2;
+  display: block;
+  color: inherit;
   white-space: nowrap;
   pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.centerPillLabelHover {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  color: var(--nav-pill-bg);
+  white-space: nowrap;
   opacity: 0;
-  will-change: transform, width, height, opacity;
+  pointer-events: none;
+  will-change: transform, opacity;
 }
 
 .talkPill {
@@ -226,7 +242,8 @@
 }
 
 .pill,
-.centerHoverPlate,
+.centerPillSurface,
+.centerPillLabelHover,
 .talkHoverLabel {
   transition-property: background-color, color;
   transition-duration: 220ms;
@@ -270,18 +287,12 @@
     letter-spacing: 0.045em;
   }
 
-  .centerHoverPlate {
-    font-size: 10px;
-    letter-spacing: 0.045em;
-  }
-
   .logoPill { width: 46px; }
   .centerPill { min-width: 72px; }
   .talkPill { min-width: 104px; }
 }
 
 @media (pointer: coarse) {
-  .centerHoverPlate,
   .gooParticle {
     display: none;
   }
@@ -300,7 +311,8 @@
   }
 
   .pill,
-  .centerHoverPlate,
+  .centerPillSurface,
+  .centerPillLabelHover,
   .talkHoverLabel {
     transition-duration: 120ms;
   }

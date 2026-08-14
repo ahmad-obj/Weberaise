@@ -22,10 +22,6 @@ export function CenterNavCluster({ onNavigate }: CenterNavClusterProps) {
 
   return (
     <div ref={rootRef} className={styles.centerCluster} data-center-nav-cluster>
-      <span className={styles.centerHoverPlate} data-center-hover-plate aria-hidden="true">
-        <span data-center-hover-label />
-      </span>
-
       {CENTER_NAV_ITEMS.map((item) => (
         <span
           className={styles.navItemSlot}
@@ -45,7 +41,21 @@ export function CenterNavCluster({ onNavigate }: CenterNavClusterProps) {
                 }
               : undefined}
           >
-            {item.label}
+            <span
+              className={styles.centerPillSurface}
+              data-center-pill-surface
+              aria-hidden="true"
+            />
+            <span className={styles.centerPillLabel} data-center-pill-label>
+              {item.label}
+            </span>
+            <span
+              className={styles.centerPillLabelHover}
+              data-center-pill-label-hover
+              aria-hidden="true"
+            >
+              {item.label}
+            </span>
           </a>
         </span>
       ))}
