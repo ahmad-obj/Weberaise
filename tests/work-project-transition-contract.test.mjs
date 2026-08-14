@@ -50,14 +50,16 @@ test('transition path does not use canvas readback or continuous picking', () =>
   assert.doesNotMatch(frameMatch[0], /hitTestProjectedSlots/);
 });
 
-test('resolve-to-front refreshes the clicked slot target every frame and freezes only after convergence', () => {
+test('resolve-to-front refreshes the clicked slot target and settles camera before handing bounds to DOM', () => {
   const engine = read('src/webgl/workSphere/WorkSphereEngine.ts');
   const frameMatch = engine.match(/private frame[\s\S]*?private updateView/);
   assert.ok(frameMatch);
   assert.match(frameMatch[0], /if \(!this\.freezeOrientation && this\.resolvingSlotId !== null\)[\s\S]*transformVec3Quat[\s\S]*setSnapTarget/);
   const statusMatch = engine.match(/getResolveStatus\(\)[\s\S]*?restoreTransitionSnapshot/);
   assert.ok(statusMatch);
-  assert.match(statusMatch[0], /if \(ready\)[\s\S]*freezeOrientation\s*=\s*true/);
+  assert.match(statusMatch[0], /cameraError/);
+  assert.match(statusMatch[0], /WORK_SPHERE\.cameraRestZ\s*\*\s*this\.scaleFactor/);
+  assert.match(statusMatch[0], /if \(ready\)[\s\S]*this\.cameraZ\s*=\s*restCameraZ[\s\S]*updateView\(\)[\s\S]*updateMatrices\(\)[\s\S]*freezeOrientation\s*=\s*true/);
 });
 
 test('expanded project layout avoids unsupported CSS length multiplication', () => {
