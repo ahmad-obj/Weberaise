@@ -23,12 +23,6 @@
   );
 }
 
-.contactReserve {
-  position: relative;
-  z-index: 1;
-  min-height: clamp(620px, 82svh, 900px);
-}
-
 @media (max-width: 640px) {
   .tail {
     min-height: 250svh;
@@ -36,9 +30,5 @@
 
   .transitionVeil {
     height: 34vh;
-  }
-
-  .contactReserve {
-    min-height: clamp(520px, 74svh, 760px);
   }
 }
