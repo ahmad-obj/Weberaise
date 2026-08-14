@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { WorkProject } from '@/content/workProjects';
 import styles from './WorkPage.module.css';
 
@@ -9,6 +9,53 @@ type ProjectShowcaseProps = {
   onReturn(): void;
   focusBackButton?: boolean;
 };
+
+function PlaceholderShowcaseMedia() {
+  const [playing, setPlaying] = useState(false);
+
+  return (
+    <div
+      className={styles.placeholderShowcase}
+      data-playing={playing ? 'true' : 'false'}
+      aria-label="Development placeholder full project showcase"
+    >
+      <div className={styles.placeholderShowcaseViewport} aria-hidden="true">
+        <div className={styles.placeholderShowcaseChrome}>
+          <span>PXX</span>
+          <i />
+          <i />
+          <i />
+        </div>
+        <div className={styles.placeholderShowcaseTrack}>
+          <div className={styles.placeholderShowcaseHero}>
+            <p>FULL PROJECT</p>
+            <strong>PLACEHOLDER SHOWCASE</strong>
+            <span />
+          </div>
+          {Array.from({ length: 6 }, (_, index) => (
+            <div className={styles.placeholderShowcaseRow} key={index}>
+              <b />
+              <span>
+                <i />
+                <i />
+                <i />
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <button
+        className={styles.placeholderPlayButton}
+        type="button"
+        onClick={() => setPlaying(value => !value)}
+        aria-pressed={playing}
+      >
+        {playing ? 'Pause placeholder showcase' : 'Play full placeholder showcase'}
+      </button>
+      <span className={styles.placeholderMediaLabel}>DEV PLACEHOLDER</span>
+    </div>
+  );
+}
 
 export function ProjectShowcase({
   project,
@@ -34,14 +81,18 @@ export function ProjectShowcase({
       </div>
 
       <div className={styles.showcaseVideoFrame}>
-        <video
-          className={styles.showcaseVideo}
-          poster={project.media.showcasePoster}
-          src={project.media.showcaseVideo}
-          controls
-          preload="metadata"
-          playsInline
-        />
+        {project.placeholder ? (
+          <PlaceholderShowcaseMedia />
+        ) : (
+          <video
+            className={styles.showcaseVideo}
+            poster={project.media.showcasePoster}
+            src={project.media.showcaseVideo}
+            controls
+            preload="metadata"
+            playsInline
+          />
+        )}
       </div>
 
       <div className={styles.showcaseInfo}>
@@ -60,14 +111,20 @@ export function ProjectShowcase({
             <dd>{project.year}</dd>
           </div>
         </dl>
-        <a
-          className={styles.visitLink}
-          href={project.liveUrl}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Visit Website <span aria-hidden="true">↗</span>
-        </a>
+        {project.placeholder ? (
+          <span className={`${styles.visitLink} ${styles.visitLinkDisabled}`} aria-disabled="true">
+            Website placeholder <span aria-hidden="true">↗</span>
+          </span>
+        ) : (
+          <a
+            className={styles.visitLink}
+            href={project.liveUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Visit Website <span aria-hidden="true">↗</span>
+          </a>
+        )}
       </div>
     </section>
   );
