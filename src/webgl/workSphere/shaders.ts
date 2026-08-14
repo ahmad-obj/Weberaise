@@ -9,42 +9,55 @@ layout(location = 4) in vec4 aInstance2;
 layout(location = 5) in vec4 aInstance3;
 layout(location = 6) in vec2 aInstanceMeta;
 
-uniform mat4 uViewProjection;
-uniform float uVelocity;
+uniform mat4 uViewMatrix;
+uniform mat4 uProjectionMatrix;
+uniform vec4 uRotationAxisVelocity;
 uniform float uDeformation;
-uniform float uProjectOpening;
-uniform int uOpeningSlot;
-uniform int uHiddenSlot;
 
 out vec2 vUv;
-out float vDepthAlpha;
+out float vAlpha;
 flat out int vProjectIndex;
 flat out int vSlotId;
 
 void main() {
-  int slotId = int(aInstanceMeta.y + 0.5);
+  mat4 instanceMatrix = mat4(aInstance0, aInstance1, aInstance2, aInstance3);
+  vec4 worldPosition = instanceMatrix * vec4(aPosition, 1.0);
+  vec3 centerPos = (instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+  float radius = max(0.0001, length(centerPos));
+
+  vec3 rotationAxis = uRotationAxisVelocity.xyz;
+  float axisLength = length(rotationAxis);
+  float rotationVelocity = min(0.15, abs(uRotationAxisVelocity.w) * 15.0) * uDeformation;
+
+  if (rotationVelocity > 0.00001 && axisLength > 0.00001) {
+    vec3 stretchDir = cross(centerPos, rotationAxis / axisLength);
+    float stretchLength = length(stretchDir);
+    if (stretchLength > 0.00001) {
+      stretchDir /= stretchLength;
+      vec3 relativeVertex = worldPosition.xyz - centerPos;
+      float relativeLength = length(relativeVertex);
+      if (relativeLength > 0.00001) {
+        relativeVertex /= relativeLength;
+        float strength = dot(stretchDir, relativeVertex);
+        float invAbsStrength = min(0.0, abs(strength) - 1.0);
+        strength = rotationVelocity
+          * sign(strength)
+          * abs(invAbsStrength * invAbsStrength * invAbsStrength + 1.0);
+        worldPosition.xyz += stretchDir * strength;
+      }
+    }
+  }
+
+  // This is the defining Infinite Menu surface behavior: after tangential
+  // placement/deformation, every website-mesh vertex is projected back onto
+  // the instance center's spherical radius.
+  worldPosition.xyz = radius * normalize(worldPosition.xyz);
+
+  gl_Position = uProjectionMatrix * uViewMatrix * worldPosition;
+  vAlpha = smoothstep(0.5, 1.0, normalize(worldPosition.xyz).z) * 0.9 + 0.1;
   vUv = aUv;
   vProjectIndex = int(aInstanceMeta.x + 0.5);
-  vSlotId = slotId;
-
-  if (slotId == uHiddenSlot) {
-    gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
-    vDepthAlpha = 0.0;
-    return;
-  }
-
-  mat4 instanceMatrix = mat4(aInstance0, aInstance1, aInstance2, aInstance3);
-  vec3 local = aPosition;
-  local.x += local.y * clamp(uVelocity, -1.0, 1.0) * uDeformation * 0.02;
-
-  if (uOpeningSlot >= 0 && slotId != uOpeningSlot) {
-    local.xy *= mix(1.0, 0.72, uProjectOpening);
-  }
-
-  vec4 world = instanceMatrix * vec4(local, 1.0);
-  gl_Position = uViewProjection * world;
-  float ndcDepth = gl_Position.z / max(0.0001, gl_Position.w);
-  vDepthAlpha = smoothstep(1.0, -0.35, ndcDepth);
+  vSlotId = int(aInstanceMeta.y + 0.5);
 }
 `;
 
@@ -62,7 +75,7 @@ uniform int uAtlasGrid;
 uniform float uCornerRadius;
 
 in vec2 vUv;
-in float vDepthAlpha;
+in float vAlpha;
 flat in int vProjectIndex;
 flat in int vSlotId;
 
@@ -77,7 +90,8 @@ vec4 samplePoster() {
   int grid = max(1, uAtlasGrid);
   int cellX = vProjectIndex % grid;
   int cellY = vProjectIndex / grid;
-  vec2 atlasUv = (vec2(float(cellX), float(cellY)) + vUv) / float(grid);
+  vec2 cellSize = vec2(1.0) / float(grid);
+  vec2 atlasUv = (vec2(float(cellX), float(cellY)) + vUv) * cellSize;
   return texture(uPosterAtlas, atlasUv);
 }
 
@@ -90,7 +104,7 @@ void main() {
   float distanceToRounded = roundedRectSdf(vUv, uCornerRadius);
   float edge = max(fwidth(distanceToRounded) * 1.35, 0.00075);
   float roundedAlpha = 1.0 - smoothstep(0.0, edge, distanceToRounded);
-  color.a *= roundedAlpha * mix(0.56, 1.0, clamp(vDepthAlpha, 0.0, 1.0));
+  color.a *= roundedAlpha * vAlpha;
   if (color.a <= 0.001) discard;
   outColor = color;
 }
