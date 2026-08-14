@@ -34,6 +34,14 @@ export class ArcballController {
     this.reducedMotion = reducedMotion;
   }
 
+  get isPointerDown() {
+    return this.pointerDownState;
+  }
+
+  get velocity() {
+    return this.angularVelocity;
+  }
+
   setViewport(width: number, height: number) {
     this.viewportWidth = Math.max(1, width);
     this.viewportHeight = Math.max(1, height);
