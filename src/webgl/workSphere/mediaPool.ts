@@ -14,6 +14,9 @@ type LiveSlot = {
   assignedSlotId: number;
   assignedProjectIndex: number;
   dirty: boolean;
+  hasFrame: boolean;
+  textureWidth: number;
+  textureHeight: number;
   lastTime: number;
   frameHandle: number | null;
 };
@@ -32,7 +35,6 @@ export function selectLiveVideoSlots(
 ): number[] {
   const result: number[] = [];
   if (maxSlots <= 0) return result;
-
   if (hoverSlotId !== undefined && hoverSlotId >= 0) result.push(hoverSlotId);
   for (const item of [...ranked].sort((a, b) => a.rank - b.rank)) {
     if (!result.includes(item.slotId)) result.push(item.slotId);
@@ -71,7 +73,6 @@ export class WorkPreviewMediaPool {
 
     const primary = this.liveSlots[0]?.video;
     if (!primary || !primary.src) return;
-
     await Promise.race([
       this.waitForCurrentData(primary),
       new Promise<void>(resolve => window.setTimeout(resolve, 1200)),
@@ -81,7 +82,6 @@ export class WorkPreviewMediaPool {
   updatePriorities(ranked: readonly RankedSlot[], hoverSlotId?: number) {
     if (this.destroyed) return;
     const desired = selectLiveVideoSlots(ranked, this.liveSlots.length, hoverSlotId);
-
     const existingBySlot = new Map<number, LiveSlot>();
     for (const slot of this.liveSlots) {
       if (slot.assignedSlotId >= 0) existingBySlot.set(slot.assignedSlotId, slot);
@@ -89,12 +89,10 @@ export class WorkPreviewMediaPool {
 
     const nextAssignments: Array<{ live: LiveSlot; slotId: number }> = [];
     const free = this.liveSlots.filter(slot => !desired.includes(slot.assignedSlotId));
-
     for (const slotId of desired) {
       const existing = existingBySlot.get(slotId);
-      if (existing) {
-        nextAssignments.push({ live: existing, slotId });
-      } else {
+      if (existing) nextAssignments.push({ live: existing, slotId });
+      else {
         const live = free.shift();
         if (live) nextAssignments.push({ live, slotId });
       }
@@ -104,7 +102,6 @@ export class WorkPreviewMediaPool {
     for (const live of this.liveSlots) {
       if (!used.has(live)) this.unassign(live);
     }
-
     for (const { live, slotId } of nextAssignments) {
       if (live.assignedSlotId !== slotId) this.assign(live, slotId);
       if (this.allowPlayback) void live.video.play().catch(() => undefined);
@@ -119,19 +116,25 @@ export class WorkPreviewMediaPool {
     for (const live of this.liveSlots) {
       const video = live.video;
       if (live.assignedSlotId < 0 || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) continue;
-
       if (!video.requestVideoFrameCallback && video.currentTime !== live.lastTime) {
         live.dirty = true;
         live.lastTime = video.currentTime;
       }
-      if (!live.dirty) continue;
+      if (!live.dirty || !video.videoWidth || !video.videoHeight) continue;
 
       gl.bindTexture(gl.TEXTURE_2D, live.texture);
       try {
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+        if (live.textureWidth !== video.videoWidth || live.textureHeight !== video.videoHeight) {
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+          live.textureWidth = video.videoWidth;
+          live.textureHeight = video.videoHeight;
+        } else {
+          gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, video);
+        }
+        live.hasFrame = true;
         live.dirty = false;
       } catch {
-        // A poster remains available if a browser rejects a transient video upload.
+        live.hasFrame = false;
       }
     }
   }
@@ -148,9 +151,8 @@ export class WorkPreviewMediaPool {
       gl.activeTexture(gl.TEXTURE1 + index);
       gl.bindTexture(gl.TEXTURE_2D, live.texture);
       gl.uniform1i(uniforms.videoTextures[index], 1 + index);
-      gl.uniform1i(uniforms.videoSlotIds[index], live.assignedSlotId);
+      gl.uniform1i(uniforms.videoSlotIds[index], live.hasFrame ? live.assignedSlotId : -1);
     }
-
     for (let index = this.liveSlots.length; index < uniforms.videoTextures.length; index += 1) {
       gl.uniform1i(uniforms.videoSlotIds[index], -1);
     }
@@ -197,17 +199,7 @@ export class WorkPreviewMediaPool {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      gl.RGBA,
-      1,
-      1,
-      0,
-      gl.RGBA,
-      gl.UNSIGNED_BYTE,
-      new Uint8Array([7, 10, 15, 255]),
-    );
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([7, 10, 15, 255]));
     return texture;
   }
 
@@ -223,6 +215,9 @@ export class WorkPreviewMediaPool {
       assignedSlotId: -1,
       assignedProjectIndex: -1,
       dirty: false,
+      hasFrame: false,
+      textureWidth: 1,
+      textureHeight: 1,
       lastTime: -1,
       frameHandle: null,
     };
@@ -236,7 +231,6 @@ export class WorkPreviewMediaPool {
     canvas.height = this.atlasGrid * cellHeight;
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Unable to create poster atlas canvas.');
-
     context.fillStyle = '#070a0f';
     context.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -293,6 +287,9 @@ export class WorkPreviewMediaPool {
     live.assignedSlotId = slotId;
     live.assignedProjectIndex = slot.projectIndex;
     live.dirty = false;
+    live.hasFrame = false;
+    live.textureWidth = 1;
+    live.textureHeight = 1;
     live.lastTime = -1;
     live.video.src = project.media.browsePreview;
     live.video.load();
@@ -307,6 +304,7 @@ export class WorkPreviewMediaPool {
     live.assignedSlotId = -1;
     live.assignedProjectIndex = -1;
     live.dirty = false;
+    live.hasFrame = false;
     live.lastTime = -1;
   }
 
