@@ -1,45 +1,23 @@
-export type CapabilityPosition = 'left' | 'mid' | 'right';
-
-export type CapabilityItem = {
-  name: string;
-  position: CapabilityPosition;
-};
-
 export type CapabilityGroup = {
   index: '01' | '02' | '03';
   label: 'DESIGN' | 'DEVELOPMENT' | 'IMPROVEMENT';
-  items: readonly [CapabilityItem, CapabilityItem, CapabilityItem, CapabilityItem];
+  items: readonly [string, string, string, string];
 };
 
 export const CAPABILITY_GROUPS = [
   {
     index: '01',
     label: 'DESIGN',
-    items: [
-      { name: 'Art Direction', position: 'left' },
-      { name: 'UI/UX', position: 'right' },
-      { name: 'Responsive', position: 'mid' },
-      { name: 'Motion', position: 'right' },
-    ],
+    items: ['Art Direction', 'UI/UX', 'Responsive', 'Motion'],
   },
   {
     index: '02',
     label: 'DEVELOPMENT',
-    items: [
-      { name: 'Frontend', position: 'mid' },
-      { name: 'CMS', position: 'left' },
-      { name: 'Integrations', position: 'right' },
-      { name: 'E-commerce', position: 'mid' },
-    ],
+    items: ['Frontend', 'CMS', 'Integrations', 'E-commerce'],
   },
   {
     index: '03',
     label: 'IMPROVEMENT',
-    items: [
-      { name: 'Performance', position: 'right' },
-      { name: 'SEO Foundations', position: 'left' },
-      { name: 'Analytics', position: 'mid' },
-      { name: 'Iteration', position: 'right' },
-    ],
+    items: ['Performance', 'SEO Foundations', 'Analytics', 'Iteration'],
   },
 ] as const satisfies readonly CapabilityGroup[];

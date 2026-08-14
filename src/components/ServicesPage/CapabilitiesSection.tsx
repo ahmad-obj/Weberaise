@@ -26,8 +26,8 @@ export function CapabilitiesSection() {
 
             <ul className={styles.list}>
               {group.items.map((item) => (
-                <li className={styles.item} data-position={item.position} key={item.name}>
-                  <span className={styles.name}>{item.name}</span>
+                <li className={styles.item} key={item}>
+                  <span className={styles.name}>{item}</span>
                 </li>
               ))}
             </ul>

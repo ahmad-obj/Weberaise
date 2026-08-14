@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { dampScalar, getRenderSize, getTailRootMargin } from './silkMath';
+import { getRenderSize, getTailRootMargin } from './silkMath';
+import { SILK_COLORS, SILK_PRESET } from './silkPreset';
 import { SILK_FRAGMENT_SHADER, SILK_VERTEX_SHADER } from './silkShaders';
 import styles from './SilkWavesBackground.module.css';
 
@@ -12,9 +13,14 @@ type SilkWavesBackgroundProps = {
 type WebglState = 'idle' | 'ready' | 'fallback';
 
 type Uniforms = {
-  resolution: WebGLUniformLocation;
-  time: WebGLUniformLocation;
-  pointer: WebGLUniformLocation;
+  colors: WebGLUniformLocation;
+  scene: WebGLUniformLocation;
+  shape: WebGLUniformLocation;
+  surface: WebGLUniformLocation;
+  finish: WebGLUniformLocation;
+  transform: WebGLUniformLocation;
+  space: WebGLUniformLocation;
+  cursor: WebGLUniformLocation;
 };
 
 function compileShader(
@@ -105,13 +111,7 @@ export function SilkWavesBackground({ activeTargetId }: SilkWavesBackgroundProps
     let reducedMotion = false;
     let lastTimestamp = 0;
     let elapsed = 0;
-    let pointerX = 0;
-    let pointerY = 0;
-    let pointerTargetX = 0;
-    let pointerTargetY = 0;
 
-    const coarseQuery = window.matchMedia('(pointer: coarse)');
-    const finePointerQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     reducedMotion = reducedMotionQuery.matches;
 
@@ -132,11 +132,8 @@ export function SilkWavesBackground({ activeTargetId }: SilkWavesBackgroundProps
         gl.ARRAY_BUFFER,
         new Float32Array([
           -1, -1,
-          1, -1,
-          -1, 1,
-          -1, 1,
-          1, -1,
-          1, 1,
+          3, -1,
+          -1, 3,
         ]),
         gl.STATIC_DRAW,
       );
@@ -144,10 +141,36 @@ export function SilkWavesBackground({ activeTargetId }: SilkWavesBackgroundProps
       gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
       uniforms = {
-        resolution: requireUniform(gl, program, 'uResolution'),
-        time: requireUniform(gl, program, 'uTime'),
-        pointer: requireUniform(gl, program, 'uPointer'),
+        colors: requireUniform(gl, program, 'u_colors[0]'),
+        scene: requireUniform(gl, program, 'u_scene'),
+        shape: requireUniform(gl, program, 'u_shape'),
+        surface: requireUniform(gl, program, 'u_surface'),
+        finish: requireUniform(gl, program, 'u_finish'),
+        transform: requireUniform(gl, program, 'u_transform'),
+        space: requireUniform(gl, program, 'u_space'),
+        cursor: requireUniform(gl, program, 'u_cursor'),
       };
+
+      const lastColor = SILK_COLORS[SILK_COLORS.length - 1];
+      const colorData = new Float32Array([
+        ...SILK_COLORS.flat(),
+        ...lastColor,
+        ...lastColor,
+        ...lastColor,
+        ...lastColor,
+      ]);
+
+      if (colorData.length !== 24) {
+        throw new Error('Silk shader palette must provide exactly eight RGB colours.');
+      }
+
+      gl.uniform3fv(uniforms.colors, colorData);
+      gl.uniform4f(uniforms.shape, ...SILK_PRESET.shape);
+      gl.uniform4f(uniforms.surface, ...SILK_PRESET.surface);
+      gl.uniform4f(uniforms.finish, ...SILK_PRESET.finish);
+      gl.uniform4f(uniforms.transform, ...SILK_PRESET.transform);
+      gl.uniform4f(uniforms.space, ...SILK_PRESET.space);
+      gl.uniform4f(uniforms.cursor, ...SILK_PRESET.cursor);
     } catch (error) {
       console.warn('Silk background WebGL initialization failed.', error);
       if (buffer) gl.deleteBuffer(buffer);
@@ -162,7 +185,6 @@ export function SilkWavesBackground({ activeTargetId }: SilkWavesBackgroundProps
         rect.width || window.innerWidth,
         rect.height || window.innerHeight,
         window.devicePixelRatio,
-        coarseQuery.matches,
       );
 
       if (canvas.width !== renderSize.width) canvas.width = renderSize.width;
@@ -172,10 +194,14 @@ export function SilkWavesBackground({ activeTargetId }: SilkWavesBackgroundProps
 
     const draw = (timeSeconds: number) => {
       gl.useProgram(program);
-      gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
-      gl.uniform1f(uniforms.time, timeSeconds);
-      gl.uniform2f(uniforms.pointer, pointerX, pointerY);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      gl.uniform4f(
+        uniforms.scene,
+        canvas.width,
+        canvas.height,
+        timeSeconds * SILK_PRESET.timeScale,
+        SILK_PRESET.colorCount,
+      );
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
 
     const stop = () => {
@@ -192,8 +218,6 @@ export function SilkWavesBackground({ activeTargetId }: SilkWavesBackgroundProps
       lastTimestamp = timestamp;
       elapsed += dt;
 
-      pointerX = dampScalar(pointerX, pointerTargetX, dt, 0.42);
-      pointerY = dampScalar(pointerY, pointerTargetY, dt, 0.42);
       draw(elapsed);
       raf = requestAnimationFrame(tick);
     };
@@ -202,8 +226,6 @@ export function SilkWavesBackground({ activeTargetId }: SilkWavesBackgroundProps
       stop();
 
       if (reducedMotion) {
-        pointerX = 0;
-        pointerY = 0;
         draw(4.25);
         return;
       }
@@ -211,19 +233,6 @@ export function SilkWavesBackground({ activeTargetId }: SilkWavesBackgroundProps
       if (!nearTail || !pageVisible) return;
       lastTimestamp = performance.now();
       raf = requestAnimationFrame(tick);
-    };
-
-    const onPointerMove = (event: PointerEvent) => {
-      if (!finePointerQuery.matches || reducedMotion) return;
-      const width = Math.max(1, window.innerWidth);
-      const height = Math.max(1, window.innerHeight);
-      pointerTargetX = (event.clientX / width - 0.5) * 2;
-      pointerTargetY = (0.5 - event.clientY / height) * 2;
-    };
-
-    const onPointerLeave = () => {
-      pointerTargetX = 0;
-      pointerTargetY = 0;
     };
 
     const onVisibilityChange = () => {
@@ -265,8 +274,6 @@ export function SilkWavesBackground({ activeTargetId }: SilkWavesBackgroundProps
 
     document.addEventListener('visibilitychange', onVisibilityChange);
     canvas.addEventListener('webglcontextlost', onContextLost);
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
-    window.addEventListener('pointerleave', onPointerLeave);
     reducedMotionQuery.addEventListener('change', onReducedMotionChange);
 
     resize();
@@ -280,8 +287,6 @@ export function SilkWavesBackground({ activeTargetId }: SilkWavesBackgroundProps
       intersectionObserver.disconnect();
       document.removeEventListener('visibilitychange', onVisibilityChange);
       canvas.removeEventListener('webglcontextlost', onContextLost);
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerleave', onPointerLeave);
       reducedMotionQuery.removeEventListener('change', onReducedMotionChange);
       if (buffer) gl.deleteBuffer(buffer);
       if (program) gl.deleteProgram(program);
