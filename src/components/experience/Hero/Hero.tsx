@@ -57,6 +57,11 @@ export function Hero({
             return;
           }
 
+          if (!target.startsWith('#')) {
+            window.location.assign(target);
+            return;
+          }
+
           const element = document.querySelector<HTMLElement>(target);
           if (!element) return;
 
