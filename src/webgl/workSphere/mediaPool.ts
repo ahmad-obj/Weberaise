@@ -125,6 +125,7 @@ export class WorkPreviewMediaPool {
       if (live.assignedSlotId < 0) continue;
 
       if (live.placeholderActive) {
+        if (!this.allowPlayback && live.hasFrame) continue;
         if (
           live.hasFrame
           && nowMs - live.lastPlaceholderFrameMs < this.placeholderFrameIntervalMs
