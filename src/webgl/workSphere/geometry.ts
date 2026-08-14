@@ -90,8 +90,6 @@ export function createIcosphereDirections(radius = ICOSPHERE_RADIUS): readonly V
     );
   }
 
-  // Keep the subdivision work explicit. The instance positions are the unique
-  // vertices, exactly as in the ReactBits Infinite Menu reference.
   void subdividedFaces;
   return vertices.map(vertex => normalizeToRadius(vertex, radius));
 }
@@ -134,7 +132,7 @@ export function createProjectSurfaceMesh() {
       const b = a + 1;
       const c = a + stride;
       const d = c + 1;
-      indices.push(a, c, b, b, c, d);
+      indices.push(a, b, c, b, d, c);
     }
   }
 
