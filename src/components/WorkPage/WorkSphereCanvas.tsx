@@ -99,6 +99,7 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
           { reducedMotion, quality },
         );
         engineRef.current = engine;
+        onActiveSlotChange(engine.getActiveSlotId());
         engine.setInteractive(interactive);
         engine.start();
       } catch (error) {
