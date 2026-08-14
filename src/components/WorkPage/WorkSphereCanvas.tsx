@@ -117,7 +117,7 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
         );
         engineRef.current = engine;
         callbacksRef.current.onActiveSlotChange(engine.getActiveSlotId());
-        engine.setInteractive(interactive);
+        engine.setInteractive(false);
         engine.start();
       } catch (error) {
         callbacksRef.current.onCapabilityFailure(
@@ -129,7 +129,9 @@ export const WorkSphereCanvas = forwardRef<WorkSphereHandle, WorkSphereCanvasPro
         engineRef.current?.destroy();
         engineRef.current = null;
       };
-    }, [interactive, projectKey, projects, reducedMotion]);
+      // The project-key is the engine identity boundary; live callbacks are refs.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [projectKey, reducedMotion]);
 
     useEffect(() => {
       engineRef.current?.setInteractive(interactive);
