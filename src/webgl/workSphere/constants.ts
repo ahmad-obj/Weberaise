@@ -1,0 +1,15 @@
+export const WORK_SPHERE = {
+  radius: 4.4,
+  projectWidth: 1.55,
+  projectHeight: 0.96,
+  cameraZ: 7.35,
+  liveVideoSlots: 3,
+  dprCapFull: 1.5,
+  dprCapLite: 1.2,
+  snapVelocityThreshold: 0.055,
+  snapTimeConstantMs: 260,
+  inertiaTimeConstantMs: 360,
+  clickTravelFine: 8,
+  clickTravelCoarse: 12,
+  clickDurationMs: 450,
+} as const;
