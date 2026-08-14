@@ -23,3 +23,8 @@ export function dampScalar(
   const ease = 1 - Math.exp(-Math.max(0, dt) / timeConstant);
   return current + (target - current) * ease;
 }
+
+export function getTailRootMargin(viewportHeight: number) {
+  const margin = Math.max(0, Math.round(viewportHeight * 1.6));
+  return `${margin}px 0px`;
+}

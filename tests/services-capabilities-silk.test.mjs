@@ -47,6 +47,12 @@ test('silk render sizing clamps DPR and pointer damping is stable', async () => 
   assert.ok(next > 0 && next < 1);
 });
 
+test('silk observer root margin is viewport-derived and browser-valid', async () => {
+  const math = await import(moduleUrl('src/components/ui/SilkWavesBackground/silkMath.ts'));
+  assert.equal(math.getTailRootMargin(900), '1440px 0px');
+  assert.equal(math.getTailRootMargin(0), '0px 0px');
+});
+
 test('silk background owns one raw-WebGL RAF lifecycle and safe fallbacks', () => {
   const source = read('src/components/ui/SilkWavesBackground/SilkWavesBackground.tsx');
   assert.match(source, /getContext\(['"]webgl['"]/);

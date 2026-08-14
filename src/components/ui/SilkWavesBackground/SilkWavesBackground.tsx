@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { dampScalar, getRenderSize } from './silkMath';
+import { dampScalar, getRenderSize, getTailRootMargin } from './silkMath';
 import { SILK_FRAGMENT_SHADER, SILK_VERTEX_SHADER } from './silkShaders';
 import styles from './SilkWavesBackground.module.css';
 
@@ -254,7 +254,7 @@ export function SilkWavesBackground({ activeTargetId }: SilkWavesBackgroundProps
         nearTail = entries.some((entry) => entry.isIntersecting);
         startIfNeeded();
       },
-      { rootMargin: '160vh 0px', threshold: 0 },
+      { rootMargin: getTailRootMargin(window.innerHeight), threshold: 0 },
     );
 
     if (activeTarget) {
