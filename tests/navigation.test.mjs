@@ -182,7 +182,8 @@ test('main mode samples background theme independently under logo center and tal
   const siteNav = read(`${navDir}/SiteNavigation.tsx`);
   const css = read(`${navDir}/Navigation.module.css`);
 
-  assert.match(hook, /elementsFromPoint/);
+  assert.doesNotMatch(hook, /elementsFromPoint/);
+  assert.match(hook, /ThemeRegion/);
   assert.match(hook, /logo/);
   assert.match(hook, /center/);
   assert.match(hook, /talk/);
