@@ -193,7 +193,8 @@
 }
 
 .projectViewMedia {
-  width: min(100%, calc((100svh - var(--project-top) - 28px) * 1.6));
+  width: 100%;
+  max-width: calc(100vw - var(--project-side) - var(--project-side));
   margin-inline: auto;
   aspect-ratio: 1.6 / 1;
   overflow: hidden;
@@ -212,7 +213,8 @@
 }
 
 .projectViewInfo {
-  width: min(100%, calc((100svh - var(--project-top) - 28px) * 1.6));
+  width: 100%;
+  max-width: calc(100vw - var(--project-side) - var(--project-side));
   margin-inline: auto;
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(240px, 0.75fr);
