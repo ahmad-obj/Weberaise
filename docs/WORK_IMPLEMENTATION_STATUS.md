@@ -1,135 +1,169 @@
-# Weberaise Work Page — Phase 1 Infinite Menu Rework Status
+# Weberaise Work Page — Phase 2 Project Expansion Status
 
 **Branch:** `feature/work-spherical-showcase`  
-**Design:** `docs/superpowers/specs/2026-08-14-work-infinite-menu-sphere-rework-design.md`  
-**No-wiggle optimization:** `docs/superpowers/specs/2026-08-14-work-sphere-no-tile-wiggle-design.md`  
-**Plan:** `docs/superpowers/plans/2026-08-14-work-infinite-menu-sphere-rework.md`  
-**Optimization plan:** `docs/superpowers/plans/2026-08-14-work-sphere-no-tile-wiggle.md`  
-**Locked decisions:** `docs/superpowers/plans/2026-08-14-work-infinite-menu-sphere-rework-locked-decisions.md`  
+**Phase 1 design:** `docs/superpowers/specs/2026-08-14-work-infinite-menu-sphere-rework-design.md`  
+**No-wiggle design:** `docs/superpowers/specs/2026-08-14-work-sphere-no-tile-wiggle-design.md`  
+**Phase 2 design:** `docs/superpowers/specs/2026-08-14-work-project-expansion-phase2-design.md`  
+**Phase 2 plan:** `docs/superpowers/plans/2026-08-14-work-project-expansion-phase2.md`  
 **Date:** 2026-08-14
 
 ## Current Phase
 
-Phase 1 is intentionally limited to the **browse sphere**. The previously built project-opening/showcase/return system was rejected and has been removed from the live implementation. Project selection/expansion will be redesigned only after the sphere itself is visually accepted.
+Phase 2 project opening/return is implemented on top of the accepted 42-instance Infinite Menu-style browse sphere. The rejected first-generation project bridge/showcase remains deleted; this implementation uses a new bounded WebGL → DOM ownership handoff.
 
-## Implemented
+## Browse Sphere Preserved
 
-### Opening and page shell
-- dedicated `/work` route;
-- `OUR WORKS` remains the only visible opening content;
-- sphere/media preparation stays hidden behind that opening;
-- dense sphere enters through the approved oversized-to-normal `5 → 1` establishing scale;
-- full-viewport fixed canvas with no card-grid/container constraint;
-- scroll remains locked while the sphere owns the viewport.
+The Phase 1 sphere remains the base experience:
 
-### Infinite Menu sphere core
-- direct WebGL2 renderer with a single instanced draw;
-- exact full icosahedron base from the supplied ReactBits Infinite Menu source;
-- one shared-edge subdivision creates exactly **42 unique sphere positions**;
-- every position is spherized to radius **2**;
-- sphere density is completely independent of project count;
-- project identity is `instanceId % projectCount`;
-- one project therefore repeats across all 42 positions;
-- six projects repeat cyclically across the full 42-position sphere;
-- no sparse 12-slot mode remains.
+- 42 fixed once-subdivided icosphere positions at radius `2`;
+- project repetition is independent of project count;
+- 4:3 subdivided website surfaces;
+- base surface scale `0.34`;
+- ReactBits-style arcball, inertia, nearest snap and dynamic camera pull-back;
+- depth scale/fade and spherical vertex reprojection;
+- bounded/de-duplicated live-preview media pool;
+- no per-tile velocity wiggle/stretch deformation;
+- no continuous hover/picking loop.
 
-### 4:3 website surfaces
-- circular discs are replaced by a fixed **4:3** website surface;
-- each surface is a 6 × 4 cell mesh: 35 vertices / 48 triangles / 144 indices;
-- triangle winding faces +Z before tangent placement so front-facing instances survive WebGL back-face culling;
-- surface base scale is locked at `0.34` for the first visual comparison;
-- depth scaling follows the reference `abs(z / radius) * 0.6 + 0.4` model;
-- every rectangular-mesh vertex is re-projected to the instance sphere radius in the vertex shader, so tiles read as part of one sphere rather than rigid cards floating around it;
-- project surfaces are now **rigid relative to the sphere**: rotational-velocity stretch/wiggle deformation has been removed;
-- corners are only mildly rounded;
-- 16:10 website media is center-cropped into the 4:3 surface instead of stretched.
+## Phase 2 Implemented
 
-### Reference interaction mechanics
-- dependency-free port of the supplied ReactBits arcball behavior;
-- reference virtual-sphere pointer projection with radius 2;
-- reference pointer delta intensity and angle amplification;
-- quaternion accumulation and normalization;
-- reference pointer-rotation release slerp;
-- reference snap direction `[0, 0, -1]`;
-- nearest-vertex lookup uses inverse orientation, matching Infinite Menu;
-- distance-sensitive magnetic snap behavior;
-- camera resting Z is `3 * scaleFactor`;
-- energetic drag still adds `rotationVelocity * 80 + 2.5` to camera target Z;
-- drag/rest camera damping follows the reference 7/5 time-scaled behavior;
-- sphere inertia/release behavior remains unchanged;
-- depth alpha follows the reference front/back fade character;
-- per-tile velocity deformation is intentionally removed while the spatial motion remains unchanged.
+### One-interaction activation
 
-### Phase 1 interaction scope
-- pointer/touch performs sphere drag only;
-- pointer release only ends arcball interaction;
-- project picking is removed;
-- project activation is removed;
-- old transition bridge is removed;
-- old project showcase component is removed;
-- old showcase placeholder styles are removed;
-- old screen-projection bridge helper is removed;
-- active metadata follows the sphere's nearest focused instance only; there is no hover-override path;
-- arrow-key/semantic navigation snaps to sphere instances without opening projects.
+- pointer/touch hit-testing occurs only on activation attempts, not in RAF;
+- exact physical `slotId` is preserved separately from repeated `projectIndex`;
+- fine-pointer click travel threshold is `8px`;
+- coarse-pointer threshold is `14px`;
+- activation duration ceiling is `550ms`;
+- drag release does not open a project;
+- semantic keyboard controls use the same open orchestration.
 
-### Media/performance
-- all 42 instances can display project posters without creating 42 decoders;
-- full desktop profile still caps live browse sources at three;
-- repeated instances are **project-deduplicated** when allocating live preview sources;
-- 1 project repeated 42× consumes at most 1 live source;
-- 2 projects consume at most 2;
-- 6+ projects consume at most 3 on the full desktop profile;
-- procedural development previews use the same bounded live-texture slots;
-- procedural placeholder texture updates are capped at 24fps;
-- reduced-motion placeholder previews hold after their initial frame;
-- hidden tabs pause RAF/media work;
-- rotational-velocity stretch math and its WebGL uniforms were removed from every rendered surface vertex, reducing unnecessary GPU work without lowering density or preview quality.
+### Resolve-to-front
 
-### Responsive/accessibility
-- desktop, tablet and mobile retain the same true 42-position sphere model;
-- mobile changes camera/quality profile rather than degrading to 2–3 cards;
-- reduced motion keeps the dense sphere while reducing aggressive inertial behavior;
-- no-WebGL fallback remains a usable static project gallery and no longer exposes the rejected Phase 2 showcase;
-- canvas remains decorative to assistive technology;
-- semantic project controls remain available for keyboard/screen-reader navigation and only snap the sphere in Phase 1.
+Before DOM takes ownership:
 
-### Development placeholders
-- six clearly labeled `PLACEHOLDER 01`–`PLACEHOLDER 06` records remain so the dense repeated sphere can be inspected immediately;
-- they are development fixtures, not client claims;
-- the six identities repeat over all 42 sphere instances automatically;
-- removing all fixtures still returns the page to the honest empty state.
+- free interaction is disabled;
+- the exact clicked slot is repeatedly recomputed in current world orientation and snapped toward reference front `[0,0,-1]`;
+- resolve readiness requires front-alignment error `<= 0.0025`;
+- rotational velocity must be `<= 0.0035`;
+- camera must settle within `0.01` of `3 * scaleFactor`;
+- on readiness the camera is set to exact rest, view/matrices are refreshed, and orientation is frozen for deterministic screen bounds.
 
-## Verification Evidence
+This avoids handing DOM a rectangle that is still drifting because of sphere rotation or camera damping.
 
-Full Next.js verification is not available in this execution environment because the repository cannot be cloned/network-installed here. Chromium is installed, but this container also fails to initialize EGL/SwiftShader, so browser WebGL shader compile/link could not be meaningfully executed.
+### WebGL → DOM ownership
 
-Fresh branch/source checks after the no-wiggle optimization:
+- selected slot screen bounds are projected from the live model/view/projection state without canvas readback;
+- a fixed DOM frame appears at the exact resolved bounds;
+- the DOM poster crossfades over the WebGL preview while both occupy the same rectangle, masking any live-preview/poster frame mismatch;
+- only after that crossfade does the selected WebGL slot hide;
+- no screenshot, `readPixels`, `getImageData`, or 42 DOM mirrors are used.
 
-- shader still contains spherical reprojection `worldPosition.xyz = radius * normalize(worldPosition.xyz)`: **PASS**;
-- shader still contains depth alpha and rounded-surface masking: **PASS**;
-- shader no longer contains `uRotationAxisVelocity`, `uDeformation`, or `stretchDir`: **PASS**;
-- engine no longer queries/uploads deformation-only uniforms: **PASS**;
-- quality/types no longer contain the deformation profile field: **PASS**;
-- engine still uses `snapshot.rotationVelocity` for movement state and dynamic camera pull-back: **PASS**;
-- exact 42-slot geometry/repetition code remains untouched by this optimization;
-- arcball, snap, camera and media implementations remain otherwise untouched by this optimization.
+### Expansion and sphere peel
 
-Earlier Phase 1 core checks remain the baseline evidence:
+- selected DOM preview expands to a responsive near-fullscreen 16:10 destination with small margins;
+- object-fit/cropping reveals more of the source rather than stretching it;
+- the other 41 WebGL instances use one global `uProjectOpenProgress` value;
+- non-selected radius multiplier reaches `1.48`;
+- non-selected scale multiplier reaches `0.68`;
+- non-selected alpha fades fully out;
+- no random per-item stagger or wiggle is reintroduced;
+- after expansion completes, WebGL RAF and sphere preview media are stopped/paused.
 
-- one-subdivision icosphere produces exactly 42 positions: **PASS**;
-- every sphere position has radius 2: **PASS**;
-- sphere density is independent of 1 / 6 / 17 project counts: **PASS**;
-- 1-project and 6-project modulo repetition: **PASS**;
-- 4:3 mesh has 35 vertices and 144 indices: **PASS**;
-- front-facing mesh winding: **PASS**;
-- arcball movement changes a normalized orientation quaternion: **PASS**;
-- released pointer rotation settles: **PASS**;
-- nearest-vertex magnetic snap converges to reference `-Z`: **PASS**;
-- dynamic camera pulls outward under motion and returns toward rest: **PASS**;
-- 42-slot keyboard wrapping: **PASS**;
-- repeated-project live-source deduplication: **PASS**.
+### Normal project view
 
-**GLSL compile/link and full Next.js test/typecheck/build are not claimed as verified in this environment.** GitHub currently has no status checks attached to this branch.
+After expansion:
+
+- normal document scrolling is unlocked;
+- the top media frame reuses the exact destination geometry used by the transition;
+- placeholder projects remain clearly marked as development placeholders;
+- real projects use native video with `controls`, `preload="metadata"`, and `playsInline`;
+- information remains deliberately compact: category/name, brief, Services, Year, Visit Website, Back to Work;
+- no fake metrics, testimonials, long process timeline, or tech-stack dump is added.
+
+### Return to sphere
+
+Two snapshots are intentionally preserved:
+
+1. `resolvedSnapshot` — stable face-on orientation used for DOM ↔ WebGL ownership;
+2. `preOpenSnapshot` — exact sphere orientation/context before the project was opened.
+
+Return sequence:
+
+- project page first scrolls to its transition-top position;
+- sphere renderer restarts hidden/receded;
+- `resolvedSnapshot` is restored;
+- DOM preview shrinks back to the exact face-on tile bounds;
+- selected WebGL tile is revealed beneath it and DOM crossfades away;
+- project DOM page stays hidden for the entire remaining return restoration;
+- sphere layer briefly masks the internal orientation swap to `preOpenSnapshot`;
+- surrounding sphere instances peel/fade back in;
+- interaction resumes only after that restoration completes;
+- programmatic focus is returned without triggering the semantic button's normal snap behavior, so focus restoration does not destroy the restored pre-open orientation.
+
+### Fallback / accessibility / reduced motion
+
+- no-WebGL fallback gallery opens the same normal DOM project view directly;
+- Escape returns from `projectViewing`;
+- semantic project controls remain keyboard accessible;
+- focus moves into project content after expansion and returns after a normal sphere return;
+- reduced motion keeps the same state/content flow with shorter transition durations and restrained spatial movement.
+
+## State Machine
+
+```text
+opening
+→ sphereEntering
+→ sphereInteractive
+→ projectResolving
+→ projectExpanding
+→ projectViewing
+→ projectReturning
+→ sphereInteractive
+```
+
+Invalid phase-skipping actions are guarded by the reducer.
+
+## Regression Contracts Added / Updated
+
+The branch now contains source/pure-behavior contracts for:
+
+- Phase 2 state lifecycle and exact selection payload;
+- activation thresholds and physical slot hit-testing;
+- no continuous picking in the render frame;
+- no canvas readback;
+- resolve target refresh on every resolve frame;
+- camera-stable handoff bounds;
+- selected-slot masking and global peel shader state;
+- continued absence of velocity wiggle/deformation;
+- separate transition and normal-flow project components;
+- WebGL stop during project viewing;
+- deterministic resolved/pre-open snapshot return ownership;
+- project page remaining hidden during the full return restoration;
+- programmatic focus restoration not re-snapping the sphere;
+- no unsupported CSS length multiplication in project layout;
+- preservation of Phase 1 42-instance/reference contracts.
+
+## Verification Boundary
+
+Full repository execution is **not available in this environment**. A fresh local clone/test attempt is blocked by network resolution:
+
+```text
+fatal: unable to access 'https://github.com/manbtd0-cloud/Weberaise.git/':
+Could not resolve host: github.com
+```
+
+Therefore the following are **not claimed as passing here**:
+
+```bash
+npm test
+npm run typecheck
+npm run build
+npm run dev
+```
+
+Browser/WebGL visual QA is also not claimed from this environment. GitHub currently exposes no CI status checks for this branch, so there is no remote green suite to substitute for local execution.
+
+What has been performed here is direct branch-source inspection after implementation, including the reducer lifecycle, activation/projection math, arcball semantics, renderer ownership boundaries, transition/view layering, no-wiggle shader preservation, no-readback/no-idle-picking contracts, return-context restoration, and CSS compatibility fixes.
 
 ## Required User-Machine Verification
 
@@ -143,19 +177,23 @@ npm run build
 npm run dev
 ```
 
-Then inspect `/work` against the ReactBits Infinite Menu reference. Confirm:
-- sphere density/repetition;
-- drag weight and release/inertia character;
-- camera pull-back;
-- snap behavior;
-- spherical curvature;
-- tile size/collision balance;
-- depth scale/fade;
-- **individual project tiles no longer wiggle/stretch during motion**;
-- desktop/mobile framing.
+Then inspect `/work` at minimum for:
 
-Do **not** judge project opening yet: clicking/expansion is intentionally disabled until Phase 2 is separately designed.
+- normal sphere behavior is unchanged from accepted Phase 1;
+- project tiles do not wiggle/stretch;
+- a stationary click/tap opens the clicked physical tile;
+- dragging does not accidentally open;
+- an off-center repeated tile resolves and opens from one interaction;
+- resolve-to-DOM handoff does not jump, duplicate, or briefly disappear;
+- remaining sphere tiles peel/fade fully away;
+- expanded project media lands at near-fullscreen margins and normal scrolling works;
+- WebGL is not visibly running behind the project view;
+- Back/Escape returns through the face-on tile before the original sphere context returns;
+- the project DOM page does not flash behind the sphere during return;
+- exact pre-open orientation is not destroyed by focus restoration;
+- mobile/coarse-pointer and reduced-motion paths remain usable;
+- no-WebGL fallback remains usable.
 
 ## Parallel-Branch Constraint
 
-Homepage, floating navigation, Services and Work continue independently. This Work branch must be reconciled against the final integration branch only after those parallel changes settle; do not copy stale homepage/navigation/Services files into Work.
+Homepage, floating navigation, Services and Work continue independently. Do not merge/copy stale homepage/navigation/Services files into this Work branch. Reconcile only against the final integration branch when the parallel work is ready.
