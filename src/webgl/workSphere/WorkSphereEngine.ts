@@ -1,8 +1,22 @@
-import { mat4, quat, vec3 } from 'gl-matrix';
 import type { WorkProject } from '@/content/workProjects';
 import { ArcballController } from './arcball';
 import { WORK_SPHERE } from './constants';
 import { buildProjectSlots, createProjectQuad } from './geometry';
+import {
+  cloneQuat,
+  lookAtMat4,
+  mat4Identity,
+  multiplyMat4,
+  normalizeVec3,
+  perspectiveMat4,
+  scaleMat4,
+  scaleVec3,
+  targetToMat4,
+  transformVec3Quat,
+  vec3f,
+  type Mat4,
+  type Vec3f,
+} from './math';
 import { WorkPreviewMediaPool, type WorkMediaUniforms } from './mediaPool';
 import { projectQuadBounds, pointInBounds } from './projection';
 import { WORK_QUALITY_PROFILES } from './quality';
@@ -80,17 +94,17 @@ export class WorkSphereEngine {
   private readonly instanceMatrixBuffer: WebGLBuffer;
   private readonly instanceMetaBuffer: WebGLBuffer;
   private readonly instanceMatrices: Float32Array;
-  private readonly models: mat4[];
-  private readonly orientedDirections: vec3[];
+  private readonly models: Mat4[];
+  private readonly orientedDirections: Vec3f[];
   private readonly controller: ArcballController;
   private readonly mediaPool: WorkPreviewMediaPool;
   private readonly uniforms: Uniforms;
   private readonly callbacks: WorkSphereCallbacks;
   private readonly profile: (typeof WORK_QUALITY_PROFILES)[keyof typeof WORK_QUALITY_PROFILES];
 
-  private projection = mat4.create();
-  private view = mat4.create();
-  private viewProjection = mat4.create();
+  private projection = mat4Identity();
+  private view = mat4Identity();
+  private viewProjection = mat4Identity();
   private raf = 0;
   private started = false;
   private destroyed = false;
@@ -123,11 +137,11 @@ export class WorkSphereEngine {
     this.gl = gl;
     this.callbacks = callbacks;
     this.profile = WORK_QUALITY_PROFILES[options.quality ?? (options.reducedMotion ? 'reduced' : 'full')];
-    this.controller = new ArcballController(Boolean(options.reducedMotion));
+    this.controller = new ArcballController(Boolean(options.reducedMotion), this.profile.inertia);
     this.slots = buildProjectSlots(projects.length);
     this.activeSlotId = findNearestSlot(this.slots, this.controller.orientation);
-    this.models = this.slots.map(() => mat4.create());
-    this.orientedDirections = this.slots.map(() => vec3.create());
+    this.models = this.slots.map(() => mat4Identity());
+    this.orientedDirections = this.slots.map(() => vec3f());
     this.instanceMatrices = new Float32Array(this.slots.length * 16);
 
     this.program = createProgram(gl);
@@ -269,6 +283,7 @@ export class WorkSphereEngine {
 
   setEntranceProgress(progress: number) {
     this.entranceProgress = clamp01(progress);
+    this.updateMatrices();
   }
 
   setHoverSlot(slotId: number | null) {
@@ -291,6 +306,7 @@ export class WorkSphereEngine {
   setProjectOpening(slotId: number, progress: number) {
     this.openingSlotId = slotId;
     this.projectOpeningProgress = clamp01(progress);
+    this.updateMatrices();
   }
 
   setSelectedHidden(hidden: boolean) {
@@ -313,7 +329,7 @@ export class WorkSphereEngine {
 
   getOrientationSnapshot(): WorkSphereSnapshot {
     return {
-      orientation: quat.clone(this.controller.orientation),
+      orientation: cloneQuat(this.controller.orientation),
       activeSlotId: this.activeSlotId,
     };
   }
@@ -351,9 +367,9 @@ export class WorkSphereEngine {
     }
 
     this.controller.setViewport(cssWidth, cssHeight);
-    mat4.perspective(this.projection, Math.PI / 3.05, cssWidth / cssHeight, 0.1, 60);
-    mat4.lookAt(this.view, [0, 0, WORK_SPHERE.cameraZ], [0, 0, 0], [0, 1, 0]);
-    mat4.multiply(this.viewProjection, this.projection, this.view);
+    perspectiveMat4(this.projection, Math.PI / 3.05, cssWidth / cssHeight, 0.1, 60);
+    lookAtMat4(this.view, [0, 0, WORK_SPHERE.cameraZ], [0, 0, 0], [0, 1, 0]);
+    multiplyMat4(this.viewProjection, this.projection, this.view);
     this.updateMatrices();
   };
 
@@ -397,13 +413,12 @@ export class WorkSphereEngine {
     const openingSlot = this.slots.find(slot => slot.id === this.openingSlotId);
 
     for (const slot of this.slots) {
-      const localDirection = vec3.fromValues(...slot.direction);
-      const direction = vec3.transformQuat(
+      const direction = transformVec3Quat(
         this.orientedDirections[slot.id],
-        localDirection,
+        slot.direction,
         this.controller.orientation,
       );
-      vec3.normalize(direction, direction);
+      normalizeVec3(direction, direction);
 
       const depth = clamp01((direction[2] + 1) * 0.5);
       let sizeScale = (0.74 + depth * 0.32) * sceneScale;
@@ -419,11 +434,13 @@ export class WorkSphereEngine {
         }
       }
 
-      const position = vec3.scale(vec3.create(), direction, radius);
-      const worldUp = Math.abs(direction[1]) > 0.94 ? [1, 0, 0] : [0, 1, 0];
+      const position = scaleVec3(vec3f(), direction, radius);
+      const worldUp: [number, number, number] = Math.abs(direction[1]) > 0.94
+        ? [1, 0, 0]
+        : [0, 1, 0];
       const model = this.models[slot.id];
-      mat4.targetTo(model, position, [0, 0, 0], worldUp);
-      mat4.scale(model, model, [
+      targetToMat4(model, position, [0, 0, 0], worldUp);
+      scaleMat4(model, model, [
         WORK_SPHERE.projectWidth * sizeScale,
         WORK_SPHERE.projectHeight * sizeScale,
         1,
