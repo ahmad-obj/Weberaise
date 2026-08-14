@@ -8,14 +8,20 @@
 .viewport {
   position: fixed;
   inset: 0;
+  z-index: 10;
   overflow: hidden;
-  background: var(--wr-black);
+  background: transparent;
+}
+
+.viewport[data-project-viewing='true'] {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .opening {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 20;
   display: grid;
   place-items: center;
   background: var(--wr-black);
@@ -40,11 +46,16 @@
   inset: 0;
   z-index: 1;
   opacity: 1;
+  transition: opacity 220ms ease;
 }
 
 .sphereLayer[data-hidden='true'] {
   visibility: hidden;
   pointer-events: none;
+}
+
+.sphereLayer[data-restoring='true'] {
+  opacity: 0;
 }
 
 .sphereCanvas {
@@ -64,7 +75,7 @@
   left: var(--wr-page-pad);
   right: var(--wr-page-pad);
   bottom: clamp(24px, 5vh, 64px);
-  z-index: 2;
+  z-index: 12;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -105,7 +116,7 @@
   position: fixed;
   right: max(18px, var(--wr-page-pad));
   bottom: 18px;
-  z-index: 3;
+  z-index: 13;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -132,71 +143,67 @@
   cursor: pointer;
 }
 
-.semanticButton:focus-visible {
-  outline: 2px solid var(--wr-glow);
-  outline-offset: 3px;
-}
-
-.transitionBridge {
-  position: fixed;
-  z-index: 3;
-  overflow: hidden;
-  pointer-events: none;
-  background: var(--wr-background);
-  box-shadow: 0 24px 80px rgb(0 0 0 / 0.36);
-  will-change: left, top, width, height, border-radius;
-}
-
-.transitionBridge img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.showcase {
-  min-height: 100svh;
-  padding: clamp(22px, 3vw, 52px) var(--wr-page-pad) clamp(72px, 9vw, 140px);
-  background: var(--wr-black);
-  color: var(--wr-white);
-}
-
-.showcaseTopbar {
-  min-height: 54px;
-  display: flex;
-  align-items: flex-start;
-}
-
-.backButton {
-  border: 1px solid color-mix(in srgb, var(--wr-white), transparent 72%);
-  border-radius: 999px;
-  padding: 11px 15px;
-  background: transparent;
-  color: var(--wr-white);
-  font-size: 11px;
-  font-weight: 750;
-  letter-spacing: 0.06em;
-  cursor: pointer;
-}
-
-.backButton:focus-visible,
-.visitLink:focus-visible,
+.semanticButton:focus-visible,
+.projectBackButton:focus-visible,
+.projectVisitLink:focus-visible,
 .fallbackProject:focus-visible {
   outline: 2px solid var(--wr-glow);
   outline-offset: 4px;
 }
 
-.showcaseVideoFrame {
-  width: 100%;
-  max-height: 70svh;
-  aspect-ratio: 1.615 / 1;
+.projectTransition {
+  position: fixed;
+  z-index: 30;
   overflow: hidden;
-  border-radius: clamp(6px, 0.7vw, 10px);
+  pointer-events: none;
   background: var(--wr-background);
-  border: 1px solid color-mix(in srgb, var(--wr-white), transparent 90%);
+  box-shadow: 0 28px 96px rgb(0 0 0 / 0.42);
+  will-change: left, top, width, height, border-radius;
 }
 
-.showcaseVideo {
+.projectTransition img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
+.projectViewShell {
+  position: relative;
+  z-index: 1;
+  min-height: 100svh;
+  background: var(--wr-black);
+  opacity: 1;
+  transition: opacity 140ms ease;
+}
+
+.projectViewShell[data-returning='true'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.projectView {
+  --project-side: clamp(28px, 4vw, 64px);
+  --project-top: clamp(68px, 7vh, 104px);
+  min-height: 100svh;
+  padding: var(--project-top) var(--project-side) clamp(88px, 10vw, 160px);
+  background: var(--wr-black);
+  color: var(--wr-white);
+}
+
+.projectViewMedia {
+  width: min(100%, calc((100svh - var(--project-top) - 28px) * 1.6));
+  margin-inline: auto;
+  aspect-ratio: 1.6 / 1;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--wr-white), transparent 90%);
+  border-radius: 6px;
+  background: var(--wr-background);
+}
+
+.projectViewMedia img,
+.projectViewVideo {
   width: 100%;
   height: 100%;
   display: block;
@@ -204,45 +211,48 @@
   background: var(--wr-black);
 }
 
-.showcaseInfo {
+.projectViewInfo {
+  width: min(100%, calc((100svh - var(--project-top) - 28px) * 1.6));
+  margin-inline: auto;
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(240px, 0.75fr);
-  gap: clamp(42px, 8vw, 150px);
-  padding-top: clamp(48px, 7vw, 108px);
+  gap: clamp(40px, 8vw, 150px);
+  padding-top: clamp(54px, 8vw, 118px);
   align-items: start;
 }
 
-.showcaseLead h1 {
-  margin: 0;
-  max-width: 12ch;
-  font: 780 clamp(56px, 9vw, 158px)/0.82 var(--font-hero), Arial, sans-serif;
-  letter-spacing: -0.065em;
-}
-
-.showcaseEyebrow,
+.projectViewLead > p:first-child,
 .fallbackKicker {
-  margin: 0 0 24px;
+  margin: 0 0 20px;
   color: var(--wr-blue);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.15em;
 }
 
-.showcaseBrief {
+.projectViewLead h1 {
   margin: 0;
-  max-width: 42ch;
-  color: var(--wr-muted);
-  font-size: clamp(18px, 1.5vw, 26px);
-  line-height: 1.45;
+  max-width: 12ch;
+  font: 780 clamp(52px, 8vw, 142px)/0.84 var(--font-hero), Arial, sans-serif;
+  letter-spacing: -0.062em;
+  outline: none;
 }
 
-.showcaseFacts {
+.projectViewBrief {
+  margin: clamp(28px, 4vw, 56px) 0 0;
+  max-width: 42ch;
+  color: var(--wr-muted);
+  font-size: clamp(17px, 1.45vw, 25px);
+  line-height: 1.5;
+}
+
+.projectViewFacts {
   grid-column: 2;
-  margin: 8px 0 0;
+  margin: 4px 0 0;
   border-top: 1px solid var(--wr-border);
 }
 
-.showcaseFacts div {
+.projectViewFacts div {
   display: grid;
   grid-template-columns: 92px 1fr;
   gap: 20px;
@@ -250,7 +260,7 @@
   border-bottom: 1px solid var(--wr-border);
 }
 
-.showcaseFacts dt {
+.projectViewFacts dt {
   color: var(--wr-muted);
   font-size: 10px;
   font-weight: 750;
@@ -258,20 +268,45 @@
   text-transform: uppercase;
 }
 
-.showcaseFacts dd {
+.projectViewFacts dd {
   margin: 0;
   font-size: 13px;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
-.visitLink {
+.projectVisitLink,
+.projectPlaceholderLink {
   grid-column: 2;
   justify-self: start;
-  margin-top: 8px;
-  border-bottom: 1px solid var(--wr-blue);
-  padding: 0 0 7px;
+  margin-top: -14px;
+  padding-bottom: 7px;
   font-size: clamp(18px, 1.6vw, 28px);
   font-weight: 700;
+}
+
+.projectVisitLink {
+  border-bottom: 1px solid var(--wr-blue);
+}
+
+.projectPlaceholderLink {
+  color: var(--wr-muted);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.projectBackButton {
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin-top: clamp(42px, 7vw, 96px);
+  border: 1px solid color-mix(in srgb, var(--wr-white), transparent 72%);
+  border-radius: 999px;
+  padding: 12px 17px;
+  background: transparent;
+  color: var(--wr-white);
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
 }
 
 .emptyState {
@@ -325,7 +360,7 @@
 
 .fallbackProject img {
   width: 100%;
-  aspect-ratio: 1.615 / 1;
+  aspect-ratio: 1.6 / 1;
   display: block;
   object-fit: cover;
   border-radius: 8px;
@@ -379,27 +414,28 @@
     text-align: left;
   }
 
-  .showcase {
-    padding-top: 18px;
+  .projectView {
+    --project-side: 18px;
   }
 
-  .showcaseVideoFrame {
-    max-height: none;
-    aspect-ratio: 1.35 / 1;
-  }
-
-  .showcaseInfo {
+  .projectViewInfo {
     grid-template-columns: 1fr;
     gap: 34px;
   }
 
-  .showcaseLead h1 {
-    font-size: clamp(52px, 17vw, 94px);
+  .projectViewLead h1 {
+    font-size: clamp(48px, 16vw, 90px);
   }
 
-  .showcaseFacts,
-  .visitLink {
+  .projectViewFacts,
+  .projectVisitLink,
+  .projectPlaceholderLink {
     grid-column: 1;
+  }
+
+  .projectVisitLink,
+  .projectPlaceholderLink {
+    margin-top: 0;
   }
 
   .fallbackGrid {
@@ -419,11 +455,13 @@
 
 @media (prefers-reduced-motion: reduce) {
   .browseMeta,
-  .semanticList {
+  .semanticList,
+  .sphereLayer,
+  .projectViewShell {
     transition-duration: 80ms;
   }
 
-  .transitionBridge,
+  .projectTransition,
   .openingText {
     will-change: auto;
   }
