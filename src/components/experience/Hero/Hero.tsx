@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { SiteNavigation } from '@/components/navigation/SiteNavigation';
 import { runHeroOpenTimeline } from '@/experience/motion/heroOpenTimeline';
 import { runExploreTimeline } from '@/experience/motion/exploreTimeline';
 import type { RevealEngine } from '@/webgl/reveal/RevealEngine';
@@ -27,6 +28,7 @@ export function Hero({
 }: HeroProps) {
   const rootRef = useRef<HTMLElement>(null);
   const engineRef = useRef<RevealEngine | null>(null);
+  const pendingTargetRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (phase !== 'heroOpening' || !rootRef.current) return;
@@ -36,12 +38,46 @@ export function Hero({
 
   useEffect(() => {
     if (phase !== 'heroExiting' || !rootRef.current) return;
+
     const controller = runExploreTimeline(rootRef.current, engineRef.current, {
       reducedMotion,
-      onComplete: onExploreComplete,
+      onComplete: () => {
+        const target = pendingTargetRef.current;
+        pendingTargetRef.current = null;
+        onExploreComplete();
+
+        if (!target) return;
+
+        const scrollWhenUnlocked = (attempt = 0) => {
+          if (
+            document.documentElement.classList.contains('experience-scroll-locked') &&
+            attempt < 12
+          ) {
+            window.requestAnimationFrame(() => scrollWhenUnlocked(attempt + 1));
+            return;
+          }
+
+          const element = document.querySelector<HTMLElement>(target);
+          if (!element) return;
+
+          element.scrollIntoView({ behavior: 'auto', block: 'start' });
+
+          if (window.location.hash !== target) {
+            window.history.replaceState(null, '', target);
+          }
+        };
+
+        window.requestAnimationFrame(() => scrollWhenUnlocked());
+      },
     });
     return () => controller.kill();
   }, [onExploreComplete, phase, reducedMotion]);
+
+  const handleHeroNavigate = (href: string) => {
+    if (phase !== 'heroInteractive') return;
+    pendingTargetRef.current = href;
+    onExplore();
+  };
 
   return (
     <section
@@ -52,6 +88,15 @@ export function Hero({
     >
       <HeroFrontLayer />
       <HeroRevealLayer />
+
+      {(phase === 'heroInteractive' || phase === 'heroExiting') && (
+        <SiteNavigation
+          mode="hero"
+          interactive={phase === 'heroInteractive'}
+          onNavigate={handleHeroNavigate}
+        />
+      )}
+
       <HeroRevealCanvas
         phase={phase}
         reducedMotion={reducedMotion}

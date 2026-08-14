@@ -1,0 +1,307 @@
+.navRoot {
+  --nav-pill-height: 42px;
+  --nav-pill-radius: 16px;
+  --nav-pill-pad-x: 18px;
+  --nav-pill-bg: #fff;
+  --nav-pill-fg: #000;
+  position: fixed;
+  top: clamp(18px, 2.2vw, 28px);
+  left: 0;
+  right: 0;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  padding-inline: clamp(18px, 3vw, 42px);
+  background: transparent;
+  pointer-events: none;
+}
+
+.logoZone,
+.centerZone,
+.talkZone {
+  display: flex;
+  align-items: center;
+}
+
+.logoZone { justify-self: start; }
+.centerZone { justify-self: center; }
+.talkZone { justify-self: end; }
+
+.centerCluster {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: visible;
+}
+
+.pill {
+  min-height: var(--nav-pill-height);
+  border: 0;
+  border-radius: 16px;
+  padding-inline: var(--nav-pill-pad-x);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body), Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.055em;
+  background: var(--nav-pill-bg);
+  color: var(--nav-pill-fg);
+  text-decoration: none;
+  pointer-events: auto;
+}
+
+.logoPill {
+  width: 52px;
+  padding-inline: 0;
+}
+
+.logoMark {
+  width: 25px;
+  height: 18px;
+  background: currentColor;
+  -webkit-mask: url('/brand/weberaise-mark.svg') center / contain no-repeat;
+  mask: url('/brand/weberaise-mark.svg') center / contain no-repeat;
+}
+
+.centerPill { min-width: 78px; }
+.talkPill { min-width: 118px; }
+
+.pill:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.navRoot[data-navigation-mode='hero'] {
+  --nav-pill-bg: #000;
+  --nav-pill-fg: #fff;
+}
+
+.navRoot[data-navigation-disabled='true'] .pill {
+  pointer-events: none;
+}
+
+.navItemSlot {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+}
+
+.centerPill {
+  position: relative;
+  z-index: 1;
+}
+
+.centerHoverPlate {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  border-radius: calc(var(--nav-pill-radius) - 3px);
+  background: var(--nav-pill-fg);
+  color: var(--nav-pill-bg);
+  font-family: var(--font-body), Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.055em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, width, height, opacity;
+}
+
+.talkPill {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+}
+
+.talkBaseLabel,
+.talkHoverLabel {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  transition: opacity 140ms ease;
+}
+
+.gooField {
+  position: absolute;
+  inset: -14px;
+  z-index: 2;
+  pointer-events: none;
+  filter: blur(4px) contrast(18);
+  opacity: 0;
+  transition: opacity 80ms linear;
+}
+
+.gooCore {
+  position: absolute;
+  inset: 14px;
+  border-radius: var(--nav-pill-radius);
+  background: var(--nav-pill-fg);
+  transform: scale(0.72);
+  opacity: 0;
+  transition:
+    transform 280ms cubic-bezier(.2, .8, .2, 1),
+    opacity 120ms linear,
+    background-color 220ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.gooParticle {
+  --goo-x: 0px;
+  --goo-y: 0px;
+  --goo-scale: 0.4;
+  --goo-delay: 0ms;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--nav-pill-fg);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.15);
+  animation: wrNavGooBurst 520ms cubic-bezier(.22, .8, .24, 1) var(--goo-delay) both;
+  transition: background-color 220ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.talkHoverLabel {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  color: var(--nav-pill-bg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.talkPill[data-active='true'] .gooField,
+.talkPill[data-active='true'] .gooCore,
+.talkPill[data-active='true'] .talkHoverLabel {
+  opacity: 1;
+}
+
+.talkPill[data-active='true'] .gooCore {
+  transform: scale(1);
+}
+
+.talkPill[data-active='true'] .talkBaseLabel {
+  opacity: 0;
+}
+
+@keyframes wrNavGooBurst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(0, 0) scale(0.15);
+  }
+  18% {
+    opacity: 1;
+  }
+  52% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate(var(--goo-x), var(--goo-y)) scale(var(--goo-scale));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(0, 0) scale(0.12);
+  }
+}
+
+.navRoot[data-navigation-mode='main'] [data-nav-theme='dark'] {
+  --nav-pill-bg: #fff;
+  --nav-pill-fg: #000;
+}
+
+.navRoot[data-navigation-mode='main'] [data-nav-theme='light'] {
+  --nav-pill-bg: #000;
+  --nav-pill-fg: #fff;
+}
+
+.pill,
+.centerHoverPlate,
+.talkHoverLabel {
+  transition-property: background-color, color;
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(.2, .8, .2, 1);
+}
+
+@media (max-width: 720px) {
+  .navRoot {
+    --nav-pill-height: 36px;
+    --nav-pill-radius: 14px;
+    --nav-pill-pad-x: 13px;
+    top: 14px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    row-gap: 8px;
+    padding-inline: 14px;
+  }
+
+  .logoZone {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  .talkZone {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .centerZone {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+  }
+
+  .centerCluster { gap: 7px; }
+
+  .pill {
+    font-size: 10px;
+    letter-spacing: 0.045em;
+  }
+
+  .centerHoverPlate {
+    font-size: 10px;
+    letter-spacing: 0.045em;
+  }
+
+  .logoPill { width: 46px; }
+  .centerPill { min-width: 72px; }
+  .talkPill { min-width: 104px; }
+}
+
+@media (pointer: coarse) {
+  .centerHoverPlate,
+  .gooParticle {
+    display: none;
+  }
+
+  .pill:active {
+    transform: scale(0.97);
+    transition: transform 90ms ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gooParticle { display: none; }
+
+  .gooCore {
+    transition-duration: 120ms;
+  }
+
+  .pill,
+  .centerHoverPlate,
+  .talkHoverLabel {
+    transition-duration: 120ms;
+  }
+}

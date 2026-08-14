@@ -6,7 +6,12 @@ import styles from './PostExploreNarrative.module.css';
 
 export function PostExploreNarrative() {
   return (
-    <section id="post-explore" className={styles.root} data-post-explore-narrative>
+    <section
+      id="post-explore"
+      className={styles.root}
+      data-post-explore-narrative
+      data-nav-theme="dark"
+    >
       <JourneyNarrative
         questions={postExploreCopy.questions}
         reassurance={postExploreCopy.reassurance}
