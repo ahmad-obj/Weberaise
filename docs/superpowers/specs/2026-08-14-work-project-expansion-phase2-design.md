@@ -8,11 +8,11 @@
 
 Add the project-opening experience on top of the accepted Infinite Menu-style Work sphere without reintroducing the glitches, coupling, or visual discontinuity of the discarded first expansion implementation.
 
-Phase 2 must feel like a continuation of the same spatial system:
+Phase 2 must feel like one continuous spatial system:
 
-`interactive sphere → selected project resolves to front → selected surface takes visual ownership → other sphere surfaces peel away → selected project expands and flattens → DOM project view takes over → normal vertical scrolling`
+`interactive sphere → clicked slot resolves face-on → DOM takes ownership of selected preview → other sphere surfaces peel away → selected preview expands/flattens → normal DOM project view → reverse handoff → sphere restores exact browse context`
 
-The selected website preview is the visual anchor throughout. There is no modal, route change, separate overlay card, or abrupt cut.
+There is no modal, route change, separate overlay card, or abrupt cut.
 
 ---
 
@@ -20,91 +20,92 @@ The selected website preview is the visual anchor throughout. There is no modal,
 
 The user selected and approved:
 
-- the selected project grows toward near-fullscreen;
+- selected project grows toward near-fullscreen;
 - surrounding sphere projects peel backward/outward;
-- surrounding projects fully disappear once the transition settles;
+- surrounding projects fully disappear once expansion settles;
 - selected project ends almost full viewport with small responsive margins;
 - after expansion the page becomes normal vertical scrolling;
-- selected project progressively flattens from curved sphere surface into a flat website frame;
-- mechanical transition choices should be optimized for smoothness, performance, and visual quality without asking the user about obvious implementation details.
+- selected project progressively reads flatter as it expands from sphere tile to normal website frame;
+- obvious mechanical choices should be made for smoothness, performance, and visual quality without repeatedly asking the user.
 
 ---
 
-## Core Design Principle
+## Core Transition Principle
 
-Do **not** attempt to morph an arbitrarily tilted, moving WebGL tile directly into DOM.
+Do **not** hand off an arbitrarily tilted, moving WebGL tile directly to DOM.
 
-The reliable transition is:
+The reliable sequence is:
 
-1. identify the clicked project instance;
-2. cancel active free-drag input and smoothly settle sphere rotational velocity;
-3. automatically snap that exact instance to the front target;
-4. once face-on and stable, establish a pixel-matched DOM handoff frame over the selected tile;
-5. hide only the selected WebGL instance after the DOM frame visually owns it;
-6. animate the DOM frame toward the near-fullscreen destination while the remaining WebGL instances peel/recede;
-7. stop WebGL/media work when surrounding instances are fully gone;
-8. continue as a normal DOM project page.
+1. identify the exact clicked sphere slot;
+2. stop accepting free-drag input;
+3. resolve that physical slot to the front snap direction;
+4. wait until it is face-on and stable;
+5. establish a pixel-matched DOM frame over that stable tile;
+6. only after DOM is visibly covering it, hide the selected WebGL instance;
+7. expand the DOM frame while remaining WebGL instances peel/recede/fade;
+8. stop WebGL/media work when the sphere is fully gone;
+9. continue in normal DOM flow.
 
-This removes the most fragile part of the old implementation: trying to bridge from a rotated, moving, distorted tile whose exact screen quad is changing during the same animation.
+This deliberately avoids the fragile part of the old implementation: trying to bridge from a rotated/moving tile whose screen quad is changing during the same transition.
 
 ---
 
 ## Project Activation
 
-### Pointer/touch
+### One interaction
 
-A valid click/tap on a project surface opens it in one interaction.
+A valid click/tap opens a project in one interaction.
 
-There is **no two-click rule** for off-center projects.
-
-If the clicked instance is not the active/front instance:
-
-- the sphere first snaps that physical instance to the front;
-- the opening sequence continues automatically when the snap settles;
-- the user does not need to click again.
+If the clicked slot is off-center, the same activation automatically resolves it to front and continues into opening. No second click is required.
 
 ### Drag discrimination
 
 Opening must never trigger from a drag release.
 
-The input system tracks pointer-down position/time and accumulated travel. A release is activation only when all are true:
+Initial thresholds:
 
-- travel remains below the click/tap threshold;
-- pointer duration remains within a normal click/tap window;
-- a sphere instance was hit at pointer-down/release;
-- sphere is in `sphereInteractive` phase.
+- fine pointer maximum travel: **8 CSS px**;
+- coarse/touch maximum travel: **14 CSS px**;
+- maximum activation press duration: **500 ms**.
 
-Coarse-pointer thresholds may be slightly larger than fine-pointer thresholds, but both use the same one-interaction behavior.
+A release activates only when:
+
+- travel stays under the appropriate threshold;
+- duration stays under 500 ms;
+- the release belongs to the same active pointer;
+- a valid sphere instance is hit;
+- phase is `sphereInteractive`.
+
+These thresholds are implementation constants and may only be tuned after real-device QA if they produce accidental opens or missed taps.
 
 ### Picking cost
 
-Do not run continuous GPU/CPU picking every frame.
+Do not run continuous picking in RAF.
 
-Picking occurs only for actual pointer/touch activation attempts. The browse experience remains driven by nearest-front selection for metadata.
+Picking occurs only on activation attempts. Browse metadata continues to use nearest-front selection.
 
 ---
 
 ## Exact Physical Instance Preservation
 
-Project identity and sphere-instance identity remain separate.
+Project identity and sphere-instance identity stay separate because projects repeat across 42 positions.
 
-Because projects repeat across the 42 slots, opening must preserve the **exact clicked sphere slot**, not merely the project index.
-
-Store:
+Opening stores:
 
 - `selectedSlotId`;
 - `selectedProjectIndex`;
 - selected project slug;
-- orientation snapshot before opening;
-- active slot before opening.
+- `preOpenOrientation`;
+- `preOpenActiveSlotId`;
+- `resolvedOrientation` after the clicked slot reaches the front.
 
-If the same project appears in seven repeated positions, clicking any one of those positions opens the same project content, but return restores the sphere to the exact physical/orientation context from which that copy was opened.
+Clicking two different repeated copies of the same project opens identical project content but preserves different physical sphere contexts for return.
 
 ---
 
-## Phase State Machine
+## State Machine
 
-Extend the current Phase-1 lifecycle to:
+Extend the current lifecycle to:
 
 ```ts
 type WorkPhase =
@@ -118,61 +119,70 @@ type WorkPhase =
   | 'projectReturning';
 ```
 
-### Meaning
+Meaning:
 
 - `sphereInteractive`: normal Infinite Menu browsing.
-- `projectResolving`: clicked slot is being brought face-on/front and sphere input is disabled.
-- `projectExpanding`: DOM handoff owns selected image; remaining sphere tiles peel away; selected preview grows/flattens.
-- `projectViewing`: WebGL is stopped; normal DOM scrolling owns the page.
-- `projectReturning`: reverse handoff from DOM preview back into the stored sphere context.
-
-No ambiguous intermediate bridge phases are needed.
+- `projectResolving`: clicked slot is being brought to front; input disabled.
+- `projectExpanding`: DOM owns the selected preview; sphere peels away.
+- `projectViewing`: WebGL stopped; normal project scrolling active.
+- `projectReturning`: reverse transition back into sphere.
 
 ---
 
 ## Resolve-to-Front Stage
 
-Immediately after a valid project activation:
+Immediately after activation:
 
-1. disable sphere pointer input;
-2. clear any stale snap target;
-3. smoothly damp free rotational motion;
-4. snap the clicked slot to the existing front snap direction;
-5. keep the current camera behavior intact while the sphere settles;
-6. wait until both angular velocity and front-alignment error are below strict thresholds;
-7. freeze the orientation for the handoff.
+1. disable sphere input;
+2. capture `preOpenOrientation` and `preOpenActiveSlotId`;
+3. clear any stale snap request;
+4. smoothly damp free rotational motion;
+5. snap the exact clicked slot to the existing front direction;
+6. keep current camera pull-back/settle behavior active;
+7. wait for stable front alignment;
+8. freeze the resolved orientation for handoff.
 
-This stage should be short. It exists to make the visual transfer deterministic, not to feel like a separate animation.
+Initial handoff-ready criteria:
 
-Metadata fades out during this stage.
+- selected slot/front dot product ≥ **0.9995**;
+- absolute rotation velocity ≤ **0.0025**;
+- both conditions hold for **2 consecutive rendered frames**.
+
+The stage should be short and read as part of opening, not as a separate animation.
+
+Browse metadata fades out during this stage.
+
+---
+
+## Live Preview → Stable Handoff Image
+
+The selected sphere tile may currently be using a live preview texture. A DOM element cannot safely inherit the exact decoded WebGL frame without expensive canvas readback.
+
+Therefore the selected slot transitions to its sharp poster during `projectResolving`:
+
+- fade live-texture contribution to poster over roughly **80–120 ms** while the sphere is still resolving;
+- do not hard-swap a moving video frame to poster;
+- once face-on, both WebGL tile and DOM handoff frame show the same poster source.
+
+This guarantees a deterministic visual match without `readPixels`, screenshots, or extra GPU copies.
+
+The full/native project media can upgrade later after DOM owns the view.
 
 ---
 
 ## WebGL → DOM Handoff
 
-### Why DOM owns the expansion
+Once the selected slot is face-on and stable:
 
-The expanded preview should be DOM/native media because it provides:
+- compute its screen-space rectangle from current model/view/projection state;
+- create one fixed-position DOM handoff frame at exactly that rectangle;
+- use the same poster and 4:3 crop currently visible on the WebGL tile;
+- wait until the DOM frame is laid out/painted;
+- then hide only the selected WebGL instance.
 
-- maximum sharpness;
-- normal responsive layout;
-- native video controls when real showcase media exists;
-- easier full-project scrolling;
-- accessibility;
-- lower GPU load after expansion;
-- cleaner return-animation control.
+There must never be a frame where both selected representations are absent.
 
-### Handoff source
-
-Once selected slot is face-on, compute its stable screen-space rectangle from the current WebGL model/view/projection state.
-
-The handoff DOM element is created fixed-position at exactly that rectangle.
-
-The handoff frame initially displays the same poster/live-preview visual as the selected sphere tile. For development placeholders, it uses the same project-specific placeholder identity so no content jump is visible.
-
-The selected WebGL instance remains visible until the DOM frame has been laid out and painted in the matching location. Then the selected WebGL instance becomes hidden.
-
-There must never be a frame where both disappear.
+A very short overlap is acceptable because the DOM frame exactly covers the WebGL tile.
 
 ---
 
@@ -180,98 +190,94 @@ There must never be a frame where both disappear.
 
 ### Destination
 
-The project preview expands to near-fullscreen with responsive margins.
+The selected preview expands to near-fullscreen with visible breathing room.
 
-Desktop target:
+Initial desktop margins:
 
-- horizontal margins roughly 3–5vw, capped to a sensible premium page padding;
-- top margin enough to avoid touching browser chrome/navigation;
-- preserve a cinematic large media area;
-- destination height is constrained by viewport and source media aspect ratio.
+```text
+horizontal = clamp(24px, 4vw, 64px)
+top        = clamp(24px, 5vh, 56px)
+```
 
-Tablet/mobile use smaller margins while preserving visible breathing room.
+Mobile/tablet use the same responsive clamp with the natural smaller result; minimum horizontal margin must not fall below **14px**.
 
-Do not go fully edge-to-edge.
+The destination never becomes fully edge-to-edge.
 
 ### Curvature → flatness
 
-The WebGL tile is curved because its subdivided mesh is reprojected to the sphere.
+No expensive mesh-curvature morph is required after handoff.
 
-The DOM handoff begins only when that tile is face-on. From there the DOM frame visually becomes the flat destination, so no expensive shader-based curvature morph is required during the large expansion.
+The perceived flattening comes from:
 
-The perceived flattening is produced by:
+- resolving the WebGL tile face-on first;
+- matching its visible rect exactly;
+- transferring ownership to a normal flat DOM frame;
+- expanding the frame while its corner radius decreases;
+- progressively revealing more of the project media.
 
-- resolve-to-front before handoff;
-- matching the curved tile's visible screen rect;
-- DOM frame expanding with decreasing corner radius and no spherical distortion;
-- opening the media crop progressively.
-
-This is visually smoother and significantly simpler than trying to animate mesh curvature to zero while simultaneously matching DOM.
+This keeps the visual result smooth while avoiding another shader transition system.
 
 ### Media crop transition
 
-Sphere surfaces display a 4:3 crop of the project's website media.
+Sphere tiles show a fixed 4:3 crop.
 
-During DOM expansion, animate from that same 4:3 cropped presentation toward the fuller project media aspect ratio, currently expected around 16:10 for placeholders/website previews.
+The DOM handoff starts at that same crop, then expands toward the actual intended expanded-media aspect ratio.
 
-The image/video is never stretched.
+Do **not** hard-code all real projects to 16:10. Use project media metadata/intrinsic dimensions where available. The current development placeholder source is 16:10 and should expand toward 16:10.
 
-Use an overflow-hidden frame with animated object-position/object-fit/crop geometry so the viewer perceives more of the website being revealed as the project becomes the main view.
+The media must never stretch. Use overflow/crop geometry and `object-fit: cover`/equivalent framing to reveal more of the source.
 
 ---
 
 ## Surrounding Sphere Peel
 
-While the selected DOM frame expands, the remaining 41 WebGL instances recede.
+While the selected DOM frame expands, the remaining 41 WebGL instances recede as one system.
 
-The effect is spatial, not decorative:
+Use one global `projectOpenProgress` in the sphere engine/shader. For non-selected instances it drives:
 
-- non-selected instances move farther from the camera / outward along their spherical directions;
-- their scale reduces moderately;
-- their alpha drops toward zero;
-- they do not wobble or elastically deform;
-- no random per-item staggering;
-- the whole sphere feels like it is making room for the selected project.
+- outward/radial recession;
+- moderate scale reduction;
+- alpha fade to zero.
 
-Use one global `projectOpenProgress` uniform/value to drive the non-selected transformation, with the selected slot masked separately.
+No per-item random stagger, no wobble, and no elastic deformation.
 
-At the end of expansion:
+The selected WebGL instance is handled separately and becomes hidden once DOM owns it.
+
+At `projectOpenProgress = 1`:
 
 - all non-selected instances are fully invisible;
-- WebGL rendering is stopped;
-- live sphere preview media is paused;
-- only the DOM project view remains.
+- selected WebGL instance is hidden;
+- WebGL RAF stops;
+- sphere preview media pauses;
+- only DOM project content remains.
 
-This is more efficient than keeping an invisible sphere rendering behind the project page.
+The exact recession/scale coefficients are tuning constants for visual QA, but topology, selection, and sphere orientation must not change.
 
 ---
 
 ## Expanded Project View
 
-After expansion finishes, change from the fixed transition layer to normal document flow.
-
-The page unlocks vertical scrolling.
+After expansion, convert from fixed transition ownership to normal document flow and unlock vertical scrolling.
 
 ### Top media
 
-The large project preview remains the dominant first element.
+The project preview remains the dominant first element.
 
 For real projects:
 
-- native `<video>` may replace the poster/preview once ready;
-- controls are explicit;
-- do not autoplay full showcase video with sound;
-- preserve poster until the first usable frame is ready.
+- use native DOM media;
+- poster stays visible until first usable video frame exists;
+- full showcase video has explicit controls;
+- do not autoplay full video with sound.
 
-For current development placeholders:
+For development placeholders:
 
-- use a simple visual placeholder representative of a full website/project preview;
-- no elaborate fake case-study simulation is required;
-- clearly remain development-only.
+- use a simple clearly development-only full-preview placeholder;
+- no elaborate fake case-study simulation is required.
 
-### Compact information below
+### Compact information
 
-Content remains deliberately short:
+Keep the page short:
 
 ```text
 Project Name
@@ -284,181 +290,156 @@ Visit Website ↗
 ← Back to Work
 ```
 
-No:
-
-- long case-study essay;
-- fake metrics;
-- fake testimonials;
-- process timeline;
-- giant technology stack dump;
-- unrelated gallery clutter.
-
-The Work page proves quality primarily through the website media itself.
+Do not add long case-study essays, fake metrics, testimonials, process timelines, giant tech-stack dumps, or decorative gallery clutter.
 
 ---
 
 ## Scroll Behavior
 
-While sphere is active:
+Sphere phases (`sphereInteractive`, `projectResolving`, `projectExpanding`) keep document scroll locked.
 
-- document scroll is locked.
+When `projectViewing` starts:
 
-During resolve/expansion:
+- unlock normal scrolling;
+- project view begins at scroll position 0;
+- focus moves to a meaningful project-view heading/control without causing a visual jump.
 
-- scroll remains locked.
+When return is requested from a scrolled position:
 
-Once `projectViewing` begins:
+1. smoothly bring the project view back to its top transition position;
+2. when near top, lock scroll;
+3. start the reverse transition.
 
-- unlock normal document scrolling;
-- project page starts at scroll position 0;
-- browser focus moves to a meaningful project-view control/heading without causing a visible jump.
-
-During return:
-
-- scroll back to project top if necessary before starting the reverse transition;
-- lock document scroll again;
-- only then begin the DOM → sphere handoff.
-
-This avoids attempting a return animation from an arbitrary scrolled layout position.
+Because project content is intentionally short, this return-to-top stage should remain brief.
 
 ---
 
-## Return to Work
+## Return to Work — Safe Reverse Handoff
 
-`Back to Work` reverses the same visual ownership sequence rather than cutting back to the sphere.
+The return must **not** attempt DOM → WebGL handoff into the arbitrary pre-open tilted orientation.
 
-### Return sequence
+Safe sequence:
 
-1. ensure project view is at its top transition position;
-2. lock scrolling;
-3. start sphere renderer/media in a hidden/frozen state;
-4. restore the saved sphere orientation and exact selected slot context;
-5. keep non-selected sphere instances invisible/receded initially;
-6. shrink the DOM project frame toward the selected sphere slot's stable front-facing rect;
-7. progressively restore the 4:3 crop and corner radius;
-8. once DOM and WebGL selected surfaces match, reveal the selected WebGL instance beneath it;
-9. remove/hide the DOM handoff frame;
-10. bring surrounding sphere tiles back from their peel state;
-11. restore metadata;
-12. re-enable sphere interaction only after settle.
+1. ensure project view is at top;
+2. lock scroll;
+3. restart sphere renderer/media in a hidden/frozen transition state at the saved **resolvedOrientation**;
+4. keep non-selected sphere instances fully peeled/invisible;
+5. keep the selected WebGL instance hidden;
+6. shrink the DOM project frame back toward the selected slot's stable face-on screen rect at `resolvedOrientation`;
+7. restore the 4:3 crop and sphere-tile corner radius;
+8. when DOM and WebGL geometry match, reveal the selected WebGL instance underneath;
+9. remove the DOM handoff frame;
+10. restore surrounding sphere instances from peel progress 1 → 0;
+11. after WebGL fully owns the view, animate sphere orientation from `resolvedOrientation` back to the exact saved `preOpenOrientation`;
+12. restore `preOpenActiveSlotId`/metadata;
+13. re-enable interaction only after the orientation settle completes.
 
-### Orientation preservation
+This preserves exact browse context without requiring DOM to mimic an angled spherical tile.
 
-Return restores the exact saved orientation from before opening, not a generic default orientation.
+### Focus after return
 
-Because the opening stage may temporarily rotate the clicked slot to front, the implementation must distinguish:
-
-- `preOpenOrientation` — what the user was browsing before clicking;
-- `resolvedOrientation` — temporary face-on orientation used for the visual handoff.
-
-Return ultimately restores `preOpenOrientation` so the sphere feels spatially continuous with the user's original browse state.
-
-The selected slot should remain the active/focused identity after return.
+Keyboard focus returns to the semantic control for the selected project, but programmatic return focus must **not** trigger an automatic sphere snap. Sphere orientation/active metadata comes from `preOpenOrientation` and `preOpenActiveSlotId`, not from focus side effects.
 
 ---
 
 ## Engine Responsibilities
 
-`WorkSphereEngine` gains only the APIs required for this bounded transition.
+`WorkSphereEngine` gains only bounded transition APIs:
 
-Expected responsibilities:
-
-- pointer click-vs-drag classification;
+- classify click vs drag;
 - one-shot slot picking on activation attempts;
-- resolve a specific slot to front;
-- expose stable selected-slot screen bounds after resolve;
-- capture/restore orientation state;
-- expose resolved/alignment status;
-- hide/show selected instance for handoff;
-- drive global non-selected peel progress;
-- pause/resume rendering/media safely.
+- resolve an exact slot to front;
+- expose handoff-ready status;
+- expose stable selected-slot screen bounds;
+- capture/restore orientation;
+- hide/show selected instance;
+- set global peel progress;
+- transition selected live texture back to poster before handoff;
+- pause/resume rendering/media without resetting orientation.
 
-Do not make the engine responsible for DOM project layout or GSAP DOM animation.
+The engine does **not** own DOM project layout or GSAP DOM animation.
 
 ---
 
 ## React / DOM Responsibilities
 
-`WorkPage` owns experience orchestration and state.
+`WorkPage` owns orchestration/state.
 
-A new focused component should own the DOM expansion/view layer, for example:
+Use focused components rather than recreating one large bridge component:
 
-- `WorkProjectTransition.tsx` — fixed handoff/expansion/return visual ownership;
-- `WorkProjectView.tsx` — normal-flow project media + compact information.
+- `WorkProjectTransition.tsx` — fixed DOM handoff/expansion/return ownership;
+- `WorkProjectView.tsx` — normal-flow project media and compact information.
 
-Do not merge both into one giant component if their lifecycle responsibilities become tangled.
-
-`WorkSphereCanvas` exposes the minimal imperative engine bridge required by `WorkPage`.
+`WorkSphereCanvas` exposes the minimum imperative engine bridge needed by `WorkPage`.
 
 ---
 
 ## Animation Ownership
 
-Use GSAP for DOM transition timing because the Work opening already uses GSAP and it provides predictable interruption/cleanup.
+GSAP owns DOM transition timing because the Work opening already uses GSAP and cleanup/interruption are predictable.
 
-Use WebGL uniforms/engine state for sphere peel and visibility.
-
-Do not animate the same property from both systems.
+WebGL owns sphere-only state.
 
 DOM owns:
 
-- handoff frame position/size;
+- handoff frame rect;
 - corner radius;
-- media crop/aspect reveal;
-- project information entrance;
+- crop/aspect reveal;
+- expanded project content entrance;
 - return shrink.
 
 WebGL owns:
 
-- selected-slot resolve-to-front;
-- remaining-instance peel/recede/fade;
-- selected-instance visibility;
-- sphere orientation restoration.
+- resolve-to-front;
+- selected live-preview → poster stabilization;
+- non-selected peel/recede/fade;
+- selected instance visibility;
+- orientation restore.
+
+Never animate the same property from both systems.
 
 ---
 
 ## Motion Character
 
-The transition should feel controlled and premium rather than springy.
-
 - no tile wiggle;
-- no overshooting project frame;
-- no bouncy spring easing;
-- use smooth cubic/quartic ease curves;
-- selected project expansion should feel decisive but not abrupt;
-- surrounding peel should start slightly after selected frame begins taking ownership, but not as obvious per-item stagger;
-- reduced-motion path uses short fades/scales and near-immediate resolve rather than spatial travel.
+- no bouncy spring overshoot;
+- no random peel staggering;
+- use smooth cubic/quartic easing;
+- selected expansion is decisive but controlled;
+- sphere peel begins shortly after DOM ownership begins, not before;
+- reduced motion uses short fades/scales and near-immediate resolve rather than long spatial travel.
 
 ---
 
 ## Performance Rules
 
 - no continuous picking loop;
-- no 42 DOM mirrors of sphere tiles;
-- no extra video decoder for every repeated instance;
-- selected DOM preview may reuse poster first and upgrade to full media after handoff;
-- stop WebGL RAF once `projectViewing` starts;
-- pause sphere live-preview media while project view owns page;
+- no 42 DOM mirrors;
+- no canvas readback / `readPixels` / screenshot capture;
+- no decoder per repeated sphere slot;
+- one DOM transition media element for selected project;
+- poster-first handoff, full media upgrade after DOM ownership;
+- stop WebGL RAF in `projectViewing`;
+- pause sphere media in `projectViewing`;
 - resume only during return preparation;
-- keep selected transition media to one DOM image/video element;
-- avoid canvas readback / `readPixels` / screenshot capture for handoff;
-- no layout polling every animation frame beyond what GSAP/resize handling requires.
+- no unnecessary layout polling each frame.
 
 ---
 
 ## Responsive Behavior
 
-The same conceptual sequence must exist on desktop, tablet, and mobile:
+Desktop, tablet, and mobile use the same conceptual sequence:
 
-`tap project → resolve → expand → peel sphere → normal project scroll`
+`activate → resolve → handoff → expand → peel → normal project scroll`
 
 Mobile differences are limited to:
 
-- larger tap-vs-drag threshold;
-- smaller destination margins;
-- shorter transition travel where necessary;
-- lower sphere live-preview count according to the existing quality profile;
-- simpler reduced-motion behavior.
+- 14px click-vs-drag threshold;
+- naturally smaller responsive margins;
+- shorter transition travel if necessary;
+- existing lower live-preview quality profile;
+- simplified reduced-motion path.
 
 Do not replace mobile with a modal or separate carousel.
 
@@ -467,38 +448,38 @@ Do not replace mobile with a modal or separate carousel.
 ## Accessibility
 
 - canvas remains decorative to assistive technology;
-- semantic project controls can activate the same opening path;
-- Enter/Space on a focused semantic project opens it;
-- Escape while `projectViewing` triggers Back to Work;
+- semantic project controls activate the same opening path;
+- Enter/Space opens focused semantic project;
+- Escape in `projectViewing` triggers return;
 - focus enters the project view after expansion;
-- focus returns to the corresponding semantic project control after return;
-- `prefers-reduced-motion` preserves content and navigation while drastically reducing spatial travel;
+- focus returns after sphere restoration without causing a new snap;
+- `prefers-reduced-motion` preserves all content/navigation;
 - native links/video controls remain keyboard accessible.
 
 ---
 
 ## Failure Handling
 
-If selected-slot screen bounds cannot be resolved after the slot is face-on:
+If stable selected-slot bounds cannot be produced after resolve:
 
-- do not attempt a visually broken transition;
-- fall back to a short fade from sphere to normal project DOM view;
-- keep the same project content and back behavior.
+- do not attempt a broken geometric handoff;
+- use a short fade from sphere to normal DOM project view;
+- preserve project content and Back to Work behavior.
 
-If WebGL capability is unavailable from the start:
+If WebGL is unavailable from the start:
 
-- existing static fallback gallery remains;
-- selecting a fallback project opens the same normal DOM project view without sphere transition.
+- static fallback gallery remains;
+- fallback project activation opens the same normal DOM project view without sphere transition.
 
-A capability failure during return should leave the user in a valid normal project view or static fallback, never on a blank page.
+If WebGL fails during return, keep the user in a valid DOM project view or static fallback; never blank the page.
 
 ---
 
 ## Testing Strategy
 
-### State-machine tests
+### State machine
 
-Verify valid guarded transitions:
+Verify only valid transitions:
 
 ```text
 sphereInteractive
@@ -509,40 +490,47 @@ sphereInteractive
 → sphereInteractive
 ```
 
-Invalid events must not skip phases.
+### Input
 
-### Input tests
+- fine click ≤ 8px activates;
+- fine drag > 8px does not activate;
+- coarse tap ≤ 14px activates;
+- press > 500ms does not activate;
+- off-center slot opens from one activation;
+- repeated project copies preserve exact `slotId`.
 
-- click under threshold activates;
-- drag over threshold never activates;
-- coarse-pointer threshold is larger but bounded;
-- off-center selected slot resolves and opens from one activation;
-- repeated project slots preserve exact `slotId`.
+### Resolve/handoff
 
-### Engine tests
+- selected slot reaches dot ≥ 0.9995;
+- velocity ≤ 0.0025 for 2 consecutive frames before handoff-ready;
+- selected live texture resolves to poster before DOM ownership;
+- source bounds are finite/positive;
+- selected WebGL instance stays visible until DOM frame owns the same rect.
 
-- selected slot converges to front before handoff-ready signal;
-- orientation snapshot round-trips accurately;
-- peel progress affects non-selected instances only;
-- selected instance visibility can be toggled without altering project mapping;
-- screen bounds are finite/positive for resolved front-facing selected slot;
-- renderer pause/resume does not reset orientation.
+### Engine
 
-### DOM transition contract tests
+- orientation snapshot round-trips;
+- peel affects non-selected instances only;
+- selected visibility toggling does not alter project mapping;
+- pause/resume preserves orientation;
+- return uses `resolvedOrientation` for handoff and only afterward restores `preOpenOrientation`.
 
-- handoff frame starts from engine-provided source rect;
+### DOM
+
+- handoff starts at engine source rect;
 - destination respects responsive margins;
-- project media is not stretched;
-- project view becomes normal-flow/scrollable only after expansion;
-- return starts only from project-top transition position;
-- full-view content remains minimal.
+- source media is cropped, never stretched;
+- normal scrolling unlocks only in `projectViewing`;
+- return begins from top transition position;
+- project content remains minimal.
 
-### Performance contracts
+### Performance
 
-- no continuous pointer-picking call in RAF;
-- WebGL `stop()` is called in `projectViewing`;
-- media pool is paused while project view is active;
-- no DOM element is created per sphere instance.
+- no pick call inside RAF;
+- WebGL `stop()` occurs in `projectViewing`;
+- sphere media pauses in `projectViewing`;
+- no DOM node per sphere instance;
+- no readback/screenshot handoff.
 
 ---
 
@@ -550,45 +538,47 @@ Invalid events must not skip phases.
 
 Phase 2 is accepted when:
 
-- clicking any visible project opens it with one interaction;
-- drag releases never accidentally open;
-- off-center clicked instance visibly resolves to front without requiring a second click;
-- there is no jump between selected WebGL tile and DOM handoff frame;
+- clicking/tapping any visible project opens it with one interaction;
+- drag releases never open projects;
+- off-center clicked copy resolves to front automatically;
+- live-preview → poster stabilization is not noticeable as a hard flash;
+- no visible jump occurs between stable WebGL tile and DOM handoff;
 - selected project expands smoothly to near-fullscreen;
-- media crop reveals more of the website instead of stretching;
-- surrounding sphere projects peel away as one spatial system and fully disappear;
-- the tile no longer wiggles/deforms during opening;
-- expanded project view becomes ordinary smooth vertical scrolling;
-- sphere rendering stops while viewing project;
-- Back to Work reverses cleanly;
-- exact browse orientation/context returns rather than resetting sphere;
-- no blank frames, duplicate selected tiles, or flashing poster/video swaps;
-- desktop and touch behavior feel like the same product;
-- reduced-motion mode remains coherent and usable.
+- 4:3 crop reveals more media rather than stretching;
+- surrounding sphere projects peel away as one system and fully disappear;
+- no tile wiggle returns;
+- expanded view becomes normal smooth vertical scrolling;
+- sphere rendering/media stop while viewing;
+- Back to Work reverses cleanly into the face-on sphere tile;
+- sphere then restores the exact pre-open orientation/context;
+- no blank frames, duplicate selected tiles, or flashing media swaps;
+- desktop/touch feel like the same product;
+- reduced motion remains coherent.
 
 ---
 
 ## Explicitly Rejected / Do Not Reintroduce
 
-- the deleted first-generation `ProjectTransitionBridge` architecture;
-- arbitrary moving/tilted tile → DOM handoff;
-- two-click off-center selection;
+- deleted first-generation `ProjectTransitionBridge` architecture;
+- moving/tilted WebGL → DOM handoff;
+- DOM → arbitrary tilted WebGL return handoff;
+- two-click off-center opening;
 - modal project view;
-- separate route for Phase 2;
-- persistent invisible WebGL rendering behind project view;
-- continuous picking every frame;
+- separate route for this phase;
+- invisible WebGL rendering behind project view;
+- continuous picking;
+- canvas readback/screenshot handoff;
 - elastic tile deformation/wiggle;
-- random per-tile peel choreography;
-- full case-study essay or fake performance claims.
+- random peel choreography;
+- long case-study/fake proof content.
 
 ---
 
 ## Out of Scope
 
-- URL/deep-link state for individual projects;
-- browser-history integration for open projects;
-- multiple project media galleries;
+- project deep-link URLs/history integration;
 - next/previous project navigation inside expanded view;
-- custom full-screen video player;
-- final client project copy/media replacement;
-- changes to homepage, Services, or global navigation.
+- multiple-media galleries;
+- custom fullscreen video player;
+- final real client media/copy replacement;
+- homepage, Services, or global-navigation changes.
