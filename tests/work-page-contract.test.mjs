@@ -33,6 +33,19 @@ test('sphere engine is direct WebGL with instanced rectangular rendering', () =>
   assert.doesNotMatch(shaders, /DiscGeometry/);
 });
 
+test('sphere callbacks stay live without recreating the WebGL engine', () => {
+  const adapter = read('src/components/WorkPage/WorkSphereCanvas.tsx');
+  assert.match(adapter, /callbacksRef/);
+  assert.match(adapter, /callbacksRef\.current\.onProjectActivate/);
+  assert.match(adapter, /\[projectKey, reducedMotion\]/);
+  assert.doesNotMatch(adapter, /\[interactive, projectKey/);
+});
+
+test('work sphere adds no new runtime dependency', () => {
+  assert.doesNotMatch(read('package.json'), /gl-matrix/);
+  assert.doesNotMatch(read('src/webgl/workSphere/math.ts'), /from ['"]gl-matrix/);
+});
+
 test('browse metadata is deliberately minimal', () => {
   const meta = read('src/components/WorkPage/WorkBrowseMeta.tsx');
   assert.match(meta, /category/);
