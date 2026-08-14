@@ -127,20 +127,20 @@ test('services route keeps one fixed silk background and tail after Works Bridge
   assert.match(route, /activeTargetId="services-tail-environment"/);
 });
 
-test('tail preserves the subtle reveal and a blank future contact runway', () => {
+test('tail preserves the subtle reveal and continues into the contact ending', () => {
   const tailSource = read('src/components/ServicesPage/ServicesTailEnvironment.tsx');
   const tailCss = read('src/components/ServicesPage/ServicesTailEnvironment.module.css');
   const shaderCss = read('src/components/ui/SilkWavesBackground/SilkWavesBackground.module.css');
 
   assert.match(tailSource, /id="services-tail-environment"/);
+  assert.match(tailSource, /<CapabilitiesSection\s*\/>[\s\S]*<ContactEnding\s*\/>/);
+  assert.doesNotMatch(tailSource, /contactReserve/);
   assert.match(tailCss, /height:\s*40vh/);
   assert.match(tailCss, /linear-gradient/);
-  assert.match(tailCss, /contactReserve/);
-  assert.match(tailCss, /82svh/);
+  assert.doesNotMatch(tailCss, /contactReserve/);
   assert.match(shaderCss, /position:\s*fixed/);
   assert.match(shaderCss, /inset:\s*0/);
   assert.match(shaderCss, /pointer-events:\s*none/);
-  assert.doesNotMatch(tailSource, />\s*(LET.S TALK|HAVE SOMETHING|CONTACT)\s*</i);
 });
 
 test('capabilities are organized as repeatable two-column groups with one-column mobile fallback', () => {
