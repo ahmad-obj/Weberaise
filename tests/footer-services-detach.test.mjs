@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import {
   clampServicesDetachProgress,
   servicesDetachPoint,
+  servicesDetachScale,
 } from '../src/components/MainSite/PostExploreNarrative/servicesDetachMotion.ts';
 
 const root = resolve(import.meta.dirname, '..');
@@ -56,6 +57,23 @@ test('services detach path is deterministic, endpoint exact, and reversible by p
   assert.ok(Math.abs(end.y - 620) < 0.001);
   assert.deepEqual(middleA, middleB);
   assert.ok(middleA.y > 0 && middleA.y < 620);
+});
+
+test('services scales from navbar size to exactly 2x at the centered footer dock', () => {
+  assert.equal(servicesDetachScale(0), 1);
+  assert.equal(servicesDetachScale(0.5), 1.5);
+  assert.equal(servicesDetachScale(1), 2);
+});
+
+test('detach controller waits for the main navbar when footer mounts before navigation', () => {
+  const motion = read('src/components/MainSite/PostExploreNarrative/servicesDetachMotion.ts');
+
+  assert.match(motion, /MutationObserver/);
+  assert.match(motion, /tryConnect/);
+  assert.doesNotMatch(
+    motion,
+    /if \(!origin \|\| !shell \|\| !footer \|\| !stage \|\| !dock\) return \(\) => undefined/,
+  );
 });
 
 test('detach controller caches geometry and keeps scroll frames free of layout reads and React state', () => {
