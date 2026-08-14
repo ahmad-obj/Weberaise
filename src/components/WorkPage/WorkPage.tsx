@@ -50,6 +50,7 @@ export function WorkPage({ projects }: WorkPageProps) {
   const resolvedRectRef = useRef<ScreenBounds | null>(null);
   const returnTweenRef = useRef<gsap.core.Tween | null>(null);
   const semanticButtonRefs = useRef(new Map<number, HTMLButtonElement>());
+  const suppressSemanticSnapRef = useRef(false);
 
   const browseSlot = slots.find(slot => slot.id === activeSlotId);
   const browseProject = browseSlot ? projects[browseSlot.projectIndex] ?? null : null;
@@ -280,7 +281,13 @@ export function WorkPage({ projects }: WorkPageProps) {
           const slotId = state.selection?.slotId;
           setReturnViewHidden(false);
           dispatch({ type: 'PROJECT_RETURNED' });
-          requestAnimationFrame(() => semanticButtonRefs.current.get(slotId ?? -1)?.focus());
+          requestAnimationFrame(() => {
+            const button = semanticButtonRefs.current.get(slotId ?? -1);
+            if (!button) return;
+            suppressSemanticSnapRef.current = true;
+            button.focus();
+            suppressSemanticSnapRef.current = false;
+          });
         },
       });
     });
@@ -390,7 +397,9 @@ export function WorkPage({ projects }: WorkPageProps) {
                   type="button"
                   className={styles.semanticButton}
                   data-work-semantic-project
-                  onFocus={() => sphereRef.current?.snapToSlot(slot.id)}
+                  onFocus={() => {
+                    if (!suppressSemanticSnapRef.current) sphereRef.current?.snapToSlot(slot.id);
+                  }}
                   onClick={() => openSlot(slot.id)}
                 >
                   {project.name} — {project.category}
