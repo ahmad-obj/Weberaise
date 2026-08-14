@@ -39,7 +39,7 @@ On exit the surface returns to the right, revealing the black row from left to r
 - Surface travel: approximately 0.62–0.7 seconds, premium `power4`-like cubic easing.
 - The surface begins immediately.
 - Preview-piece entrance begins about 0.16 seconds after the surface; its negative stagger makes the earliest piece begin around 0.09 seconds, when the advancing white field has reached the preview region.
-- The clipped title exit/switch/entrance begins about 0.16 seconds after the surface.
+- The clipped title exit/switch/entrance begins only after the `.66s` surface travel is complete, followed by a restrained `.06s` white-field hold. This gives the eye one event at a time: surface takeover first, typography second.
 - Preserve the Codrops-derived preview values: start scale about `.8`, `xPercent` about `20`, duration about `.4`, `power3`, and negative stagger around `-.035`.
 - On exit, title and pieces reverse immediately while the surface withdraws. Because the black field returns from the title side first and the preview side last, the disappearing black pieces retain contrast throughout most of their exit.
 - Rapid hover/focus changes must reverse the same surface without snapping or resetting its geometry.

@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { gsap } from 'gsap';
 import { Flip } from 'gsap/Flip';
 import { SERVICES } from './servicesModel';
-import { getIntroExitX, SERVICES_MOTION } from './servicesMotion';
+import { getHoverTimelinePositions, getIntroExitX, SERVICES_MOTION } from './servicesMotion';
 import styles from './ServicesPage.module.css';
 
 gsap.registerPlugin(Flip);
@@ -90,7 +90,8 @@ export function ServicesPage() {
     }
 
     const blocksIn = SERVICES_MOTION.hover.blocksIn;
-    const { surfaceLead, titleIn, titleOut } = SERVICES_MOTION.hover;
+    const { titleIn, titleOut } = SERVICES_MOTION.hover;
+    const positions = getHoverTimelinePositions();
 
     const timeline = gsap.timeline();
     hoverTimelineRefs.current[index] = timeline;
@@ -103,20 +104,20 @@ export function ServicesPage() {
         xPercent: 0,
         opacity: 1,
         stagger: blocksIn.stagger,
-      }, surfaceLead)
+      }, positions.blocksIn)
       .to(title, {
         duration: titleOut.duration,
         ease: titleOut.ease,
         yPercent: -100,
         onComplete: () => { title.dataset.switched = 'true'; },
-      }, surfaceLead)
+      }, positions.titleOut)
       .to(title, {
         duration: titleIn.duration,
         ease: titleIn.ease,
         startAt: { yPercent: 100, rotation: titleIn.rotation },
         yPercent: 0,
         rotation: 0,
-      }, surfaceLead + titleOut.duration);
+      }, positions.titleIn);
   };
 
   const hideRowPreview = (index: number, source: 'pointer' | 'focus') => {
@@ -554,7 +555,13 @@ export function ServicesPage() {
   }, []);
 
   return (
-    <main ref={pageRef} className={styles.page} data-index-ready="false" data-index-interactive="false">
+    <main
+      ref={pageRef}
+      className={styles.page}
+      data-index-ready="false"
+      data-index-interactive="false"
+      style={{ '--service-wave-duration': `${SERVICES_MOTION.hover.surfaceDuration}s` } as CSSProperties}
+    >
       <h1 className="sr-only">SO, WHAT SERVICES DO WE PROVIDE?</h1>
 
       <section ref={introRef} className={styles.intro} aria-hidden="true">

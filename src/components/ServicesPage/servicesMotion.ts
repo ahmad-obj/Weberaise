@@ -11,6 +11,8 @@ export const SERVICES_MOTION = {
   },
   hover: {
     surfaceLead: 0.16,
+    surfaceDuration: 0.66,
+    titleLead: 0.72,
     blocksIn: {
       duration: 0.4,
       ease: 'power3',
@@ -47,6 +49,16 @@ export const SERVICES_MOTION = {
 
 export function getTitleExitY(targetTop: number, selectedTop: number): -100 | 100 {
   return targetTop > selectedTop ? 100 : -100;
+}
+
+export function getHoverTimelinePositions() {
+  const { surfaceLead, titleLead, titleOut } = SERVICES_MOTION.hover;
+
+  return {
+    blocksIn: surfaceLead,
+    titleOut: titleLead,
+    titleIn: titleLead + titleOut.duration,
+  };
 }
 
 export function getIntroExitX(

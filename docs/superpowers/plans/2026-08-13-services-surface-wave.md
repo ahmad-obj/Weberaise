@@ -93,7 +93,7 @@ Add `surfaceLead: 0.16` to `SERVICES_MOTION.hover` and assert it in the focused 
 
 - [x] **Step 2: Offset interior choreography behind the wave**
 
-Start block entrance and title exit at `surfaceLead`; the blocks' negative stagger makes the rightmost piece begin first at roughly `.09s`. Retain all existing Codrops values after those offsets. Keep exit immediate so content clears while the surface withdraws.
+Start block entrance at `surfaceLead`; the blocks' negative stagger makes the rightmost piece begin first at roughly `.09s`. Start title exit at `titleLead: 0.72`, after the `.66s` surface travel and a `.06s` hold. Retain all existing Codrops values after those offsets. Keep exit immediate so content clears while the surface withdraws.
 
 - [x] **Step 3: Preserve combined pointer/focus ownership**
 

@@ -32,6 +32,7 @@ test('service model stays five-group and composes three transferred plus five su
 test('motion blueprint preserves Codrops hover, takeover, and title-direction behavior', async () => {
   const {
     SERVICES_MOTION,
+    getHoverTimelinePositions,
     getIntroExitX,
     getSupplementalStartDelay,
     getTitleExitY,
@@ -44,6 +45,17 @@ test('motion blueprint preserves Codrops hover, takeover, and title-direction be
     stagger: -0.035,
   });
   assert.equal(SERVICES_MOTION.hover.surfaceLead, 0.16);
+  assert.equal(SERVICES_MOTION.hover.surfaceDuration, 0.66);
+  assert.equal(SERVICES_MOTION.hover.titleLead, 0.72);
+  assert.ok(
+    SERVICES_MOTION.hover.titleLead > SERVICES_MOTION.hover.surfaceDuration,
+    'title switch must begin only after the white surface has fully covered the row',
+  );
+  assert.deepEqual(getHoverTimelinePositions(), {
+    blocksIn: 0.16,
+    titleOut: 0.72,
+    titleIn: 0.82,
+  });
   assert.equal(SERVICES_MOTION.hover.titleOut.duration, 0.1);
   assert.equal(SERVICES_MOTION.hover.titleIn.duration, 0.5);
   assert.equal(SERVICES_MOTION.intro.rowRevealDuration, 0.42);
