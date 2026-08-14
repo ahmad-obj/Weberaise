@@ -86,7 +86,8 @@ A dependency-free isolated verification harness was built for the new sphere cor
 - deterministic keyboard wrapping: **PASS**;
 - arcball orientation normalization after movement: **PASS**;
 - front-project matrix/projection produces a centered landscape screen footprint: **PASS**;
-- focused core tests: **6/6 PASS**.
+- soft magnetic snapping converges the chosen sphere direction to the front target: **PASS**;
+- focused core tests: **7/7 PASS**.
 
 Repository diff inspection confirms this branch adds Work-specific source/tests/docs and does not edit homepage or Services implementation files.
 
