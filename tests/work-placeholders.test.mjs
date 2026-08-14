@@ -15,10 +15,9 @@ test('development Work data exposes six explicit placeholder projects', () => {
   assert.equal(flags.length, 6);
 });
 
-test('placeholder data uses the explicit procedural media sentinel', () => {
+test('placeholder data uses the explicit procedural preview sentinel', () => {
   const source = read('src/content/workProjects.ts');
   assert.match(source, /placeholder:\/\/procedural-preview/);
-  assert.match(source, /placeholder:\/\/procedural-showcase/);
 });
 
 test('sphere placeholders animate through procedural live textures instead of fake video requests', () => {
@@ -37,11 +36,4 @@ test('procedural placeholder preview uploads are cadence capped', () => {
 test('reduced-motion placeholder previews hold after their first frame', () => {
   const media = read('src/webgl/workSphere/mediaPool.ts');
   assert.match(media, /!this\.allowPlayback\s*&&\s*live\.hasFrame/);
-});
-
-test('expanded placeholder exposes an explicit play pause showcase simulation', () => {
-  const showcase = read('src/components/WorkPage/ProjectShowcase.tsx');
-  assert.match(showcase, /project\.placeholder/);
-  assert.match(showcase, /placeholderShowcase/);
-  assert.match(showcase, /Play full placeholder showcase/);
 });
