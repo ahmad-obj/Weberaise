@@ -76,6 +76,21 @@ test('detach controller waits for the main navbar when footer mounts before navi
   );
 });
 
+test('detach controller never binds to the temporary hero navbar', () => {
+  const motion = read('src/components/MainSite/PostExploreNarrative/servicesDetachMotion.ts');
+
+  assert.match(
+    motion,
+    /document\.querySelector<HTMLElement>\('\[data-site-navigation\]\[data-navigation-mode="main"\]'\)/,
+  );
+  assert.match(motion, /navigation\.querySelector<HTMLElement>\('\[data-nav-detach-anchor\]'\)/);
+  assert.match(motion, /navigation\.querySelector<HTMLElement>\('\[data-services-detachable\]'\)/);
+  assert.doesNotMatch(
+    motion,
+    /const origin = document\.querySelector<HTMLElement>\('\[data-nav-detach-anchor\]'\)/,
+  );
+});
+
 test('services starts detaching the moment the footer enters the viewport', () => {
   const motion = read('src/components/MainSite/PostExploreNarrative/servicesDetachMotion.ts');
 
