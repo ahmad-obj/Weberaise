@@ -76,6 +76,21 @@ test('detach controller waits for the main navbar when footer mounts before navi
   );
 });
 
+test('services starts detaching the moment the footer enters the viewport', () => {
+  const motion = read('src/components/MainSite/PostExploreNarrative/servicesDetachMotion.ts');
+
+  assert.match(
+    motion,
+    /startScroll:\s*footerRect\.top \+ window\.scrollY - window\.innerHeight/,
+  );
+  assert.match(motion, /travelRange:\s*Math\.max\(1, footerRect\.height\)/);
+  assert.match(
+    motion,
+    /\(window\.scrollY - geometry\.startScroll\) \/ geometry\.travelRange/,
+  );
+  assert.doesNotMatch(motion, /\(window\.scrollY - geometry\.sectionTop\)/);
+});
+
 test('detach controller caches geometry and keeps scroll frames free of layout reads and React state', () => {
   const motion = read('src/components/MainSite/PostExploreNarrative/servicesDetachMotion.ts');
 
@@ -109,5 +124,5 @@ test('closing footer remains responsive, reduced-motion aware and does not resto
   assert.match(css, /@media\s*\(max-width:/);
   assert.match(css, /clamp\(/);
   assert.match(motion, /prefers-reduced-motion:\s*reduce/);
-  assert.doesNotMatch(main, /id="(?:work|services|audit|about|process|proof|engagement|contact)"/);
+  assert.doesNotMatch(main, /id=\"(?:work|services|audit|about|process|proof|engagement|contact)\"/);
 });
