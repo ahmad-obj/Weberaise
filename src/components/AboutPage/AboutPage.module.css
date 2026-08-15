@@ -1,0 +1,219 @@
+.kicker {
+  margin: 0;
+  color: rgb(255 255 255 / 52%);
+  font: 650 10px/1 var(--font-technical), monospace;
+  letter-spacing: .13em;
+}
+
+.opening {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: clamp(660px, 84svh, 920px);
+  padding: clamp(112px, 13svh, 156px) var(--wr-page-pad) clamp(78px, 9svh, 112px);
+  color: var(--wr-white);
+  background: transparent;
+}
+
+.openingInner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: min(100%, var(--wr-max));
+  margin: 0 auto;
+}
+
+.openingHeading {
+  display: flex;
+  flex-direction: column;
+  margin: clamp(38px, 5svh, 58px) 0 0;
+  max-width: 1360px;
+  font: 610 clamp(52px, 7vw, 118px)/.88 var(--font-hero), Arial, sans-serif;
+  letter-spacing: -.06em;
+  text-wrap: balance;
+}
+
+.openingHeading span:nth-child(2),
+.openingHeading span:nth-child(3) {
+  color: rgb(255 255 255 / 82%);
+}
+
+.openingNote {
+  width: min(420px, 46vw);
+  margin: clamp(42px, 6svh, 66px) 0 0 auto;
+  color: rgb(255 255 255 / 62%);
+  font: 500 clamp(15px, 1.25vw, 19px)/1.5 var(--font-body), Arial, sans-serif;
+}
+
+.foundersSection {
+  position: relative;
+  z-index: 2;
+  min-height: clamp(820px, 106svh, 1120px);
+  padding: clamp(104px, 11svh, 148px) var(--wr-page-pad);
+  background: var(--wr-black);
+  color: var(--wr-white);
+}
+
+.foundersGrid {
+  display: grid;
+  grid-template-columns: minmax(220px, .72fr) repeat(2, minmax(260px, 380px));
+  align-items: end;
+  justify-content: space-between;
+  gap: clamp(32px, 4.2vw, 72px);
+  width: min(100%, var(--wr-max));
+  margin: 0 auto;
+}
+
+.peopleIntro {
+  align-self: start;
+  max-width: 340px;
+}
+
+.peopleHeading {
+  margin: 34px 0 0;
+  font: 610 clamp(46px, 4.8vw, 76px)/.88 var(--font-hero), Arial, sans-serif;
+  letter-spacing: -.058em;
+}
+
+.peopleNote {
+  margin: 34px 0 0;
+  max-width: 28ch;
+  color: rgb(255 255 255 / 58%);
+  font: 500 14px/1.5 var(--font-body), Arial, sans-serif;
+}
+
+.approach {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: clamp(560px, 68svh, 780px);
+  padding: clamp(90px, 10svh, 126px) var(--wr-page-pad) 26px;
+  color: var(--wr-white);
+  background: var(--wr-black);
+}
+
+.approachMain {
+  display: grid;
+  grid-template-columns: minmax(220px, .65fr) minmax(0, 1.35fr);
+  gap: clamp(48px, 8vw, 132px);
+  width: min(100%, var(--wr-max));
+  margin: 0 auto;
+}
+
+.approachIntro {
+  max-width: 380px;
+}
+
+.approachHeading {
+  margin: 34px 0 0;
+  font: 610 clamp(48px, 5.8vw, 92px)/.9 var(--font-hero), Arial, sans-serif;
+  letter-spacing: -.06em;
+}
+
+.principles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(24px, 3vw, 52px);
+  align-self: end;
+}
+
+.principle {
+  min-width: 0;
+  padding-top: 20px;
+  border-top: 1px solid rgb(255 255 255 / 16%);
+}
+
+.principle p {
+  margin: 0;
+  color: rgb(255 255 255 / 78%);
+  font: 650 10px/1 var(--font-technical), monospace;
+  letter-spacing: .11em;
+}
+
+.principle span {
+  display: block;
+  margin-top: 18px;
+  color: rgb(255 255 255 / 56%);
+  font: 500 14px/1.5 var(--font-body), Arial, sans-serif;
+}
+
+.footerRail {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  width: min(100%, var(--wr-max));
+  margin: clamp(70px, 9svh, 98px) auto 0;
+  padding-top: 18px;
+  border-top: 1px solid rgb(255 255 255 / 13%);
+  color: rgb(255 255 255 / 50%);
+  font: 620 10px/1 var(--font-technical), monospace;
+  letter-spacing: .11em;
+}
+
+@media (max-width: 1099px) {
+  .foundersGrid {
+    grid-template-columns: repeat(2, minmax(240px, 1fr));
+    max-width: 860px;
+  }
+
+  .peopleIntro {
+    grid-column: 1 / -1;
+    max-width: 520px;
+    margin-bottom: clamp(28px, 4vw, 52px);
+  }
+}
+
+@media (max-width: 920px) {
+  .approachMain {
+    grid-template-columns: 1fr;
+  }
+
+  .principles {
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 720px) {
+  .opening {
+    min-height: clamp(620px, 82svh, 820px);
+    padding: 96px 18px 76px;
+  }
+
+  .openingHeading {
+    font-size: clamp(48px, 13.5vw, 78px);
+    line-height: .91;
+  }
+
+  .openingNote {
+    width: min(100%, 390px);
+    margin-left: 0;
+  }
+
+  .foundersSection {
+    min-height: auto;
+    padding: 92px 18px 110px;
+  }
+
+  .foundersGrid {
+    grid-template-columns: 1fr;
+    gap: 56px;
+    max-width: 520px;
+  }
+
+  .peopleIntro {
+    grid-column: auto;
+    margin-bottom: 6px;
+  }
+
+  .approach {
+    min-height: auto;
+    padding: 92px 18px 24px;
+  }
+
+  .principles {
+    grid-template-columns: 1fr;
+    gap: 34px;
+  }
+}
