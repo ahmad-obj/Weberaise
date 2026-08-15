@@ -6,19 +6,18 @@ import path from 'node:path';
 const root = path.resolve(process.cwd());
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-function readWebp(relativePath) {
+function readAvifSize(relativePath) {
   const buffer = fs.readFileSync(path.join(root, relativePath));
-  assert.equal(buffer.subarray(0, 4).toString('ascii'), 'RIFF');
-  assert.equal(buffer.subarray(8, 12).toString('ascii'), 'WEBP');
-  return buffer;
-}
 
-function readLossyWebpSize(relativePath) {
-  const buffer = readWebp(relativePath);
-  assert.equal(buffer.subarray(12, 16).toString('ascii'), 'VP8 ');
+  assert.equal(buffer.subarray(4, 8).toString('ascii'), 'ftyp');
+  assert.equal(buffer.subarray(8, 12).toString('ascii'), 'avif');
+
+  const ispeOffset = buffer.indexOf(Buffer.from('ispe'));
+  assert.ok(ispeOffset >= 0, `Missing AVIF ispe box in ${relativePath}`);
+
   return {
-    width: buffer.readUInt16LE(26) & 0x3fff,
-    height: buffer.readUInt16LE(28) & 0x3fff,
+    width: buffer.readUInt32BE(ispeOffset + 8),
+    height: buffer.readUInt32BE(ispeOffset + 12),
   };
 }
 
@@ -73,22 +72,22 @@ test('founder data uses the approved two real identities, responsibilities and l
   assert.match(data, /name:\s*'Muhammad Ahmad'/);
   assert.match(data, /role:\s*'Design \/ Creative Direction \/ Frontend'/);
   assert.match(data, /revealTitle:\s*'DESIGN \/ DIRECTION \/ FRONTEND'/);
-  assert.match(data, /imageSrc:\s*'\/about\/founders\/muhammad-ahmad-about\.webp'/);
+  assert.match(data, /imageSrc:\s*'\/about\/founders\/muhammad-ahmad-about\.avif'/);
 
   assert.match(data, /name:\s*'Ahmad Ali'/);
   assert.match(data, /role:\s*'Backend \/ Development \/ Systems'/);
   assert.match(data, /revealTitle:\s*'BACKEND \/ DEVELOPMENT \/ SYSTEMS'/);
-  assert.match(data, /imageSrc:\s*'\/about\/founders\/ahmad-ali-about\.webp'/);
+  assert.match(data, /imageSrc:\s*'\/about\/founders\/ahmad-ali-about\.avif'/);
 
-  assert.ok(fs.existsSync(path.join(root, 'public/about/founders/muhammad-ahmad-about.webp')));
-  assert.ok(fs.existsSync(path.join(root, 'public/about/founders/ahmad-ali-about.webp')));
+  assert.ok(fs.existsSync(path.join(root, 'public/about/founders/muhammad-ahmad-about.avif')));
+  assert.ok(fs.existsSync(path.join(root, 'public/about/founders/ahmad-ali-about.avif')));
   assert.doesNotMatch(data, /placeholder|example|john doe|jane doe|founder one|founder two|tbd|todo/i);
 });
 
-test('founder portrait files are valid high-resolution WebP resources', () => {
-  const muhammad = readLossyWebpSize('public/about/founders/muhammad-ahmad-about.webp');
-  const ali = readLossyWebpSize('public/about/founders/ahmad-ali-about.webp');
+test('founder portrait files are valid high-resolution AVIF resources', () => {
+  const muhammad = readAvifSize('public/about/founders/muhammad-ahmad-about.avif');
+  const ali = readAvifSize('public/about/founders/ahmad-ali-about.avif');
 
-  assert.ok(muhammad.width >= 800 && muhammad.height >= 1000, `Muhammad portrait is only ${muhammad.width}x${muhammad.height}`);
-  assert.ok(ali.width >= 800 && ali.height >= 1000, `Ahmad Ali portrait is only ${ali.width}x${ali.height}`);
+  assert.deepEqual(muhammad, { width: 840, height: 1050 });
+  assert.deepEqual(ali, { width: 840, height: 1050 });
 });
