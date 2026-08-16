@@ -10,12 +10,6 @@ export type ContactDetail = {
 
 export const CONTACT_DETAILS: readonly ContactDetail[] = [
   {
-    kind: 'email',
-    label: 'EMAIL',
-    value: 'example@gmail.com',
-    href: 'mailto:example@gmail.com',
-  },
-  {
     kind: 'whatsapp',
     label: 'PHONE / WHATSAPP',
     value: '+92 325 9622759',

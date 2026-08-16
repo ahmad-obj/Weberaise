@@ -11,7 +11,7 @@ export function ContactEnding() {
   const year = new Date().getFullYear();
 
   return (
-    <section className={styles.section} aria-labelledby="services-contact-heading">
+    <section id="contact" className={styles.section} aria-labelledby="services-contact-heading">
       <div className={styles.main}>
         <p className={styles.kicker}>// CONTACT.</p>
         <h2 id="services-contact-heading" className={styles.heading}>

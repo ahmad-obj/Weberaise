@@ -10,13 +10,17 @@ export function GooeyTalkButton({ onNavigate }: GooeyTalkButtonProps) {
   return (
     <a
       className={`${styles.pill} ${styles.talkPill} ${styles.pillFlood}`}
-      href="#contact"
+      href="/services#contact"
       data-talk-pill
       data-pill-flood
       onClick={onNavigate
         ? (event) => {
             event.preventDefault();
-            onNavigate('#contact');
+            if (window.location.pathname === '/services') {
+              onNavigate('#contact');
+              return;
+            }
+            onNavigate('/services#contact');
           }
         : undefined}
     >

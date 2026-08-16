@@ -14,11 +14,12 @@ test('final center navigation targets the dedicated routes', () => {
   assert.doesNotMatch(model, /href:\s*'#(?:work|about)'/);
 });
 
-test('lets talk has one concrete sitewide Services contact destination', () => {
+test('lets talk has a canonical Services contact destination with a local Services alias', () => {
   const talk = read('src/components/navigation/GooeyTalkButton.tsx');
   assert.match(talk, /href="\/services#contact"/);
+  assert.match(talk, /window\.location\.pathname === '\/services'/);
+  assert.match(talk, /onNavigate\('#contact'\)/);
   assert.match(talk, /onNavigate\('\/services#contact'\)/);
-  assert.doesNotMatch(talk, /onNavigate\('#contact'\)/);
 });
 
 test('secondary routes reuse the current SiteNavigation with route layering', () => {
@@ -48,6 +49,7 @@ test('Services contact is a real deep-link target and hash handoff waits for int
   assert.match(route, /<ServicesHashHandoff \/>/);
   assert.match(handoff, /window\.location\.hash !== '#contact'/);
   assert.match(handoff, /document\.body\.style\.overflow === 'hidden'/);
+  assert.match(handoff, /data-index-interactive/);
   assert.match(handoff, /requestAnimationFrame/);
   assert.match(handoff, /getElementById\('contact'\)/);
   assert.match(handoff, /scrollIntoView/);

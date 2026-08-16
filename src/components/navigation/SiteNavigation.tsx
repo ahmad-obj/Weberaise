@@ -9,14 +9,18 @@ import { type NavigationMode } from './navigationModel';
 import { useNavigationThemes } from './useNavigationTheme';
 import styles from './Navigation.module.css';
 
+type NavigationLayer = 'experience' | 'route';
+
 type SiteNavigationProps = {
   mode: NavigationMode;
+  layer?: NavigationLayer;
   interactive?: boolean;
   onNavigate?: (href: string) => void;
 };
 
 export function SiteNavigation({
   mode,
+  layer = 'experience',
   interactive = true,
   onNavigate,
 }: SiteNavigationProps) {
@@ -67,6 +71,7 @@ export function SiteNavigation({
       className={styles.navRoot}
       data-site-navigation
       data-navigation-mode={mode}
+      data-navigation-layer={layer}
       data-navigation-disabled={interactive ? 'false' : 'true'}
       aria-label="Primary"
       inert={!interactive ? true : undefined}

@@ -17,6 +17,10 @@
   pointer-events: none;
 }
 
+.navRoot[data-navigation-layer='route'] {
+  z-index: 150;
+}
+
 .logoZone,
 .centerZone,
 .talkZone {
