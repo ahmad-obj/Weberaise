@@ -33,7 +33,9 @@ export function WorkOpening({ ready, reducedMotion, onComplete }: WorkOpeningPro
       ease: 'power3.inOut',
       onComplete,
     });
-    return () => tween.kill();
+    return () => {
+      tween.kill();
+    };
   }, [minimumBeatComplete, onComplete, ready, reducedMotion]);
 
   return (
