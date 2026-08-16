@@ -96,7 +96,9 @@ export function WorkPage({ projects }: WorkPageProps) {
         dispatch({ type: 'SPHERE_ENTERED' });
       },
     });
-    return () => tween.kill();
+    return () => {
+      tween.kill();
+    };
   }, [capabilityFailed, reducedMotion, state.phase]);
 
   const openSlot = useCallback((slotId: number) => {
