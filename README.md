@@ -1,120 +1,52 @@
-# Weberaise Signature Intro Implementation
+# WEBERAISE
 
-Production-oriented implementation of the approved Weberaise homepage intro milestone:
+Integrated Next.js site for Weberaise.
 
-`real loader → masked hero opening → viscous interactive reveal → EXPLORE → black First Impression`
+## Routes
 
-The downstream homepage skeleton is preserved, but its final art direction remains intentionally unfinished until the next design phase.
+- `/` — signature Homepage experience: truthful loader, masked Hero opening, interactive reveal, post-Explore ribbon narrative, purpose section, and closing Services handoff.
+- `/services` — Services opening/index, service detail transitions, Works bridge, Capabilities, and Contact ending.
+- `/work` — 42-slot Infinite Menu-style WebGL project sphere with project expansion/return and a no-WebGL fallback.
+- `/about` — studio introduction, two-founder portrait section, and How We Work.
 
-## Source of truth
-
-Read before changing visual behavior:
-
-1. `docs/reference/WEBERAISE_MASTER_PLANNING.md`
-2. `docs/reference/WEBERAISE_WEBGL_REVEAL_RESEARCH.md`
-3. `docs/reference/WEBERAISE_MASTER_IMPLEMENTATION_PROMPT.md`
-4. `docs/reference/WEBERAISE_HANDOFF_PROMPT.md`
-
-Newer decisions in the master planning document override older handoff/skeleton notes.
+The current integration candidate lives on `integration/final-site`. `main` must not be promoted until the verification gate in `docs/FINAL_INTEGRATION_STATUS.md` is complete.
 
 ## Stack
 
-- Next.js App Router + TypeScript
-- React Server Components where practical
-- GSAP for authored intro timelines
-- custom WebGL2 low-resolution feedback mask for the signature reveal
-- native scrolling after `EXPLORE`
+- Next.js 16.3.0 / App Router
+- React 19.2.8
+- TypeScript 7.0.2
+- GSAP 3.15.0
+- Framer Motion 12.43.0
+- custom WebGL/WebGL2 systems for the Homepage reveal, Services/About Silk environment, and Work sphere
 
-## Production app
-
-Once npm registry access is available:
+## Local verification
 
 ```bash
-npm install
-npm run test
+npm ci
+npm test
 npm run typecheck
 npm run build
 npm run dev
 ```
 
-Open the URL printed by Next.js.
+Browser QA is required in addition to automated checks because the accepted experience depends on animation choreography, pointer/touch behavior, responsive geometry, WebGL ownership, and reduced-motion fallbacks.
 
-> The implementation sandbox used for this handoff could not reach `registry.npmjs.org` (`EAI_AGAIN`), so dependency installation and the Next.js production build could not be verified here. See `docs/IMPLEMENTATION_STATUS.md`.
+## Integration source of truth
 
-## Dependency-free visual prototype
+Read these before modifying integrated behavior:
 
-The prototype exists only for visual QA in restricted/offline environments; production architecture lives under `src/`.
+1. `docs/superpowers/specs/2026-08-16-final-site-integration-design.md`
+2. `docs/superpowers/plans/2026-08-16-final-site-integration.md`
+3. `docs/FINAL_INTEGRATION_STATUS.md`
+4. Homepage-specific architecture/status documents under `docs/`
+5. Services/About/Work feature specs retained under `docs/superpowers/`
+6. `THIRD_PARTY_NOTICES.md`
 
-```bash
-python3 -m http.server 4173
-```
+Feature ownership is deliberate: Homepage/shared experience code comes from the latest Signature branch; Services+About come from the final About branch; Work comes from the final Work branch. Do not wholesale-merge the historical donor branches into the integration branch.
 
-Then open:
+## Production data boundary
 
-```text
-http://localhost:4173/prototype/
-```
+The Work project records are still explicit development placeholders. They exist to exercise the accepted Work interaction system and must be replaced with verified real project content/media before the public portfolio is treated as production-ready.
 
-Structural smoke test:
-
-```bash
-./scripts/smoke-prototype.sh
-```
-
-The sandbox Chromium capture harness is:
-
-```bash
-xvfb-run -a python3 scripts/capture-prototype.py
-```
-
-## Tests available without npm install
-
-```bash
-npm test
-```
-
-The test command uses Node's built-in test runner and TypeScript stripping for the dependency-free core behavior.
-
-A dependency-free TypeScript core compile can also be run with a globally available compiler:
-
-```bash
-tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler \
-  --allowImportingTsExtensions --lib ES2022,DOM \
-  src/experience/state/experienceReducer.ts \
-  src/experience/loading/countdownPositions.ts \
-  src/experience/loading/progressController.ts \
-  src/webgl/reveal/math.ts \
-  src/webgl/reveal/emitters/types.ts \
-  src/webgl/reveal/emitters/pointerEmitter.ts \
-  src/webgl/reveal/emitters/autonomousEmitter.ts \
-  src/webgl/reveal/emitters/bottomFillEmitter.ts \
-  src/webgl/reveal/pointerTracker.ts \
-  src/webgl/reveal/quality.ts
-```
-
-## Current milestone boundaries
-
-Implemented now:
-- truthful critical-resource loader and 100→0 display logic;
-- loader line/tagline choreography;
-- strict twin-line hero opening;
-- registered `WELCOME / TO` front/reveal composition;
-- thick semi-fluid persistent pointer reveal;
-- one-shot autonomous brand reveal;
-- custom cursor on fine pointers;
-- WebGL/reduced-motion fallback structure;
-- same-route `EXPLORE` viscous black fill;
-- scroll unlock onto black First Impression;
-- semantic downstream skeleton with explicit TODOs instead of fabricated proof.
-
-Not yet finalized:
-- navigation system;
-- First Impression final art direction/entrance;
-- downstream section motion/polish;
-- real case-study imagery/data;
-- audit workflow;
-- real proof/testimonials;
-- final engagement/pricing details;
-- contact/intake integration.
-
-See `docs/ARCHITECTURE.md` and `docs/IMPLEMENTATION_STATUS.md` for details.
+The previous fake contact email has been removed. Only verified contact channels currently present in the repository are rendered.
