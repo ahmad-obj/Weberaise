@@ -126,7 +126,9 @@ export function WorkProjectTransition({
       });
     }
 
-    return () => timeline.kill();
+    return () => {
+      timeline.kill();
+    };
   }, [direction, onComplete, onOwnership, onProgress, reducedMotion, sourceRect]);
 
   return (
