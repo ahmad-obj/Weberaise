@@ -1,0 +1,39 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import test from 'node:test';
+
+const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+
+test('development Work data exposes six explicit placeholder projects', () => {
+  const source = read('src/content/workProjects.ts');
+  assert.match(source, /placeholder\?: boolean/);
+  assert.match(source, /name: 'PLACEHOLDER 01'/);
+  assert.match(source, /name: 'PLACEHOLDER 06'/);
+  const names = source.match(/name: 'PLACEHOLDER \d\d'/g) ?? [];
+  assert.equal(names.length, 6);
+  const flags = source.match(/placeholder: true/g) ?? [];
+  assert.equal(flags.length, 6);
+});
+
+test('placeholder data uses the explicit procedural preview sentinel', () => {
+  const source = read('src/content/workProjects.ts');
+  assert.match(source, /placeholder:\/\/procedural-preview/);
+});
+
+test('sphere placeholders animate through procedural live textures instead of fake video requests', () => {
+  const media = read('src/webgl/workSphere/mediaPool.ts');
+  assert.match(media, /project\.placeholder/);
+  assert.match(media, /renderPlaceholderFrame/);
+  assert.match(media, /placeholderCanvas/);
+});
+
+test('procedural placeholder preview uploads are cadence capped', () => {
+  const media = read('src/webgl/workSphere/mediaPool.ts');
+  assert.match(media, /placeholderFrameIntervalMs/);
+  assert.match(media, /1000\s*\/\s*24/);
+});
+
+test('reduced-motion placeholder previews hold after their first frame', () => {
+  const media = read('src/webgl/workSphere/mediaPool.ts');
+  assert.match(media, /!this\.allowPlayback\s*&&\s*live\.hasFrame/);
+});

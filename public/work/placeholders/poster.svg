@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <rect width="1600" height="1000" fill="#070A0F"/>
+  <text x="64" y="92" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#F5F7FA">PXX</text>
+  <text x="64" y="300" font-family="Arial, sans-serif" font-size="104" font-weight="800" fill="#F5F7FA">PLACEHOLDER</text>
+  <text x="64" y="420" font-family="Arial, sans-serif" font-size="104" font-weight="800" fill="#3B82F6">WEBSITE PREVIEW</text>
+  <rect x="64" y="488" width="350" height="78" rx="39" fill="#3B82F6"/>
+  <text x="122" y="538" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#FFFFFF">VIEW PROJECT</text>
+  <rect x="1000" y="170" width="520" height="350" rx="34" fill="#121826" stroke="#3B82F6" stroke-width="4"/>
+  <circle cx="1112" cy="310" r="68" fill="#3B82F6"/>
+  <rect x="1230" y="250" width="220" height="18" rx="9" fill="#A7B0C0"/>
+  <rect x="1230" y="307" width="180" height="18" rx="9" fill="#A7B0C0"/>
+  <rect x="1230" y="364" width="230" height="18" rx="9" fill="#A7B0C0"/>
+  <rect x="64" y="665" width="460" height="210" rx="28" fill="#121826"/>
+  <rect x="570" y="665" width="460" height="210" rx="28" fill="#121826"/>
+  <rect x="1076" y="665" width="460" height="210" rx="28" fill="#121826"/>
+  <text x="1280" y="955" font-family="Arial, sans-serif" font-size="26" fill="#A7B0C0">DEV PLACEHOLDER</text>
+</svg>
