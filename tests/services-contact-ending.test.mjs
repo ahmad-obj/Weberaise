@@ -17,16 +17,10 @@ test('contact ending uses direct non-persuasive section copy', () => {
   assert.doesNotMatch(source, /href=[^>]*CONTACT US|<button[^>]*>[\s\S]*CONTACT US/i);
 });
 
-test('contact details match the approved current Weberaise channels', async () => {
+test('contact details contain only the verified current Weberaise channels', async () => {
   const model = await import(moduleUrl('src/components/ServicesPage/contactDetails.ts'));
 
   assert.deepEqual(model.CONTACT_DETAILS, [
-    {
-      kind: 'email',
-      label: 'EMAIL',
-      value: 'example@gmail.com',
-      href: 'mailto:example@gmail.com',
-    },
     {
       kind: 'whatsapp',
       label: 'PHONE / WHATSAPP',
