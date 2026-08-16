@@ -1,0 +1,181 @@
+.card {
+  width: 100%;
+  min-width: 0;
+}
+
+.shell {
+  width: 100%;
+  perspective: 800px;
+  cursor: default;
+}
+
+.tiltLayer {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: #060910;
+  border: 1px solid rgb(255 255 255 / 12%);
+  box-shadow: 0 22px 58px rgb(0 0 0 / 0%);
+  transform: translateZ(0);
+  transform-style: preserve-3d;
+  transition:
+    border-color 360ms var(--wr-ease-premium),
+    box-shadow 420ms var(--wr-ease-premium);
+}
+
+.revealSurface {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  height: 27%;
+  background: var(--wr-blue);
+}
+
+.imageLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  transform: translateY(0);
+  transition: transform 520ms var(--wr-ease-premium);
+  will-change: transform;
+}
+
+.image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  pointer-events: none;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.revealContent {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 27%;
+  padding: clamp(18px, 2vw, 26px);
+  color: var(--wr-white);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateZ(72px) translateY(-10px);
+  transform-style: preserve-3d;
+  transition:
+    opacity 260ms ease,
+    transform 520ms var(--wr-ease-premium);
+  will-change: transform, opacity;
+}
+
+.revealContent span {
+  color: rgb(255 255 255 / 72%);
+  font: 650 10px/1 var(--font-technical), monospace;
+  letter-spacing: .12em;
+}
+
+.revealContent strong {
+  margin-top: auto;
+  max-width: 13ch;
+  font: 660 clamp(22px, 2.15vw, 34px)/.9 var(--font-hero), Arial, sans-serif;
+  letter-spacing: -.052em;
+  text-shadow: 0 14px 34px rgb(0 0 0 / 24%);
+}
+
+.identity {
+  display: grid;
+  gap: 8px;
+  padding-top: 20px;
+}
+
+.identity h3 {
+  margin: 0;
+  color: var(--wr-white);
+  font: 620 clamp(25px, 2vw, 33px)/1 var(--font-hero), Arial, sans-serif;
+  letter-spacing: -.045em;
+}
+
+.identity p {
+  margin: 0;
+  color: rgb(255 255 255 / 54%);
+  font: 570 10px/1.35 var(--font-body), Arial, sans-serif;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shell:hover .frame {
+    border-color: rgb(255 255 255 / 24%);
+    box-shadow: 0 34px 86px rgb(0 0 0 / 48%);
+  }
+
+  .shell:hover .imageLayer {
+    transform: translateY(27%);
+  }
+
+  .shell:hover .revealContent {
+    opacity: 1;
+    transform: translateZ(72px) translateY(0);
+  }
+}
+
+@media (pointer: coarse) {
+  .tiltLayer {
+    transform: none !important;
+    will-change: auto;
+  }
+
+  .imageLayer,
+  .shell:hover .imageLayer {
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
+
+  .revealContent,
+  .shell:hover .revealContent {
+    opacity: 0;
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tiltLayer {
+    transform: none !important;
+    will-change: auto;
+  }
+
+  .frame {
+    transition: none;
+  }
+
+  .imageLayer,
+  .shell:hover .imageLayer {
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
+
+  .revealContent,
+  .shell:hover .revealContent {
+    opacity: 0;
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
+}

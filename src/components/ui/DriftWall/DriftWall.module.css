@@ -1,0 +1,156 @@
+.root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  perspective: var(--dw-perspective, 1400px);
+  perspective-origin: 50% 50%;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 18%,
+    #000 82%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 18%,
+    #000 82%,
+    transparent 100%
+  );
+}
+
+.plane {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: row;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.column {
+  position: relative;
+  width: calc(var(--dw-tile-w) + var(--dw-gap));
+  flex: 0 0 auto;
+  transform-style: preserve-3d;
+}
+
+.track {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+.tile {
+  position: relative;
+  width: calc(var(--dw-tile-w) + var(--dw-gap));
+  height: calc(var(--dw-tile-h) + var(--dw-gap));
+  flex: 0 0 auto;
+  transform-style: preserve-3d;
+}
+
+.tileInner {
+  position: absolute;
+  inset: calc(var(--dw-gap) / 2);
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: clamp(4px, 0.55vw, 8px);
+  background: #0a0a0a;
+  opacity: 0.82;
+  transform: translateZ(0);
+  transform-style: preserve-3d;
+  transition:
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tileInner img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  filter: saturate(0.9) brightness(0.9);
+  transition: filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0.16;
+  pointer-events: none;
+  transition: opacity 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tile[data-active='true'] .tileInner {
+  opacity: 1;
+  transform: translateZ(var(--dw-lift, 42px));
+  box-shadow: 0 24px 60px -24px rgb(0 0 0 / 0.72);
+}
+
+.tile[data-active='true'] .tileInner img {
+  filter: saturate(1.03) brightness(1);
+}
+
+.tile[data-active='true'] .overlay {
+  opacity: 0;
+}
+
+.fadeTop,
+.fadeBottom {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  height: 22%;
+  pointer-events: none;
+}
+
+.fadeTop {
+  top: 0;
+  background: linear-gradient(to bottom, #000 0%, transparent 100%);
+}
+
+.fadeBottom {
+  bottom: 0;
+  background: linear-gradient(to top, #000 0%, transparent 100%);
+}
+
+@supports not (mask-image: linear-gradient(#000, #000)) {
+  .root {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .fadeTop,
+  .fadeBottom {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plane,
+  .track {
+    will-change: auto;
+  }
+
+  .tileInner,
+  .tileInner img,
+  .overlay {
+    transition: none;
+  }
+
+  .tile[data-active='true'] .tileInner {
+    transform: translateZ(0);
+  }
+}

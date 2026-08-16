@@ -1,0 +1,34 @@
+.tail {
+  position: relative;
+  z-index: 2;
+  min-height: 220svh;
+  color: var(--wr-white);
+  background: transparent;
+  isolation: isolate;
+}
+
+.transitionVeil {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 0;
+  height: 40vh;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    #000 0%,
+    rgb(0 0 0 / 96%) 16%,
+    rgb(0 0 0 / 72%) 48%,
+    rgb(0 0 0 / 28%) 78%,
+    transparent 100%
+  );
+}
+
+@media (max-width: 640px) {
+  .tail {
+    min-height: 250svh;
+  }
+
+  .transitionVeil {
+    height: 34vh;
+  }
+}

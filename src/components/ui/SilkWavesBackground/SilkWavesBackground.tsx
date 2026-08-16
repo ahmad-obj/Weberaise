@@ -1,0 +1,306 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { getRenderSize, getTailRootMargin } from './silkMath';
+import { SILK_COLORS, SILK_PRESET } from './silkPreset';
+import { SILK_FRAGMENT_SHADER, SILK_VERTEX_SHADER } from './silkShaders';
+import styles from './SilkWavesBackground.module.css';
+
+type SilkWavesBackgroundProps = {
+  activeTargetId: string;
+};
+
+type WebglState = 'idle' | 'ready' | 'fallback';
+
+type Uniforms = {
+  colors: WebGLUniformLocation;
+  scene: WebGLUniformLocation;
+  shape: WebGLUniformLocation;
+  surface: WebGLUniformLocation;
+  finish: WebGLUniformLocation;
+  transform: WebGLUniformLocation;
+  space: WebGLUniformLocation;
+  cursor: WebGLUniformLocation;
+};
+
+function compileShader(
+  gl: WebGLRenderingContext,
+  type: number,
+  source: string,
+): WebGLShader {
+  const shader = gl.createShader(type);
+  if (!shader) throw new Error('Unable to create shader.');
+
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    const message = gl.getShaderInfoLog(shader) ?? 'Unknown shader compile error.';
+    gl.deleteShader(shader);
+    throw new Error(message);
+  }
+
+  return shader;
+}
+
+function createProgram(gl: WebGLRenderingContext): WebGLProgram {
+  const vertex = compileShader(gl, gl.VERTEX_SHADER, SILK_VERTEX_SHADER);
+  const fragment = compileShader(gl, gl.FRAGMENT_SHADER, SILK_FRAGMENT_SHADER);
+  const program = gl.createProgram();
+
+  if (!program) {
+    gl.deleteShader(vertex);
+    gl.deleteShader(fragment);
+    throw new Error('Unable to create WebGL program.');
+  }
+
+  gl.attachShader(program, vertex);
+  gl.attachShader(program, fragment);
+  gl.linkProgram(program);
+  gl.deleteShader(vertex);
+  gl.deleteShader(fragment);
+
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    const message = gl.getProgramInfoLog(program) ?? 'Unknown shader link error.';
+    gl.deleteProgram(program);
+    throw new Error(message);
+  }
+
+  return program;
+}
+
+function requireUniform(
+  gl: WebGLRenderingContext,
+  program: WebGLProgram,
+  name: string,
+): WebGLUniformLocation {
+  const location = gl.getUniformLocation(program, name);
+  if (!location) throw new Error(`Missing Silk shader uniform: ${name}`);
+  return location;
+}
+
+export function SilkWavesBackground({ activeTargetId }: SilkWavesBackgroundProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [webglState, setWebglState] = useState<WebglState>('idle');
+
+  useEffect(() => {
+    const root = rootRef.current;
+    const canvas = canvasRef.current;
+    if (!root || !canvas) return;
+
+    const gl = canvas.getContext('webgl', {
+      alpha: false,
+      antialias: false,
+      depth: false,
+      stencil: false,
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: false,
+    });
+
+    if (!gl) {
+      setWebglState('fallback');
+      return;
+    }
+
+    let program: WebGLProgram | null = null;
+    let buffer: WebGLBuffer | null = null;
+    let raf = 0;
+    let nearTail = false;
+    let pageVisible = !document.hidden;
+    let reducedMotion = false;
+    let lastTimestamp = 0;
+    let elapsed = 0;
+
+    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    reducedMotion = reducedMotionQuery.matches;
+
+    let uniforms: Uniforms;
+
+    try {
+      program = createProgram(gl);
+      gl.useProgram(program);
+
+      const positionLocation = gl.getAttribLocation(program, 'aPosition');
+      if (positionLocation < 0) throw new Error('Missing Silk shader position attribute.');
+
+      buffer = gl.createBuffer();
+      if (!buffer) throw new Error('Unable to create Silk geometry buffer.');
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([
+          -1, -1,
+          3, -1,
+          -1, 3,
+        ]),
+        gl.STATIC_DRAW,
+      );
+      gl.enableVertexAttribArray(positionLocation);
+      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+      uniforms = {
+        colors: requireUniform(gl, program, 'u_colors[0]'),
+        scene: requireUniform(gl, program, 'u_scene'),
+        shape: requireUniform(gl, program, 'u_shape'),
+        surface: requireUniform(gl, program, 'u_surface'),
+        finish: requireUniform(gl, program, 'u_finish'),
+        transform: requireUniform(gl, program, 'u_transform'),
+        space: requireUniform(gl, program, 'u_space'),
+        cursor: requireUniform(gl, program, 'u_cursor'),
+      };
+
+      const lastColor = SILK_COLORS[SILK_COLORS.length - 1];
+      const colorData = new Float32Array([
+        ...SILK_COLORS.flat(),
+        ...lastColor,
+        ...lastColor,
+        ...lastColor,
+        ...lastColor,
+      ]);
+
+      if (colorData.length !== 24) {
+        throw new Error('Silk shader palette must provide exactly eight RGB colours.');
+      }
+
+      gl.uniform3fv(uniforms.colors, colorData);
+      gl.uniform4f(uniforms.shape, ...SILK_PRESET.shape);
+      gl.uniform4f(uniforms.surface, ...SILK_PRESET.surface);
+      gl.uniform4f(uniforms.finish, ...SILK_PRESET.finish);
+      gl.uniform4f(uniforms.transform, ...SILK_PRESET.transform);
+      gl.uniform4f(uniforms.space, ...SILK_PRESET.space);
+      gl.uniform4f(uniforms.cursor, ...SILK_PRESET.cursor);
+    } catch (error) {
+      console.warn('Silk background WebGL initialization failed.', error);
+      if (buffer) gl.deleteBuffer(buffer);
+      if (program) gl.deleteProgram(program);
+      setWebglState('fallback');
+      return;
+    }
+
+    const resize = () => {
+      const rect = root.getBoundingClientRect();
+      const renderSize = getRenderSize(
+        rect.width || window.innerWidth,
+        rect.height || window.innerHeight,
+        window.devicePixelRatio,
+      );
+
+      if (canvas.width !== renderSize.width) canvas.width = renderSize.width;
+      if (canvas.height !== renderSize.height) canvas.height = renderSize.height;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    };
+
+    const draw = (timeSeconds: number) => {
+      gl.useProgram(program);
+      gl.uniform4f(
+        uniforms.scene,
+        canvas.width,
+        canvas.height,
+        timeSeconds * SILK_PRESET.timeScale,
+        SILK_PRESET.colorCount,
+      );
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
+
+    const stop = () => {
+      if (!raf) return;
+      cancelAnimationFrame(raf);
+      raf = 0;
+    };
+
+    const tick = (timestamp: number) => {
+      raf = 0;
+      if (reducedMotion || !nearTail || !pageVisible) return;
+
+      const dt = Math.min(0.05, Math.max(0, (timestamp - (lastTimestamp || timestamp)) / 1000));
+      lastTimestamp = timestamp;
+      elapsed += dt;
+
+      draw(elapsed);
+      raf = requestAnimationFrame(tick);
+    };
+
+    const startIfNeeded = () => {
+      stop();
+
+      if (reducedMotion) {
+        draw(4.25);
+        return;
+      }
+
+      if (!nearTail || !pageVisible) return;
+      lastTimestamp = performance.now();
+      raf = requestAnimationFrame(tick);
+    };
+
+    const onVisibilityChange = () => {
+      pageVisible = !document.hidden;
+      startIfNeeded();
+    };
+
+    const onReducedMotionChange = (event: MediaQueryListEvent) => {
+      reducedMotion = event.matches;
+      startIfNeeded();
+    };
+
+    const onContextLost = (event: Event) => {
+      event.preventDefault();
+      stop();
+      setWebglState('fallback');
+    };
+
+    const resizeObserver = new ResizeObserver(() => {
+      resize();
+      if (reducedMotion || !raf) draw(reducedMotion ? 4.25 : elapsed);
+    });
+    resizeObserver.observe(root);
+
+    const activeTarget = document.getElementById(activeTargetId);
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        nearTail = entries.some((entry) => entry.isIntersecting);
+        startIfNeeded();
+      },
+      { rootMargin: getTailRootMargin(window.innerHeight), threshold: 0 },
+    );
+
+    if (activeTarget) {
+      intersectionObserver.observe(activeTarget);
+    } else {
+      nearTail = true;
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    canvas.addEventListener('webglcontextlost', onContextLost);
+    reducedMotionQuery.addEventListener('change', onReducedMotionChange);
+
+    resize();
+    setWebglState('ready');
+    draw(reducedMotion ? 4.25 : 0);
+    startIfNeeded();
+
+    return () => {
+      stop();
+      resizeObserver.disconnect();
+      intersectionObserver.disconnect();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      canvas.removeEventListener('webglcontextlost', onContextLost);
+      reducedMotionQuery.removeEventListener('change', onReducedMotionChange);
+      if (buffer) gl.deleteBuffer(buffer);
+      if (program) gl.deleteProgram(program);
+    };
+  }, [activeTargetId]);
+
+  return (
+    <div
+      ref={rootRef}
+      className={styles.root}
+      data-webgl-state={webglState}
+      aria-hidden="true"
+    >
+      <canvas ref={canvasRef} className={styles.canvas} />
+    </div>
+  );
+}

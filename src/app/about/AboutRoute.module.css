@@ -1,0 +1,11 @@
+.route {
+  position: relative;
+  min-height: 100svh;
+  background: var(--wr-black);
+  isolation: isolate;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+}

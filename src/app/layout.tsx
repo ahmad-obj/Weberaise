@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { Geist, Inter_Tight } from 'next/font/google';
+import { Geist, Geist_Mono, Inter_Tight } from 'next/font/google';
 import './globals.css';
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-body', display: 'swap' });
+const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-technical', display: 'swap' });
 const interTight = Inter_Tight({ subsets: ['latin'], variable: '--font-hero', display: 'swap' });
 
 export const metadata: Metadata = {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable} ${interTight.variable}`}>
+    <html lang="en" className={`${geist.variable} ${geistMono.variable} ${interTight.variable}`}>
       <body>{children}</body>
     </html>
   );
