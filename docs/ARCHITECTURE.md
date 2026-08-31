@@ -1,8 +1,8 @@
 # Weberaise Signature Intro Architecture
 
-## Design goal
+## Experience boundary
 
-The intro is one coordinated experience rather than a collection of independent animations. The homepage remains on one route and moves through an explicit state machine:
+The homepage remains one explicit experience state machine:
 
 ```text
 boot
@@ -16,316 +16,382 @@ boot
 
 Scrolling remains locked until `main`.
 
-The Nothin-fidelity work changes only the **interactive reveal material model**. It does not redesign the loader, typography, hero opening, EXPLORE transition, navigation, or downstream homepage.
+The Nothin-fidelity branch changes only the **interactive reveal material model and its input/GPU lifecycle**. Loader choreography, hero typography, twin-line opening, navigation, EXPLORE, post-hero content and downstream routes remain architecturally separate.
 
-## Separation of responsibilities
+## Responsibility split
 
 ### React / DOM
 
 Owns:
-- semantic content;
-- hero and page layout;
-- accessibility;
+- semantic content and accessibility;
+- hero/page layout;
 - experience state;
-- lifecycle of intro components;
-- normal scrollable website content.
+- intro lifecycle;
+- pointer/touch event wiring;
+- normal website content.
 
-The page is not a WebGL scene. Hero copy and downstream content remain normal HTML/CSS.
+Hero typography remains DOM-rendered. The website is not converted into a WebGL scene.
 
 ### GSAP
 
 Owns finite authored choreography:
 - loader completion;
 - line contraction/rotation;
-- twin-line hero opening;
-- EXPLORE bottom-fill transition progress.
+- twin-line opening;
+- EXPLORE bottom-fill progress.
 
-GSAP does not own pointer sampling or the fluid simulation loop.
+It does not run the fluid solver.
 
 ### WebGL2 reveal engine
 
-Owns only the signature reveal material:
-- persistent half-float velocity field;
-- persistent half-float dye/reveal field;
+Owns:
+- persistent velocity field;
+- persistent dye field;
 - divergence field;
-- pressure ping-pong field;
-- Gaussian input splats;
+- pressure solve;
+- Gaussian input deposition;
 - advection;
-- pressure projection;
-- dye persistence/healing;
-- hard reveal-mask extraction;
-- final WEBERAISE difference compositing;
-- authored EXPLORE bottom-fill mode.
+- time-correct dissipation;
+- final hard reveal mask;
+- WEBERAISE difference compositor;
+- bottom-fill render mode.
 
-The previous age-aware radial primitive/metaball system is retired from the production reveal path.
+The previous CPU radial-primitive/metaball model is retired.
 
-## Why the engine is now pressure-projected fluid
+---
 
-Direct inspection of the supplied Nothin production bundle confirmed that its reveal is generated from persistent fluid state rather than a union of CPU-generated circles.
+## Why the reveal architecture changed
 
-The important visual distinction is architectural:
+The supplied Nothin production bundle confirms that its reveal is generated from persistent 2D fluid state, not a union of rounded CPU primitives.
+
+Previous WEBERAISE:
 
 ```text
-old WEBERAISE
 pointer history
-→ radial primitives
+→ many radial primitives
 → additive metaball field
 → threshold
-→ individual primitives shrink
+→ each primitive shrinks with age
+```
 
-current WEBERAISE
-pointer movement
-→ velocity + dye splats
-→ persistent fluid transport
+Current WEBERAISE:
+
+```text
+latest pointer state
+→ Gaussian velocity + dye splat
+→ persistent transport
 → pressure projection
 → dye dissipation
 → narrow threshold
 ```
 
-The old model structurally biased every surface toward circles, rounded necks and blob-like endpoints. The fluid model allows deposited material to stretch, shear, bend, taper, reconnect and split after input has moved away.
+The old representation structurally produced round heads, bulbous joins and circle-like healing. The new representation allows deposited material to stretch, shear, bend, taper and split after the pointer has moved away.
 
-Organic contour shape therefore comes from the simulated field itself. The interactive reveal no longer uses procedural contour sine/noise to fake liquid irregularity.
+The interactive boundary therefore receives its irregularity from fluid transport itself. No procedural sine/noise contour deformation is used for the reveal edge.
+
+---
 
 ## Hero composition
 
-The visual hero still uses one shared `HeroTypography` structure for front and hidden states so `WELCOME / TO` remains pixel-registered.
+`HeroTypography` remains shared by the front and hidden DOM layers, preserving exact `WELCOME / TO` registration.
 
 Front state:
 - white background;
 - black typography;
 - empty lower brand slot.
 
-Reveal state:
+Hidden state:
 - black background;
 - identical white typography;
-- approved horizontal WEBERAISE lockup in the lower brand slot.
+- approved WEBERAISE lockup.
 
-The DOM remains the semantic/accessibility source. WebGL produces only the reveal/compositor layer.
+The WebGL canvas continues to use `mix-blend-mode: difference`. A viewport-aligned brand texture reconstructs the approved lockup only inside the reveal mask.
 
-## Difference compositor
-
-The normal hero remains crisp DOM text. The WebGL canvas uses difference blending to reconstruct the inverse black/white hero only where the dye mask is open.
-
-A viewport-aligned brand texture supplies the approved WEBERAISE lockup inside the hidden brand slot. The fluid simulation never rasterizes or blurs the hero typography itself.
-
-Interactive surface extraction is deliberately simple:
+Interactive mask extraction is deliberately simple:
 
 ```text
-dye.r
-× revealGain (3.9 baseline)
+dye.r × 3.9
 → smoothstep(0.50, 0.51)
 → near-binary reveal alpha
 ```
 
-There is no animated interactive contour warp. The shape comes from fluid transport.
+Typography itself is not rasterized into the fluid simulation.
 
-## Fluid reveal data flow
+---
+
+## Confirmed fluid pipeline
+
+Full/lite data flow:
 
 ```text
-Pointer / touch / autonomous stroke
+mouse / pen / touch / autonomous sample
         ↓
-PointerTracker interpolation
+latest sample retained until next RAF
         ↓
-RevealSample[]
+one Gaussian velocity splat + one dye splat at most per frame
         ↓
-one-time Gaussian splats
-   ↙                 ↘
-velocity              dye
-ping-pong              ping-pong
-   ↓                     ↓
-velocity advection     dye advection
-   ↓                     │
-divergence               │
-   ↓                     │
-pressure Jacobi solve    │
-   ↓                     │
-gradient subtraction ────┘
+velocity advection
         ↓
-persistent fluid state
+dye advection
         ↓
-dye gain + narrow threshold
+divergence
+        ↓
+Jacobi pressure solve
+        ↓
+pressure-gradient subtraction
+        ↓
+persistent dye field
+        ↓
+gain + narrow threshold
         ↓
 WEBERAISE difference compositor
 ```
 
-Full/lite solver order for one visible frame:
+The order intentionally follows the inspected Nothin runtime.
 
-1. apply queued velocity and dye splats;
-2. advect velocity through itself;
-3. advect dye through the current velocity field;
-4. compute velocity divergence;
-5. clear pressure seed;
-6. solve pressure with Jacobi iterations;
-7. subtract the pressure gradient from velocity;
-8. composite the current dye mask.
+### Why input is frame-coalesced
 
-This intentionally follows the confirmed reference ordering.
+Nothin does not execute a fluid splat for every DOM event. Mouse/touch events update the latest pointer state; the animation loop injects at most once per frame.
 
-## Full-quality baseline
+WEBERAISE now follows the same rule:
 
-The first fidelity baseline starts from the shipped Nothin values rather than immediately brand-tuning them:
+- `HeroRevealCanvas` may still use `PointerTracker` as an event-conditioning layer;
+- `RevealEngine.emit()` keeps only `samples.at(-1)`;
+- multiple pointer events/interpolated samples before the next RAF collapse into one pending sample;
+- displacement is measured from the last **actually applied** sample;
+- one velocity and one dye splat are therefore the maximum interactive deposition cost per render frame.
 
-- velocity/pressure simulation: `256 × 256`;
-- dye field: `512 × 512`;
-- pressure iterations: `20`;
-- velocity retention at the 60 Hz reference frame: `0.962`;
-- dye retention at the 60 Hz reference frame: `0.988`;
-- curl/vorticity amplification: omitted (`curlStrength` was `0` in the reference);
-- Gaussian splat radius parameter: `0.00006`;
-- splat force: `5900`;
-- reveal gain: `3.9`;
-- threshold: `0.50 → 0.51`;
-- display DPR cap: `2`.
+This avoids both GPU pass explosion and dye over-deposition on high-frequency pointer hardware.
 
-These are fidelity reference values, not immutable brand constants. Any future tuning should respond to a named visual mismatch found in side-by-side comparison.
+---
+
+## Full-quality fidelity baseline
+
+Initial values come from the inspected Nothin production bundle:
+
+```text
+velocity/pressure simulation   256 × 256
+dye field                      512 × 512
+pressure iterations            20
+velocity retention @ 60 Hz     0.962
+dye retention @ 60 Hz          0.988
+curl strength                  0
+Gaussian radius parameter      0.00006
+splat force                    5900
+reveal gain                    3.9
+threshold                      0.50 → 0.51
+display DPR cap                2
+```
+
+Curl/vorticity shaders are intentionally omitted. The inspected reference has the machinery but its production `curlStrength` is zero, so those passes do not provide the target material behavior.
+
+These are fidelity baseline values, not immutable brand constants. Future tuning should be tied to a named mismatch seen in side-by-side QA.
+
+---
 
 ## Refresh-rate independence
 
-The reference implementation applies frame-based dissipation. WEBERAISE preserves its 60 Hz visual behavior while converting retention to elapsed-time-corrected values:
+The reference uses frame-based dissipation. WEBERAISE preserves the 60 Hz appearance but makes retention elapsed-time aware:
 
 ```text
 retention = baseRetention ^ (deltaSeconds × 60)
 ```
 
-The reference-frame scale is bounded so a stalled/hidden tab cannot produce one enormous advection step.
+The reference-frame scale is bounded to prevent a stalled frame from creating an extreme backtrace.
 
-When `document.hidden` is true, the engine resets its frame-time anchor instead of simulating elapsed background time.
+When `document.hidden` is true, the frame-time anchor is cleared. Background-tab time is not simulated on return.
 
-## Input architecture
+---
 
-`HeroRevealCanvas` remains the lifecycle/input adapter. Pointer work does not enter React state.
+## Input lifecycle
 
-Mouse, pen and touch pointer movement all feed the same tracker and `RevealSample[]` contract.
+Mouse, pen and touch pointer movement share the same simulation path.
 
-Fast path interpolation remains because it prevents gaps between browser pointer events. Interpolated samples are no longer visible geometry: they become one-time fluid splats.
+Stream history is reset on:
+- new `pointerdown` contact;
+- `pointerup`;
+- `pointercancel`;
+- `pointerleave`.
 
-Momentum normalization comes from using the displacement between consecutive interpolated samples. Splitting one physical pointer segment into more samples therefore divides its displacement rather than multiplying total injected motion.
+Resetting the input stream does **not** clear persistent dye/velocity. It only prevents a later contact from being interpreted as one giant movement vector.
 
-Every new contact resets only input-history state. Existing dye/velocity remains alive. `pointerup`, `pointercancel` and `pointerleave` also reset input history so separate gestures cannot create a giant artificial delta.
+### Autonomous teaser vs live input
+
+The short autonomous brand stroke still exists, but scripted and user input are never allowed to fight over the same displacement history.
+
+- teaser waits until the real hero engine is ready;
+- user input immediately cancels all remaining autonomous timers;
+- engine/tracker input history is reset before live control begins;
+- already deposited fluid remains visible and evolves normally.
+
+This prevents false momentum jumps when a user interacts during the teaser.
+
+### Engine readiness
+
+GPU initialization is asynchronous relative to hero phase changes. `HeroRevealCanvas` therefore promotes successful initialization into one `engineReady` React state transition.
+
+Pointer listeners and the autonomous teaser wait for `engineReady`. This prevents the interactive phase from racing past a still-null mutable `engineRef`.
+
+Pointer movement itself remains outside React state.
+
+---
 
 ## Residual motion and healing
 
-There is no CPU-scheduled afterglide and no synthetic rogue satellite-droplet system.
+There is no CPU afterglide or synthetic satellite-droplet mechanism.
 
-Residual motion comes from velocity already stored in the fluid field. After pointer motion ends, that velocity may continue transporting dye briefly and then damps naturally through the configured retention.
+Residual motion is genuine field momentum. After input stops, existing velocity may transport dye briefly and then damps through velocity retention.
 
-Healing is dye dissipation, not circles shrinking. Aging material can taper, shear, separate or reconnect before falling below the narrow reveal threshold.
+Healing is dye dissipation. Old revealed regions can narrow, deform or split before falling below the hard threshold instead of shrinking as individual circles.
 
-## Reduced/lite/fallback behavior
-
-### Full
-
-- simulation `256`;
-- dye `512`;
-- `20` pressure iterations;
-- velocity enabled;
-- pressure projection enabled.
-
-### Lite
-
-- simulation `128`;
-- dye `256`;
-- `10` pressure iterations;
-- same fluid semantics and threshold behavior;
-- velocity and pressure projection remain enabled.
-
-### Reduced motion
-
-- simulation `96`;
-- dye `192`;
-- velocity injection disabled;
-- pressure iterations `0`;
-- persistent dye still provides the reveal without authored fluid drift.
-
-### Capability fallback
-
-If WebGL2, `EXT_color_buffer_float`, or renderable `RGBA16F` targets are unavailable, `createRevealEngine()` returns `null` and the existing CSS reveal/fill fallback remains responsible for a usable hero.
+---
 
 ## GPU resources
 
-Full/lite fluid mode owns:
+Full/lite mode owns:
 
 ```text
-velocity    double RGBA16F target, LINEAR
-pressure    double RGBA16F target, NEAREST
-dye        double RGBA16F target, LINEAR
-divergence single RGBA16F target, NEAREST
+velocity    double RGBA16F, LINEAR
+pressure    double RGBA16F, NEAREST
+dye         double RGBA16F, LINEAR
+divergence  single RGBA16F, NEAREST
 ```
 
-Simulation resolution is independent of display resolution.
+The engine validates:
+- actual WebGL2 context creation on the hero canvas;
+- `EXT_color_buffer_float`;
+- `RGBA16F` framebuffer completeness.
 
-The engine compiles six primary programs:
+No separate disposable probe context is created before the real hero context. If construction fails, `createRevealEngine()` returns `null` and the CSS fallback is used.
 
+Programs:
 - splat;
 - advection;
 - divergence;
 - pressure Jacobi;
-- pressure-gradient subtraction;
+- gradient subtraction;
 - final compositor.
 
-A curl/vorticity pass is intentionally not compiled because the confirmed reference production setting was zero and therefore does not contribute to the desired material behavior.
+---
 
-## Loader warm-up
+## Quality tiers
 
-`criticalAssetRegistry` remains truthful and tracks hero-critical readiness only.
+### Full
 
-The existing `hero-code` critical task now warms the real fluid engine rather than merely importing the module. Warm-up:
+```text
+sim 256
+dye 512
+pressure iterations 20
+DPR cap 2
+velocity enabled
+```
 
-- acquires WebGL2;
-- validates the required float-color-buffer capability;
-- compiles/links the fluid programs;
-- allocates all persistent solver targets;
-- validates framebuffer completeness;
-- runs `prime()` for a zero-input pass graph;
-- disposes the temporary engine.
+### Lite
 
-This moves expensive first-use GPU setup into the loader instead of the user's first pointer interaction.
+```text
+sim 128
+dye 256
+pressure iterations 10
+DPR cap 1.25
+velocity enabled
+```
 
-## EXPLORE transition compatibility
+The same fluid semantics and reveal threshold are retained.
 
-The same engine still exposes the existing external API used by the hero and `exploreTimeline.ts`.
+### Reduced motion
 
-When EXPLORE starts:
+```text
+sim 96
+dye 192
+pressure iterations 0
+DPR cap 1
+velocity injection disabled
+persistent dye enabled
+```
+
+### Fallback
+
+If the required WebGL/half-float path fails, the existing CSS reveal remains usable. CSS fallback pointer state is cleared on pointer up/cancel/leave so touch contacts cannot leave it stuck open.
+
+---
+
+## Loader GPU preflight
+
+The loader's `hero-code` critical task calls `warmRevealEngine()`.
+
+This is a **disposable-context compatibility/shader preflight**, not persistent warming of the eventual hero canvas.
+
+It verifies on a temporary canvas that the browser can:
+- create the fluid engine;
+- compile/link the pass graph;
+- allocate compatible half-float targets;
+- execute `prime()`;
+- dispose cleanly.
+
+WebGL compiled state/resources are context-specific, so the later hero canvas still creates its own actual context/programs/targets. The preflight catches unsupported paths early; it does not guarantee zero setup cost when the hero mounts.
+
+---
+
+## EXPLORE compatibility
+
+The public reveal-engine contract used by the hero remains intact.
+
+EXPLORE does:
 
 ```text
 engine.clear()
 → mode = bottomFill
-→ fluid evolution is skipped
-→ authored black crest progresses upward
-→ fill reaches 1
+→ fluid evolution skipped
+→ existing authored black crest progresses upward
 → main state
 ```
 
-The bottom-fill crest remains a separate authored transition. It is not simulated fluid and is intentionally unaffected by the Nothin-fidelity rewrite.
+The sine terms in the bottom-fill crest are intentionally unrelated to the interactive liquid edge. They remain part of the accepted authored exit transition.
+
+---
 
 ## Performance strategy
 
-- expensive physics runs at `128–256²`, not display resolution;
-- visually important dye runs at `256–512²`;
-- display DPR is profile-capped;
-- no React state update occurs on pointer movement;
+- pressure/velocity physics stays at 128–256²;
+- dye stays at 256–512²;
+- display DPR is capped independently;
+- maximum interactive deposition is one velocity + one dye splat per RAF;
+- pointer movement causes no React render loop;
 - no DOM layout read occurs inside the solver RAF;
-- no CPU primitive history is rebuilt every frame;
-- full mode omits an unnecessary zero-strength curl/vorticity pass;
-- loader primes GPU resources before interaction;
-- hidden-tab time is discarded instead of simulated;
-- fluid evolution is skipped in bottom-fill mode;
-- hero teardown disposes the GPU graph when leaving the intro;
-- fallback behavior is explicit rather than allowing unsupported hardware to fail unpredictably.
+- no CPU primitive history is rebuilt per frame;
+- zero-strength curl/vorticity passes are omitted;
+- hidden-tab elapsed time is discarded;
+- fluid evolution is skipped during bottom fill;
+- partial engine initialization is disposed before fallback;
+- full hero teardown disposes all owned GPU targets/programs.
+
+---
 
 ## Verification boundary
 
-The new core has been verified independently with:
+Completed independently in this environment:
 
-- strict TypeScript compilation of the fluid engine/modules;
-- real Chromium WebGL2 shader compile/link for all six programs;
-- `EXT_color_buffer_float` presence;
-- successful `RGBA16F` framebuffer completeness;
-- one complete pressure-solver frame with `gl.getError() === 0`;
-- synthetic interpolated S-curve rendering showing a connected, directionally deformed filament rather than a circle chain.
+- TypeScript compilation of the fluid core/engine;
+- real Chromium WebGL2 compile/link of all six shaders;
+- `EXT_color_buffer_float` availability;
+- complete `RGBA16F` framebuffer;
+- one pressure-solver frame with `gl.getError() === 0`;
+- synthetic S-curve render showing connected directional deformation rather than a circle chain.
 
-A full repository `npm test`, `npm run typecheck`, `npm run build`, and complete in-site side-by-side browser comparison remain mandatory before merging. Those gates could not be run in the current container because the runtime cannot resolve the GitHub repository for a complete checkout.
+Still required before merge on a complete network-enabled checkout:
 
-## Downstream site boundary
+```bash
+npm ci
+npm test
+npm run typecheck
+npm run build
+git diff --check
+```
 
-This branch does not redesign or modify Services, Work, About, navigation, the post-Explore ribbon narrative, or other normal homepage sections. The change is intentionally isolated to the signature hero reveal system and its tests/documentation.
+Then perform the complete WEBERAISE-vs-Nothin in-site comparison on desktop, mobile/touch, reduced motion, hidden-tab resume and fallback conditions.
+
+---
+
+## Downstream boundary
+
+This branch does not redesign Services, Work, About, navigation, ribbon sections or other normal homepage content. The implementation remains isolated to the signature hero reveal, reveal-related tests and its documentation.
