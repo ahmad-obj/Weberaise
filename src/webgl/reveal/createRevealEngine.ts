@@ -5,14 +5,15 @@ export function createRevealEngine(
   canvas: HTMLCanvasElement,
   input: Omit<RevealQualityInput, 'webgl2'>,
 ): RevealEngine | null {
-  const probe = document.createElement('canvas');
-  const webgl2 = Boolean(probe.getContext('webgl2'));
-  const quality = chooseRevealQuality({ ...input, webgl2 });
-  if (quality.mode === 'fallback') return null;
+  if (typeof WebGL2RenderingContext === 'undefined') return null;
+
+  // Do not create a second throwaway WebGL context just to probe support.
+  // RevealEngine is the capability authority on the real hero canvas: context
+  // acquisition, EXT_color_buffer_float and RGBA16F completeness may all fail
+  // there and are deliberately caught into the CSS fallback.
+  const quality = chooseRevealQuality({ ...input, webgl2: true });
 
   try {
-    // RevealEngine itself is the final capability authority: it validates the
-    // half-float color-buffer extension and actual RGBA16F framebuffer creation.
     return new RevealEngine(canvas, quality);
   } catch {
     return null;
