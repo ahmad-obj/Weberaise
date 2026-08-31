@@ -104,7 +104,7 @@ export class RevealEngine {
   private readonly divergence: FluidTarget;
   private readonly brandTexture: WebGLTexture;
 
-  private pendingSplats: FluidSplat[] = [];
+  private pendingSample: RevealSample | null = null;
   private lastInputPoint: { x: number; y: number } | null = null;
   private lastFrameTime: number | null = null;
   private running = false;
@@ -177,23 +177,16 @@ export class RevealEngine {
   emit(samples: readonly RevealSample[]) {
     if (this.mode === 'disabled' || samples.length === 0) return;
 
-    for (const sample of samples) {
-      const previous = this.lastInputPoint;
-      const dx = previous ? sample.x - previous.x : 0;
-      const dy = previous ? sample.y - previous.y : 0;
-      this.pendingSplats.push({
-        x: Math.min(1, Math.max(0, sample.x)),
-        y: Math.min(1, Math.max(0, 1 - sample.y)),
-        dx,
-        dy: -dy,
-        strength: Math.max(0, sample.strength),
-      });
-      this.lastInputPoint = { x: sample.x, y: sample.y };
-    }
+    // Nothin's production loop stores the latest pointer position and injects
+    // once per RAF. Coalescing here prevents high-frequency pointer events or
+    // interpolation from multiplying dye/velocity passes within one frame.
+    const latest = samples.at(-1);
+    if (latest) this.pendingSample = latest;
   }
 
   resetInputStream() {
     this.lastInputPoint = null;
+    this.pendingSample = null;
   }
 
   setMode(mode: RevealMode) {
@@ -220,7 +213,7 @@ export class RevealEngine {
     clearFluidTarget(gl, this.dye.write);
     clearFluidTarget(gl, this.divergence);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    this.pendingSplats.length = 0;
+    this.pendingSample = null;
     this.resetInputStream();
     this.lastFrameTime = null;
   }
@@ -289,20 +282,31 @@ export class RevealEngine {
     target.swap();
   }
 
-  private applyPendingSplats() {
-    if (this.pendingSplats.length === 0) return;
+  private applyPendingSplat() {
+    const sample = this.pendingSample;
+    if (!sample) return;
+    this.pendingSample = null;
 
-    for (const splat of this.pendingSplats) {
-      if (this.quality.enableVelocity) {
-        this.applySplat(this.velocity, splat, [
-          splat.dx * this.quality.splatForce,
-          splat.dy * this.quality.splatForce,
-          0,
-        ]);
-      }
-      this.applySplat(this.dye, splat, [splat.strength, splat.strength, splat.strength]);
+    const previous = this.lastInputPoint;
+    const dx = previous ? sample.x - previous.x : 0;
+    const dy = previous ? sample.y - previous.y : 0;
+    const splat: FluidSplat = {
+      x: Math.min(1, Math.max(0, sample.x)),
+      y: Math.min(1, Math.max(0, 1 - sample.y)),
+      dx,
+      dy: -dy,
+      strength: Math.max(0, sample.strength),
+    };
+    this.lastInputPoint = { x: sample.x, y: sample.y };
+
+    if (this.quality.enableVelocity) {
+      this.applySplat(this.velocity, splat, [
+        splat.dx * this.quality.splatForce,
+        splat.dy * this.quality.splatForce,
+        0,
+      ]);
     }
-    this.pendingSplats.length = 0;
+    this.applySplat(this.dye, splat, [splat.strength, splat.strength, splat.strength]);
   }
 
   private advect(
@@ -392,7 +396,7 @@ export class RevealEngine {
       60,
     );
 
-    this.applyPendingSplats();
+    this.applyPendingSplat();
 
     if (!this.quality.enableVelocity) {
       this.advect(this.dye, this.velocity.read.texture, dtFrames, dyeDissipation);
