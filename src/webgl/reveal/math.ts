@@ -16,6 +16,20 @@ export function interpolateSegment(start: Point2, end: Point2, maxSpacing: numbe
   return output;
 }
 
+export function referenceFrameScale(deltaSeconds: number, referenceHz = 60): number {
+  if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return 0;
+  return Math.min(2, deltaSeconds * Math.max(1, referenceHz));
+}
+
+export function retentionFromReferenceFrame(
+  baseRetention: number,
+  deltaSeconds: number,
+  referenceHz = 60,
+): number {
+  const base = Math.min(1, Math.max(0, baseRetention));
+  return Math.pow(base, referenceFrameScale(deltaSeconds, referenceHz));
+}
+
 export function retentionForHalfLife(deltaSeconds: number, halfLifeSeconds: number): number {
   if (halfLifeSeconds <= 0) return 0;
   if (deltaSeconds <= 0) return 1;
