@@ -23,13 +23,15 @@ test('hero keeps the approved tight pointer sampling geometry', () => {
   assert.match(canvas, /maxVelocity:\s*1\.85/);
 });
 
-test('loader zero shares typography contract with completion zero and transition is smoother', () => {
-  const countdown = read('src/components/experience/Loader/LoaderCountdown.tsx');
+test('persistent loader zero remains Loader-owned across completion', () => {
+  const loader = read('src/components/experience/Loader/Loader.tsx');
   const completion = read('src/components/experience/Loader/LoaderCompletion.tsx');
   const css = read('src/app/globals.css');
-  assert.match(countdown, /loader-zero-glyph/);
-  assert.match(completion, /loader-zero-glyph/);
-  assert.match(css, /loader-number-in\s+2(?:6|7|8|9)0ms|loader-number-in\s+3\d\dms/);
+  assert.match(loader, /loader-zero-glyph/);
+  assert.match(loader, /loader-persistent-zero/);
+  assert.match(loader, /data-loader-zero/);
+  assert.match(completion, /zeroRef/);
+  assert.doesNotMatch(completion, /loader-zero-glyph/);
   assert.match(css, /\.loader-zero-glyph/);
 });
 
@@ -37,12 +39,13 @@ test('loader completion copy and line width match the approved polish', () => {
   const completion = read('src/components/experience/Loader/LoaderCompletion.tsx');
   const css = read('src/app/globals.css');
   assert.match(completion, />Need a website for business\?<\/span>/);
-  assert.match(css, /loader-completion__line[\s\S]*width:\s*min\((?:84|86)vw,\s*(?:960|980|1000)px\)/);
+  assert.match(css, /loader-completion__line[\s\S]*width:\s*min\(92vw,\s*1100px\)/);
 });
 
-test('hero is raised further and EXPLORE uses difference inversion', () => {
+test('hero keeps the approved raised composition and black front EXPLORE label', () => {
   const css = read('src/app/globals.css');
-  assert.match(css, /\.hero-composition[\s\S]*translateY\(clamp\(-38px,\s*-3\.6vh,\s*-24px\)\)/);
-  assert.match(css, /\.hero-explore[\s\S]*mix-blend-mode:\s*difference/);
-  assert.match(css, /\.hero-explore[\s\S]*color:\s*#fff/);
+  assert.match(css, /\.hero-composition[\s\S]*translateY\(clamp\(-44px,\s*-4\.2vh,\s*-28px\)\)/);
+  assert.match(css, /\.hero-explore[\s\S]*mix-blend-mode:\s*normal/);
+  assert.match(css, /\.hero-explore[\s\S]*color:\s*#000/);
+  assert.match(css, /\.hero-reveal-canvas[\s\S]*mix-blend-mode:\s*difference/);
 });
