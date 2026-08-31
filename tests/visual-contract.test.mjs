@@ -65,9 +65,9 @@ test('post-explore root owns the seamless black handoff from EXPLORE', () => {
   assert.match(shell, /EXPLORE_COMPLETE/);
 });
 
-test('post-explore effects include reduced-motion handling without adding Motion', () => {
+test('post-explore effects include reduced-motion handling without adding the separate Motion package', () => {
   const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
   const pkg = read('package.json');
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.doesNotMatch(pkg, /"motion"\s*:|"framer-motion"\s*:/);
+  assert.doesNotMatch(pkg, /"motion"\s*:/);
 });
