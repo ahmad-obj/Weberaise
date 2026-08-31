@@ -6,22 +6,12 @@ import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
-test('pointer reveal keeps the tight radius and emits visible rogue inertial patches', async () => {
+test('hero delegates residual motion to persistent fluid state', () => {
   const canvas = read('src/components/experience/Hero/HeroRevealCanvas.tsx');
-  assert.match(canvas, /root\.clientWidth < 720 \? 0\.10 : 0\.078/);
-  assert.match(canvas, /inertiaVelocity/);
-
-  const { createInertialAfterglide } = await import('../src/webgl/reveal/inertia.ts');
-  assert.equal(createInertialAfterglide({ x: 0.5, y: 0.5, vx: 0.05, vy: 0, radius: 0.078 }).length, 0);
-
-  const emissions = createInertialAfterglide({ x: 0.5, y: 0.5, vx: 1.8, vy: 0, radius: 0.078 });
-  assert.ok(emissions.length >= 2 && emissions.length <= 4);
-  assert.ok(emissions.at(-1).delayMs <= 340);
-  assert.ok(emissions.every((entry) => entry.sample.x > 0.5));
-  assert.ok(Math.max(...emissions.map((entry) => entry.sample.x - 0.5)) >= 0.025);
-  assert.ok(Math.max(...emissions.map((entry) => entry.sample.x - 0.5)) <= 0.050001);
-  assert.ok(emissions.every((entry) => entry.sample.radius < 0.078 * 0.42));
-  assert.ok(emissions.every((entry) => entry.sample.strength >= 0.46));
+  assert.match(canvas, /createPointerTracker/);
+  assert.match(canvas, /engine\.emit\(samples\)/);
+  assert.match(canvas, /engine\.resetInputStream\(\)/);
+  assert.doesNotMatch(canvas, /createInertialAfterglide|afterglide|inertiaVelocity/);
 });
 
 test('countdown cadence and transition duration become progressively slower without animation restarts', async () => {
