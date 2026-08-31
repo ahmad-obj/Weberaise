@@ -106,7 +106,7 @@ test('reveal engine owns persistent pressure-projected fluid state', () => {
   assert.match(engine, /pressure/);
   assert.match(engine, /divergence/);
   assert.match(engine, /pressureIterations/);
-  assert.match(engine, /pendingSplats/);
+  assert.match(engine, /pendingSample/);
   assert.match(engine, /resetInputStream/);
   assert.match(engine, /EXT_color_buffer_float/);
   assert.doesNotMatch(engine, /LiquidPrimitive|liquidRadiusScale|drawArraysInstanced|primitives/);
@@ -114,7 +114,21 @@ test('reveal engine owns persistent pressure-projected fluid state', () => {
   assert.doesNotMatch(shaders, /FIELD_VERTEX|FIELD_FRAGMENT|uContourWarp/);
 });
 
-test('loader warm-up primes the real fluid pass graph', () => {
+test('fluid input is coalesced to one latest sample per render frame', () => {
+  const engine = read('src/webgl/reveal/RevealEngine.ts');
+  assert.match(engine, /const latest = samples\.at\(-1\)/);
+  assert.match(engine, /this\.pendingSample = latest/);
+  assert.match(engine, /private applyPendingSplat\(\)/);
+  assert.doesNotMatch(engine, /pendingSplats|for \(const splat of this\.pending/);
+});
+
+test('engine creation uses the real hero context as capability authority', () => {
+  const create = read('src/webgl/reveal/createRevealEngine.ts');
+  assert.match(create, /typeof WebGL2RenderingContext === 'undefined'/);
+  assert.doesNotMatch(create, /const probe|probe\.getContext/);
+});
+
+test('loader preflight compiles and primes the fluid pass graph', () => {
   const create = read('src/webgl/reveal/createRevealEngine.ts');
   assert.match(create, /warmRevealEngine/);
   assert.match(create, /64/);
