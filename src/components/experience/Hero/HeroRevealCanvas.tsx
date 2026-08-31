@@ -90,9 +90,17 @@ function installFallbackPointer(root: HTMLElement) {
 export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: HeroRevealCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const autonomousPlayed = useRef(false);
+  const autonomousCancelled = useRef(false);
   const autonomousTimers = useRef<number[]>([]);
   const fallbackCleanup = useRef<(() => void) | null>(null);
   const [engineReady, setEngineReady] = useState(false);
+
+  const cancelAutonomousStroke = () => {
+    if (autonomousCancelled.current) return;
+    autonomousCancelled.current = true;
+    autonomousTimers.current.forEach((id) => window.clearTimeout(id));
+    autonomousTimers.current.length = 0;
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -149,8 +157,7 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       resizeObserver?.disconnect();
       fallbackCleanup.current?.();
       fallbackCleanup.current = null;
-      autonomousTimers.current.forEach((id) => window.clearTimeout(id));
-      autonomousTimers.current.length = 0;
+      cancelAutonomousStroke();
       engineRef.current?.dispose();
       engineRef.current = null;
     };
@@ -170,19 +177,27 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       maxVelocity: 1.85,
       strength: 1,
     });
+    let liveInputStarted = false;
 
     const resetStream = () => {
       tracker.reset();
       engine.resetInputStream();
     };
 
+    const takeOverFromAutonomous = () => {
+      if (liveInputStarted) return;
+      liveInputStarted = true;
+      cancelAutonomousStroke();
+      resetStream();
+    };
+
     const begin = () => {
-      // Every new contact/mouse press starts a fresh input segment. Persistent
-      // fluid state remains intact; only interpolation/delta history is reset.
+      takeOverFromAutonomous();
       resetStream();
     };
 
     const move = (event: PointerEvent) => {
+      takeOverFromAutonomous();
       const rect = root.getBoundingClientRect();
       const point = {
         x: Math.min(1, Math.max(0, (event.clientX - rect.left) / Math.max(1, rect.width))),
@@ -210,10 +225,19 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
 
   useEffect(() => {
     const engine = engineRef.current;
-    if (!engineReady || !engine || phase !== 'heroInteractive' || autonomousPlayed.current) return;
+    if (
+      !engineReady ||
+      !engine ||
+      phase !== 'heroInteractive' ||
+      autonomousPlayed.current ||
+      autonomousCancelled.current
+    ) return;
+
     autonomousPlayed.current = true;
     const delay = window.setTimeout(
-      () => playAutonomousStroke(engine, autonomousTimers.current),
+      () => {
+        if (!autonomousCancelled.current) playAutonomousStroke(engine, autonomousTimers.current);
+      },
       reducedMotion ? 80 : 260,
     );
     autonomousTimers.current.push(delay);
