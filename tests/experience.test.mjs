@@ -167,7 +167,10 @@ test('loader source contains the truthful countdown and masked completion choreo
   const timeline = readProject('src/experience/motion/loaderTimeline.ts');
   assert.match(loader, /createProgressController/);
   assert.match(loader, /createCriticalAssetRegistry|registry/);
-  assert.match(completion, /data-loader-zero/);
+  assert.match(loader, /data-loader-zero/);
+  assert.match(loader, /loader-persistent-zero/);
+  assert.match(completion, /zeroRef/);
+  assert.doesNotMatch(completion, /data-loader-zero/);
   assert.match(completion, /data-loader-tagline/);
   assert.match(timeline, /rotation:\s*90/);
   assert.match(timeline, /scaleX/);
