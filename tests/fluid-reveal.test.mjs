@@ -97,3 +97,19 @@ test('fluid shader suite contains splat, advection and pressure projection passe
   assert.match(source, /exp\(-dot\(/);
   assert.doesNotMatch(source, /fbm|simplex|hash\s*\(|vorticity|uCurlStrength/i);
 });
+
+test('reveal engine owns persistent pressure-projected fluid state', () => {
+  const engine = read('src/webgl/reveal/RevealEngine.ts');
+  const shaders = read('src/webgl/reveal/shaders.ts');
+  assert.match(engine, /velocity/);
+  assert.match(engine, /dye/);
+  assert.match(engine, /pressure/);
+  assert.match(engine, /divergence/);
+  assert.match(engine, /pressureIterations/);
+  assert.match(engine, /pendingSplats/);
+  assert.match(engine, /resetInputStream/);
+  assert.match(engine, /EXT_color_buffer_float/);
+  assert.doesNotMatch(engine, /LiquidPrimitive|liquidRadiusScale|drawArraysInstanced|primitives/);
+  assert.match(shaders, /uDye/);
+  assert.doesNotMatch(shaders, /FIELD_VERTEX|FIELD_FRAGMENT|uContourWarp/);
+});
