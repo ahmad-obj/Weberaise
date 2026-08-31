@@ -177,8 +177,18 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       strength: 1,
     });
 
+    const resetStream = () => {
+      tracker.reset();
+      engine.resetInputStream();
+    };
+
+    const begin = () => {
+      // Every new contact/mouse press starts a fresh input segment. Persistent
+      // fluid state remains intact; only interpolation/delta history is reset.
+      resetStream();
+    };
+
     const move = (event: PointerEvent) => {
-      if (event.pointerType === 'touch') return;
       const rect = root.getBoundingClientRect();
       const point = {
         x: Math.min(1, Math.max(0, (event.clientX - rect.left) / Math.max(1, rect.width))),
@@ -189,18 +199,18 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       engine.emit(samples);
     };
 
-    const leave = () => {
-      tracker.reset();
-      engine.resetInputStream();
-    };
-
+    root.addEventListener('pointerdown', begin, { passive: true });
     root.addEventListener('pointermove', move, { passive: true });
-    root.addEventListener('pointerleave', leave, { passive: true });
+    root.addEventListener('pointerup', resetStream, { passive: true });
+    root.addEventListener('pointercancel', resetStream, { passive: true });
+    root.addEventListener('pointerleave', resetStream, { passive: true });
     return () => {
+      root.removeEventListener('pointerdown', begin);
       root.removeEventListener('pointermove', move);
-      root.removeEventListener('pointerleave', leave);
-      tracker.reset();
-      engine.resetInputStream();
+      root.removeEventListener('pointerup', resetStream);
+      root.removeEventListener('pointercancel', resetStream);
+      root.removeEventListener('pointerleave', resetStream);
+      resetStream();
     };
   }, [engineRef, phase, rootRef]);
 
