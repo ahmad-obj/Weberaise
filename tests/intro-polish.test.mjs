@@ -14,6 +14,13 @@ test('hero delegates residual motion to persistent fluid state', () => {
   assert.doesNotMatch(canvas, /createInertialAfterglide|afterglide|inertiaVelocity/);
 });
 
+test('hero waits for the actual fluid engine before installing interactive input', () => {
+  const canvas = read('src/components/experience/Hero/HeroRevealCanvas.tsx');
+  assert.match(canvas, /useState\(false\)/);
+  assert.match(canvas, /setEngineReady\(true\)/);
+  assert.match(canvas, /if \(!engineReady \|\| !root \|\| !engine/);
+});
+
 test('hero accepts touch pointer movement and resets stream boundaries between contacts', () => {
   const canvas = read('src/components/experience/Hero/HeroRevealCanvas.tsx');
   assert.doesNotMatch(canvas, /pointerType\s*===\s*['"]touch['"]\)\s*return/);
@@ -22,6 +29,8 @@ test('hero accepts touch pointer movement and resets stream boundaries between c
   assert.match(canvas, /addEventListener\('pointerup',\s*resetStream/);
   assert.match(canvas, /addEventListener\('pointercancel',\s*resetStream/);
   assert.match(canvas, /addEventListener\('pointerleave',\s*resetStream/);
+  assert.match(canvas, /addEventListener\('pointerup',\s*leave/);
+  assert.match(canvas, /addEventListener\('pointercancel',\s*leave/);
 });
 
 test('countdown cadence and transition duration become progressively slower without animation restarts', async () => {
