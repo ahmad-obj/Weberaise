@@ -3,200 +3,239 @@
 **Milestone:** Nothin-fidelity hero reveal rebuild  
 **Branch:** `feature/hero-nothin-reveal-fidelity`  
 **Base:** `main` @ `dff8870b357e9bc87fe1d87e1a0dc67ca9dcc74c`  
-**Status:** implemented at reveal-core level; full Next.js regression/deployed visual QA still required before merge
+**Status:** reveal implementation and independent GPU verification complete; full repository/build and complete in-site visual QA still required before merge
 
-## Scope
+## Scope preserved
 
-This branch changes the WEBERAISE signature hero reveal only.
+This branch does not redesign the WEBERAISE website. It replaces the hero's interactive material model while preserving:
 
-Preserved:
-- experience reducer/state sequence;
-- truthful loader;
-- loader completion choreography;
+- experience state sequence;
+- truthful loader and completion choreography;
 - twin-line hero opening;
-- registered `WELCOME / TO` DOM typography;
-- approved WEBERAISE brand lockup composition;
+- `WELCOME / TO` DOM typography and registration;
+- WEBERAISE brand lockup composition;
 - hero vignette;
-- EXPLORE CTA;
-- EXPLORE bottom-fill transition;
-- post-Explore handoff;
-- no-WebGL CSS fallback;
-- Services / Work / About / navigation / ribbon sections.
+- navigation;
+- EXPLORE CTA and bottom-fill handoff;
+- post-Explore experience;
+- CSS fallback;
+- Services, Work, About and unrelated homepage sections.
 
-## Reference investigation
+## Confirmed Nothin reference
 
-The supplied Nothin site archive was inspected directly. Its shipped bundle confirms that the signature reveal is based on a real 2D fluid pipeline rather than a CPU metaball/primitive field.
-
-Confirmed reference characteristics used as the WEBERAISE baseline:
+Direct inspection of the supplied Nothin production bundle confirmed:
 
 ```text
-velocity / pressure simulation   256 × 256
-dye field                        512 × 512
-pressure iterations              20
-velocity retention / frame       0.962 at 60 Hz
-dye retention / frame            0.988 at 60 Hz
-curl strength                     0
-splat force                       5900
-Gaussian radius parameter         0.00006
-reveal gain                       3.9
-threshold                         0.50 → 0.51
-half-float render targets         yes
-DPR cap in reference              2
+velocity / pressure sim        256 × 256
+dye                            512 × 512
+pressure iterations            20
+velocity dissipation           0.962 / frame
+dye dissipation                0.988 / frame
+curl strength                  0
+splat radius parameter         0.00006
+splat force                    5900
+reveal multiplier              3.9
+threshold                      0.50 → 0.51
+half-float targets             yes
+DPR cap                        2
 ```
 
-Reference research/spec:
+The reference uses a genuine pressure-projected 2D fluid field. It does not build the visible mask from shrinking metaball primitives.
+
+Research:
 - `docs/superpowers/specs/2026-08-31-nothin-reveal-fidelity-design.md`
 
-Execution plan:
+Implementation plan:
 - `docs/superpowers/plans/2026-08-31-nothin-fluid-reveal-rebuild.md`
 
-## Current interactive reveal architecture
+## Production reveal replacement
 
-The old production model has been removed from the active reveal path.
+Retired from the active reveal path:
 
-Removed:
-- `LiquidPrimitive[]` CPU history;
-- instanced rounded field contributions;
+- `LiquidPrimitive[]` history;
+- instanced radial field geometry;
 - additive metaball construction;
-- radius-contraction healing;
+- geometric radius-contraction healing;
 - `liquidRadiusScale()`;
 - `createInertialAfterglide()`;
-- synthetic rogue satellite droplets;
+- rogue satellite droplets;
 - interactive contour sine warp;
 - primitive lifetime module/test.
 
-Current full/lite model:
+Current full/lite pipeline:
 
 ```text
-Pointer / touch / autonomous input
-→ PointerTracker interpolation
-→ one-time Gaussian velocity + dye splats
+latest mouse / pen / touch / autonomous input
+→ at most one Gaussian velocity+dye injection per RAF
 → velocity advection
 → dye advection
 → divergence
-→ pressure Jacobi solve
+→ pressure Jacobi iterations
 → pressure-gradient subtraction
-→ persistent dye field
-→ gain + narrow threshold
+→ persistent dye
+→ gain + 0.01-wide threshold
 → existing WEBERAISE difference compositor
 ```
 
-The visible contour is produced by the simulated dye field itself rather than by procedural boundary noise.
+Shape irregularity comes from field transport, not decorative boundary noise.
+
+## Input fidelity and performance
+
+A first implementation queued every interpolated pointer sample and could perform many full-screen splat passes in one frame. Review against Nothin's shipped `_step()` showed this was not reference-faithful and would over-deposit dye.
+
+The current engine now follows Nothin's event model:
+
+- `emit(samples)` keeps only `samples.at(-1)`;
+- that sample waits as `pendingSample`;
+- RAF computes displacement from the last sample that was actually applied;
+- at most one velocity splat and one dye splat occur per frame;
+- high-frequency mouse/pointer events therefore do not multiply GPU passes or dye strength.
+
+`PointerTracker` may still condition DOM events before `emit()`, but interpolation no longer increases simulation deposition count.
 
 ## GPU implementation
 
-New focused modules:
+New modules:
 
 - `src/webgl/reveal/fluid/types.ts`
 - `src/webgl/reveal/fluid/gl.ts`
 - `src/webgl/reveal/fluid/renderTargets.ts`
 - `src/webgl/reveal/fluid/shaders.ts`
 
-`RevealEngine.ts` now owns:
+`RevealEngine` owns:
 
 ```text
-velocity    double RGBA16F
-pressure    double RGBA16F
-dye        double RGBA16F
-divergence single RGBA16F
+velocity    double RGBA16F / LINEAR
+pressure    double RGBA16F / NEAREST
+dye         double RGBA16F / LINEAR
+divergence  single RGBA16F / NEAREST
 ```
 
-Fluid shader programs:
+Programs:
 
 1. Gaussian splat;
 2. advection;
 3. divergence;
 4. pressure Jacobi;
-5. pressure-gradient subtraction;
-6. final WEBERAISE composite.
+5. gradient subtraction;
+6. final compositor.
 
-Curl/vorticity is intentionally omitted because the directly inspected Nothin production setting is `curlStrength = 0`.
+Curl/vorticity is intentionally omitted because the inspected Nothin production value is `curlStrength = 0`.
 
 ## Quality profiles
 
 ### Full
 
 ```text
-simulation resolution     256
-dye resolution            512
-pressure iterations       20
-display DPR cap           2
-velocity retention 60 Hz  0.962
-dye retention 60 Hz       0.988
-splat radius              0.00006
-splat force               5900
-reveal gain               3.9
-threshold start           0.50
-threshold width           0.01
-velocity enabled          yes
+sim resolution             256
+dye resolution             512
+pressure iterations        20
+DPR cap                    2
+velocity retention @60Hz   0.962
+dye retention @60Hz        0.988
+splat radius               0.00006
+splat force                5900
+reveal gain                3.9
+threshold                  0.50 → 0.51
+velocity                   enabled
 ```
 
 ### Lite
 
 ```text
-simulation resolution     128
-dye resolution            256
-pressure iterations       10
-display DPR cap           1.25
-same retention / threshold semantics
-velocity enabled          yes
+sim resolution             128
+dye resolution             256
+pressure iterations        10
+DPR cap                    1.25
+velocity                   enabled
+same reveal semantics
 ```
 
 ### Reduced motion
 
 ```text
-simulation resolution     96
-dye resolution            192
-pressure iterations       0
-display DPR cap           1
-velocity injection        disabled
-persistent dye reveal     enabled
+sim resolution             96
+dye resolution             192
+pressure iterations        0
+DPR cap                    1
+velocity injection         disabled
+persistent dye             enabled
 ```
 
 ### Fallback
 
-If WebGL2 or the required renderable half-float path cannot initialize, `createRevealEngine()` returns `null` and the existing CSS reveal/fill fallback is used.
+The actual hero canvas is the capability authority. If WebGL2 context creation, `EXT_color_buffer_float`, shader/FBO setup or RGBA16F framebuffer validation fails, `createRevealEngine()` returns `null` and the CSS fallback is used.
 
-## Timing improvement over the reference
+A throwaway WebGL probe context is no longer created before the real hero context, avoiding unnecessary context pressure on mobile browsers.
 
-Nothin's shipped dissipation values are frame-based. WEBERAISE retains the same 60 Hz appearance but converts them to elapsed-time-corrected retention.
+## Refresh-rate behavior
 
-This prevents 120 Hz displays from healing materially faster than 60 Hz displays.
+Nothin's dissipation constants are frame-based. WEBERAISE converts them to elapsed-time-corrected retention while matching the 60 Hz reference appearance.
 
-Long hidden-tab gaps are not simulated. The frame-time anchor resets while `document.hidden` is true.
+A bounded reference-frame scale prevents extreme single-frame backtraces after a stall.
 
-## Pointer / touch behavior
+When `document.hidden` is true, `lastFrameTime` is reset. Background-tab elapsed time is not simulated on resume.
 
-The previous synthetic afterglide path is gone.
+## Hero lifecycle fixes made during review
+
+### Engine readiness race
+
+The heavier fluid engine initializes asynchronously. A mutable `engineRef` alone was insufficient because the hero could enter `heroInteractive` just before initialization finished and the input effect would not rerun.
+
+`HeroRevealCanvas` now sets one `engineReady` state transition after successful engine/layout setup. Interactive listeners and the autonomous teaser wait for that state.
+
+Pointer movement itself does not update React state.
+
+### Partial-engine fallback cleanup
+
+If engine creation succeeds but required brand-layer setup cannot complete, the partial engine is disposed before CSS fallback is installed. GPU resources are not orphaned.
+
+### Autonomous/live input isolation
+
+Scripted teaser samples and live input previously risked sharing displacement history if the user interacted during the `0.64s` teaser.
 
 Current behavior:
-- pointer interpolation spacing remains `0.022`;
-- tracker max velocity remains `1.85`;
-- existing sample radius values remain as input-contract data but full fluid mode uses the solver `splatRadius`;
-- interpolated displacement is split across splats so path interpolation does not multiply total momentum;
-- residual movement comes from the persistent velocity texture;
-- new pointer/touch contact resets interpolation and engine delta history only;
-- persistent fluid state is not cleared between contacts;
-- mouse, pen and touch pointer movement use the same simulation input path;
-- `pointerup`, `pointercancel` and `pointerleave` reset stream history to prevent discontinuity jumps.
+- autonomous timers are cancellable;
+- first live user input cancels all remaining teaser timers;
+- tracker/engine input history is reset before live input takes control;
+- already deposited dye/velocity remains alive.
 
-## Autonomous reveal
+This prevents false long-distance momentum splats between scripted and user coordinates.
 
-The existing short autonomous hero stroke remains.
+## Mouse, pen and touch
 
-It still:
-- uses `createHeroAutonomousStroke()`;
-- runs over approximately `0.64s`;
-- crosses the intended lower brand region;
-- uses the same `RevealSample` input contract.
+The old `pointerType === 'touch'` exclusion has been removed.
 
-Its samples now deposit dye/velocity into the real simulation instead of becoming visible circle primitives.
+Mouse, pen and touch movement now use the same reveal path.
+
+Input history resets on:
+- `pointerdown`;
+- `pointerup`;
+- `pointercancel`;
+- `pointerleave`.
+
+This prevents separate contacts from becoming one huge movement vector.
+
+CSS fallback also clears its active state on pointer up/cancel/leave, so a touch release cannot leave the fallback reveal stuck open.
+
+Actual coarse-pointer/touch-device QA is still required before merge.
+
+## Autonomous teaser
+
+The existing short brand-region teaser remains:
+
+- `createHeroAutonomousStroke()`;
+- ~`0.64s` sequence;
+- lower brand region;
+- same `RevealSample` contract.
+
+Its samples now become simulation input. Once user input begins, the remaining teaser is cancelled.
 
 ## EXPLORE compatibility
 
-The public `RevealEngine` contract used by the hero is preserved.
+The external engine contract required by `exploreTimeline.ts` remains intact.
 
-Before EXPLORE bottom-fill:
+EXPLORE still performs:
 
 ```text
 engine.clear()
@@ -204,23 +243,24 @@ engine.setBottomFillProgress(0)
 engine.setMode('bottomFill')
 ```
 
-In `bottomFill` mode the expensive fluid solver is skipped. The existing authored black crest remains responsible for the hero-to-main transition.
+Fluid evolution is skipped in `bottomFill`. The accepted authored black crest remains responsible for the transition into the main page.
 
-## Loader warm-up
+## Loader GPU preflight
 
-`warmRevealEngine()` now validates the actual fluid path rather than only importing the reveal module.
+`Loader.tsx` still contains the `hero-code` critical task calling `warmRevealEngine()`.
 
-Warm-up uses a small display canvas while allocating the real quality-profile solver resources. It:
-- constructs the engine;
-- verifies WebGL2 and `EXT_color_buffer_float`;
-- allocates RGBA16F targets;
-- compiles/links fluid programs;
-- runs `prime()`;
-- disposes the temporary engine.
+This is now documented accurately as a **temporary-context preflight**:
 
-The existing loader `hero-code` critical task and weight are preserved.
+- create a disposable canvas/context;
+- construct the fluid graph;
+- validate compatible float targets;
+- compile/link programs;
+- execute `prime()`;
+- dispose.
 
-## Tests changed with the architecture
+It can detect an unsupported fluid path before the hero, but WebGL resources/programs are context-specific. It does **not** persistently warm the eventual hero canvas or eliminate all hero-context setup cost.
+
+## Reveal tests
 
 Added:
 - `tests/fluid-reveal.test.mjs`
@@ -228,65 +268,70 @@ Added:
 Removed:
 - `tests/liquid-lifetime.test.mjs`
 
-Updated reveal-related contracts now assert:
-- Nothin baseline quality constants;
-- refresh-rate-independent timing math;
-- half-float ping-pong targets;
-- splat/advection/divergence/pressure/gradient shader suite;
-- persistent fluid ownership in `RevealEngine`;
+Current reveal contracts cover:
+- confirmed full-profile constants;
+- refresh-rate timing math;
+- RGBA16F ping-pong resources;
+- splat/advection/divergence/pressure/gradient shaders;
+- pressure-projected engine ownership;
+- one-latest-sample-per-RAF input coalescing;
 - no metaball primitive engine;
 - no interactive contour warp;
 - no synthetic afterglide;
-- touch input lifecycle/reset boundaries;
-- existing EXPLORE and loader behavior remains intact.
+- actual-context capability authority;
+- hidden-tab protection;
+- engine-ready interaction gating;
+- autonomous/live input isolation;
+- mouse/touch stream reset boundaries;
+- fallback touch cleanup;
+- existing EXPLORE/loader contracts.
 
-Several stale historical loader/hero assertions were also aligned with the already-approved current `main` behavior rather than modifying working production UI to satisfy obsolete tests.
+Some older non-production utility tests/helpers remain in the repository and are intentionally outside this reveal-material change unless the full repository gate proves they need cleanup.
 
-## Verification evidence completed in this environment
+## Independent verification completed
 
-The current environment cannot obtain a complete GitHub checkout through the local container because external repository DNS resolution is blocked. Therefore a full project `npm test`, Next typecheck and Next build cannot honestly be claimed here.
+The local runtime cannot clone/fetch the complete GitHub repository because outbound GitHub DNS resolution is blocked. Full Next.js project commands therefore cannot honestly be reported as passing here.
 
-The new reveal core was independently reconstructed into a verification harness and checked directly.
+The reveal core was reconstructed into an isolated verification harness.
 
 ### TypeScript
 
-- fluid quality/timing/render-target modules: compile pass;
-- full `RevealEngine` + shader imports: compile pass.
+- quality/timing/render-target modules: compile pass;
+- complete fluid `RevealEngine` and shader imports: compile pass at the earlier core checkpoint.
 
-### Real Chromium WebGL2
+A final core compilation should be repeated after the latest input-coalescing/lifecycle edits before merge.
 
-Verified through Chromium's DevTools runtime:
+### Chromium WebGL2
+
+Previously verified through a real Chromium WebGL2 context:
 
 ```text
-WebGL2 context                      available
-EXT_color_buffer_float            available
-SPLAT_FRAGMENT                    compile/link pass
-ADVECTION_FRAGMENT                compile/link pass
-DIVERGENCE_FRAGMENT               compile/link pass
-PRESSURE_FRAGMENT                 compile/link pass
-GRADIENT_SUBTRACT_FRAGMENT        compile/link pass
-COMPOSITE_FRAGMENT                compile/link pass
-RGBA16F framebuffer               COMPLETE
-full pressure-solver frame        executed
-final gl.getError()               0
+WebGL2                         available
+EXT_color_buffer_float       available
+SPLAT_FRAGMENT               compile/link pass
+ADVECTION_FRAGMENT           compile/link pass
+DIVERGENCE_FRAGMENT          compile/link pass
+PRESSURE_FRAGMENT            compile/link pass
+GRADIENT_SUBTRACT_FRAGMENT   compile/link pass
+COMPOSITE_FRAGMENT           compile/link pass
+RGBA16F framebuffer          COMPLETE
+pressure-solver frame        executed
+gl.getError()                0
 ```
 
-### Synthetic material sanity test
+### Material sanity render
 
-A sequence of interpolated splats was rendered through the actual fluid pass graph using an S-shaped path.
-
-Observed result:
+A synthetic interpolated S-curve through the fluid pass graph produced:
 - connected elongated material;
-- directional deformation;
-- bending/shearing through the path;
-- tapering/irregular edge behavior;
-- no visible chain-of-circular-metaballs construction.
+- directional bending/shearing;
+- tapering/irregular field shape;
+- no visible circle-chain/metaball construction.
 
-This confirms the core geometry model has moved into the intended Nothin-like directional-fluid family.
+The shader/pass graph is unchanged by the later input-lifecycle fixes; final integration behavior still needs full-site QA.
 
-## Verification still required before merge
+## Required verification before merge
 
-On a normal network-enabled checkout of this branch:
+On a complete network-enabled checkout:
 
 ```bash
 npm ci
@@ -297,51 +342,44 @@ git diff --check
 npm run dev
 ```
 
-Then compare the complete WEBERAISE hero against the supplied/local Nothin reference with the same deliberate paths:
+Then compare complete WEBERAISE against the supplied/local Nothin reference using identical paths:
 
 ```text
-straight medium-speed stroke
-fast diagonal stroke
+medium straight stroke
+fast diagonal
 slow 90° turn
 S-curve
 tight loop/self-overlap
-fast stroke then 3-second stop
+fast stroke then 3-second decay
 second stroke through an aging first stroke
-touch drag on a coarse-pointer device
+user takeover during autonomous teaser
+touch drag + lift + second touch
 ```
 
-Acceptance:
-- no circle-chain construction;
-- movement direction stretches/deforms the surface;
-- dye continues moving briefly after pointer stops;
-- velocity damps rather than swimming indefinitely;
-- reveal interior remains solid;
-- edge remains narrow and clean;
-- no animated contour-noise crawl;
-- no fog halo;
-- healing occurs through dye loss/deformation rather than shrinking circles;
-- hero text/logo registration remains exact;
-- touch gestures do not jump between contacts;
-- EXPLORE handoff remains seamless;
-- no performance regression outside the hero.
+Also test:
+- 1920×1080 / 1440×900 / 1280×800;
+- tablet/mobile sizes;
+- reduced motion;
+- forced capability fallback;
+- hidden tab → visible tab;
+- EXPLORE while dye is active.
 
-Do not retune the baseline constants until this comparison identifies a specific mismatch.
+Do not retune the baseline constants until a specific side-by-side mismatch is identified.
 
 ## Merge gate
 
-This branch should not merge into `main` until all of the following are true:
-
 ```text
-[ ] npm test passes
-[ ] npm run typecheck passes
-[ ] npm run build passes
-[ ] git diff --check passes
-[ ] full desktop hero visually matches the Nothin material family
-[ ] lite/mobile hero remains responsive
-[ ] reduced-motion path remains usable
-[ ] touch drag works without inter-gesture jumps
-[ ] forced fluid capability failure uses CSS fallback cleanly
-[ ] hidden-tab resume is stable
-[ ] EXPLORE transition remains correct
-[ ] branch diff contains no unrelated site changes
+[ ] npm test
+[ ] npm run typecheck
+[ ] npm run build
+[ ] git diff --check
+[ ] full desktop Nothin-family fidelity
+[ ] acceptable lite/mobile performance
+[ ] reduced-motion behavior
+[ ] real touch/coarse-pointer behavior
+[ ] fallback behavior
+[ ] hidden-tab resume
+[ ] autonomous/live takeover
+[ ] EXPLORE handoff
+[ ] no unrelated branch changes
 ```
