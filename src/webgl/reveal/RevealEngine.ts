@@ -175,7 +175,7 @@ export class RevealEngine {
   }
 
   emit(samples: readonly RevealSample[]) {
-    if (this.mode === 'disabled' || samples.length === 0) return;
+    if (this.mode !== 'reveal' || samples.length === 0) return;
 
     // Nothin's production loop stores the latest pointer position and injects
     // once per RAF. Coalescing here prevents high-frequency pointer events or
@@ -185,14 +185,20 @@ export class RevealEngine {
   }
 
   resetInputStream() {
+    // Do not discard a sample already queued for the next RAF. A pointerup or
+    // touchend can arrive before that frame; dropping it would erase the final
+    // visible deposit. Only displacement history is discontinuous across contacts.
     this.lastInputPoint = null;
-    this.pendingSample = null;
   }
 
   setMode(mode: RevealMode) {
     this.mode = mode;
     this.canvas.dataset.revealMode = mode;
     this.lastFrameTime = null;
+    if (mode !== 'reveal') {
+      this.pendingSample = null;
+      this.lastInputPoint = null;
+    }
   }
 
   setBottomFillProgress(progress: number) {
@@ -214,7 +220,7 @@ export class RevealEngine {
     clearFluidTarget(gl, this.divergence);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     this.pendingSample = null;
-    this.resetInputStream();
+    this.lastInputPoint = null;
     this.lastFrameTime = null;
   }
 
