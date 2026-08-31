@@ -21,6 +21,14 @@ test('hero waits for the actual fluid engine before installing interactive input
   assert.match(canvas, /if \(!engineReady \|\| !root \|\| !engine/);
 });
 
+test('live input cancels the autonomous fluid stream before taking over displacement history', () => {
+  const canvas = read('src/components/experience/Hero/HeroRevealCanvas.tsx');
+  assert.match(canvas, /autonomousCancelled/);
+  assert.match(canvas, /cancelAutonomousStroke/);
+  assert.match(canvas, /takeOverFromAutonomous/);
+  assert.match(canvas, /cancelAutonomousStroke\(\);\s*resetStream\(\);/s);
+});
+
 test('hero accepts touch pointer movement and resets stream boundaries between contacts', () => {
   const canvas = read('src/components/experience/Hero/HeroRevealCanvas.tsx');
   assert.doesNotMatch(canvas, /pointerType\s*===\s*['"]touch['"]\)\s*return/);
