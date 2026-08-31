@@ -113,3 +113,17 @@ test('reveal engine owns persistent pressure-projected fluid state', () => {
   assert.match(shaders, /uDye/);
   assert.doesNotMatch(shaders, /FIELD_VERTEX|FIELD_FRAGMENT|uContourWarp/);
 });
+
+test('loader warm-up primes the real fluid pass graph', () => {
+  const create = read('src/webgl/reveal/createRevealEngine.ts');
+  assert.match(create, /warmRevealEngine/);
+  assert.match(create, /64/);
+  assert.match(create, /prime\(\)/);
+  assert.match(create, /return null/);
+});
+
+test('engine bounds hidden-tab resume instead of simulating a huge timestep', () => {
+  const engine = read('src/webgl/reveal/RevealEngine.ts');
+  assert.match(engine, /document\.hidden/);
+  assert.match(engine, /lastFrameTime\s*=\s*null/);
+});
