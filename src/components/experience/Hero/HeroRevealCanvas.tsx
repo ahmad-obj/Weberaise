@@ -75,9 +75,13 @@ function installFallbackPointer(root: HTMLElement) {
   };
   const leave = () => root.classList.remove('is-fallback-active');
   root.addEventListener('pointermove', move, { passive: true });
+  root.addEventListener('pointerup', leave, { passive: true });
+  root.addEventListener('pointercancel', leave, { passive: true });
   root.addEventListener('pointerleave', leave, { passive: true });
   return () => {
     root.removeEventListener('pointermove', move);
+    root.removeEventListener('pointerup', leave);
+    root.removeEventListener('pointercancel', leave);
     root.removeEventListener('pointerleave', leave);
     root.classList.remove('is-reveal-fallback', 'is-fallback-active');
   };
