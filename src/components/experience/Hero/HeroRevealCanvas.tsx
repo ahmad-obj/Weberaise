@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type MutableRefObject, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type MutableRefObject, type RefObject } from 'react';
 import { createRevealEngine } from '@/webgl/reveal/createRevealEngine';
 import { createPointerTracker } from '@/webgl/reveal/pointerTracker';
 import { createHeroAutonomousStroke } from '@/webgl/reveal/emitters/autonomousEmitter';
@@ -95,12 +95,12 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
   const fallbackCleanup = useRef<(() => void) | null>(null);
   const [engineReady, setEngineReady] = useState(false);
 
-  const cancelAutonomousStroke = () => {
+  const cancelAutonomousStroke = useCallback(() => {
     if (autonomousCancelled.current) return;
     autonomousCancelled.current = true;
     autonomousTimers.current.forEach((id) => window.clearTimeout(id));
     autonomousTimers.current.length = 0;
-  };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -130,6 +130,7 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       });
 
       if (!engine || !brandImage) {
+        engine?.dispose();
         fallbackCleanup.current = installFallbackPointer(root);
         return;
       }
@@ -161,7 +162,7 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       engineRef.current?.dispose();
       engineRef.current = null;
     };
-  }, [engineRef, reducedMotion, rootRef]);
+  }, [cancelAutonomousStroke, engineRef, reducedMotion, rootRef]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -221,7 +222,7 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       root.removeEventListener('pointerleave', resetStream);
       resetStream();
     };
-  }, [engineReady, engineRef, phase, rootRef]);
+  }, [cancelAutonomousStroke, engineReady, engineRef, phase, rootRef]);
 
   useEffect(() => {
     const engine = engineRef.current;
