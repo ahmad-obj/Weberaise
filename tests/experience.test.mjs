@@ -241,36 +241,36 @@ test('hero autonomous reveal preset crosses the lower brand band instead of the 
   assert.ok(Math.max(...samples.map((sample) => sample.x)) - Math.min(...samples.map((sample) => sample.x)) < 0.06);
 });
 
-test('quality profiles keep the implicit field bounded and degrade intentionally', async () => {
+test('quality profiles preserve the fluid model while degrading intentionally', async () => {
   const { chooseRevealQuality } = await import('../src/webgl/reveal/quality.ts');
   const full = chooseRevealQuality({ width: 1440, height: 900, dpr: 2, reducedMotion: false, webgl2: true, deviceMemory: 8 });
   const lite = chooseRevealQuality({ width: 390, height: 844, dpr: 3, reducedMotion: false, webgl2: true, deviceMemory: 2 });
   const fallback = chooseRevealQuality({ width: 390, height: 844, dpr: 3, reducedMotion: false, webgl2: false, deviceMemory: 4 });
   assert.equal(full.mode, 'full');
-  assert.ok(full.maskShortAxis <= 512);
-  assert.ok(full.dprCap <= 1.5);
-  assert.equal(full.lifetime, 3.6);
-  assert.equal(full.holdFraction, 0.60);
-  assert.equal(full.maxPrimitives, 420);
+  assert.equal(full.simResolution, 256);
+  assert.equal(full.dyeResolution, 512);
+  assert.equal(full.pressureIterations, 20);
+  assert.equal(full.dprCap, 2);
   assert.equal(lite.mode, 'lite');
-  assert.ok(lite.maskShortAxis <= 320);
-  assert.ok(lite.maxPrimitives < full.maxPrimitives);
+  assert.equal(lite.simResolution, 128);
+  assert.equal(lite.dyeResolution, 256);
+  assert.ok(lite.pressureIterations < full.pressureIterations);
   assert.equal(fallback.mode, 'fallback');
 });
 
-test('reveal engine rebuilds a bounded implicit field instead of decaying ping-pong history', () => {
+test('reveal engine owns persistent pressure-projected fluid state', () => {
   const engine = readProject('src/webgl/reveal/RevealEngine.ts');
   const shaders = readProject('src/webgl/reveal/shaders.ts');
-  assert.match(engine, /fieldTarget/);
-  assert.match(engine, /drawArraysInstanced/);
-  assert.match(engine, /liquidRadiusScale/);
-  assert.match(engine, /blendFunc\(gl\.ONE,\s*gl\.ONE\)/);
-  assert.match(shaders, /FIELD_VERTEX/);
-  assert.match(shaders, /FIELD_FRAGMENT/);
-  assert.match(shaders, /uSurfaceThreshold/);
-  assert.doesNotMatch(engine, /historyTargets|historyReadIndex|updateHistory/);
-  assert.doesNotMatch(shaders, /uPrevious|uHalfLife|uAdvection/);
-  assert.doesNotMatch(shaders, /pressureIterations|jacobi|divergence/i);
+  assert.match(engine, /velocity/);
+  assert.match(engine, /dye/);
+  assert.match(engine, /pressure/);
+  assert.match(engine, /divergence/);
+  assert.match(engine, /pressureIterations/);
+  assert.match(engine, /pendingSplats/);
+  assert.match(engine, /resetInputStream/);
+  assert.doesNotMatch(engine, /LiquidPrimitive|liquidRadiusScale|drawArraysInstanced|primitives/);
+  assert.match(shaders, /uDye/);
+  assert.doesNotMatch(shaders, /FIELD_VERTEX|FIELD_FRAGMENT|uContourWarp/);
 });
 
 test('interactive hero mounts one reveal engine, runs autonomous stroke once, and avoids pointer-driven React state', () => {
