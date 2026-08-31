@@ -1,11 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import { chooseRevealQuality } from '../src/webgl/reveal/quality.ts';
 import {
   referenceFrameScale,
   retentionFromReferenceFrame,
 } from '../src/webgl/reveal/math.ts';
+
+const root = resolve(import.meta.dirname, '..');
+const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
 test('full profile starts from confirmed Nothin production values', () => {
   const full = chooseRevealQuality({
@@ -71,4 +76,13 @@ test('lite and reduced profiles preserve mask semantics at lower cost', () => {
   assert.equal(reduced.pressureIterations, 0);
   assert.equal(reduced.edgeSoftness, 0.5);
   assert.equal(reduced.edgeWidth, 0.01);
+});
+
+test('fluid targets use renderable half-float ping-pong textures', () => {
+  const source = read('src/webgl/reveal/fluid/renderTargets.ts');
+  assert.match(source, /RGBA16F/);
+  assert.match(source, /HALF_FLOAT/);
+  assert.match(source, /framebufferTexture2D/);
+  assert.match(source, /FRAMEBUFFER_COMPLETE/);
+  assert.match(source, /swap\(\)/);
 });
