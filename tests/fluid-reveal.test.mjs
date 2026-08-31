@@ -86,3 +86,14 @@ test('fluid targets use renderable half-float ping-pong textures', () => {
   assert.match(source, /FRAMEBUFFER_COMPLETE/);
   assert.match(source, /swap\(\)/);
 });
+
+test('fluid shader suite contains splat, advection and pressure projection passes', () => {
+  const source = read('src/webgl/reveal/fluid/shaders.ts');
+  assert.match(source, /SPLAT_FRAGMENT/);
+  assert.match(source, /ADVECTION_FRAGMENT/);
+  assert.match(source, /DIVERGENCE_FRAGMENT/);
+  assert.match(source, /PRESSURE_FRAGMENT/);
+  assert.match(source, /GRADIENT_SUBTRACT_FRAGMENT/);
+  assert.match(source, /exp\(-dot\(/);
+  assert.doesNotMatch(source, /fbm|simplex|hash\s*\(|vorticity|uCurlStrength/i);
+});
