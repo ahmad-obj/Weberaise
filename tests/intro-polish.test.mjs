@@ -14,6 +14,16 @@ test('hero delegates residual motion to persistent fluid state', () => {
   assert.doesNotMatch(canvas, /createInertialAfterglide|afterglide|inertiaVelocity/);
 });
 
+test('hero accepts touch pointer movement and resets stream boundaries between contacts', () => {
+  const canvas = read('src/components/experience/Hero/HeroRevealCanvas.tsx');
+  assert.doesNotMatch(canvas, /pointerType\s*===\s*['"]touch['"]\)\s*return/);
+  assert.match(canvas, /addEventListener\('pointerdown',\s*begin/);
+  assert.match(canvas, /addEventListener\('pointermove',\s*move/);
+  assert.match(canvas, /addEventListener\('pointerup',\s*resetStream/);
+  assert.match(canvas, /addEventListener\('pointercancel',\s*resetStream/);
+  assert.match(canvas, /addEventListener\('pointerleave',\s*resetStream/);
+});
+
 test('countdown cadence and transition duration become progressively slower without animation restarts', async () => {
   const timing = await import('../src/experience/loading/countdownTiming.ts');
   assert.equal(timing.FINAL_ZERO_HOLD_MS, 700);
