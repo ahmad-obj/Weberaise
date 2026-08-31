@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type MutableRefObject, type RefObject } from 'react';
+import { useEffect, useRef, useState, type MutableRefObject, type RefObject } from 'react';
 import { createRevealEngine } from '@/webgl/reveal/createRevealEngine';
 import { createPointerTracker } from '@/webgl/reveal/pointerTracker';
 import { createHeroAutonomousStroke } from '@/webgl/reveal/emitters/autonomousEmitter';
@@ -85,12 +85,10 @@ function installFallbackPointer(root: HTMLElement) {
 
 export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: HeroRevealCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const phaseRef = useRef<HeroPhase>(phase);
   const autonomousPlayed = useRef(false);
   const autonomousTimers = useRef<number[]>([]);
   const fallbackCleanup = useRef<(() => void) | null>(null);
-
-  phaseRef.current = phase;
+  const [engineReady, setEngineReady] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -137,15 +135,7 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       engine.start();
       resizeObserver = new ResizeObserver(refreshLayout);
       resizeObserver.observe(root);
-
-      if (phaseRef.current === 'heroInteractive' && !autonomousPlayed.current) {
-        autonomousPlayed.current = true;
-        const delay = window.setTimeout(
-          () => playAutonomousStroke(engine, autonomousTimers.current),
-          reducedMotion ? 80 : 260,
-        );
-        autonomousTimers.current.push(delay);
-      }
+      setEngineReady(true);
     };
 
     void initialize();
@@ -165,7 +155,7 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
   useEffect(() => {
     const root = rootRef.current;
     const engine = engineRef.current;
-    if (!root || !engine || phase !== 'heroInteractive') return;
+    if (!engineReady || !root || !engine || phase !== 'heroInteractive') return;
 
     engine.setMode('reveal');
     engine.resetInputStream();
@@ -212,18 +202,18 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       root.removeEventListener('pointerleave', resetStream);
       resetStream();
     };
-  }, [engineRef, phase, rootRef]);
+  }, [engineReady, engineRef, phase, rootRef]);
 
   useEffect(() => {
     const engine = engineRef.current;
-    if (!engine || phase !== 'heroInteractive' || autonomousPlayed.current) return;
+    if (!engineReady || !engine || phase !== 'heroInteractive' || autonomousPlayed.current) return;
     autonomousPlayed.current = true;
     const delay = window.setTimeout(
       () => playAutonomousStroke(engine, autonomousTimers.current),
       reducedMotion ? 80 : 260,
     );
     autonomousTimers.current.push(delay);
-  }, [engineRef, phase, reducedMotion]);
+  }, [engineReady, engineRef, phase, reducedMotion]);
 
   return (
     <>
