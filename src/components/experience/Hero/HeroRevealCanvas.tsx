@@ -4,9 +4,7 @@ import { useEffect, useRef, type MutableRefObject, type RefObject } from 'react'
 import { createRevealEngine } from '@/webgl/reveal/createRevealEngine';
 import { createPointerTracker } from '@/webgl/reveal/pointerTracker';
 import { createHeroAutonomousStroke } from '@/webgl/reveal/emitters/autonomousEmitter';
-import { createInertialAfterglide } from '@/webgl/reveal/inertia';
 import type { RevealEngine } from '@/webgl/reveal/RevealEngine';
-import type { RevealSample } from '@/webgl/reveal/emitters/types';
 
 type HeroPhase = 'heroOpening' | 'heroInteractive' | 'heroExiting';
 
@@ -56,6 +54,7 @@ function createBrandLayer(root: HTMLElement, image: HTMLImageElement, scale: num
 function playAutonomousStroke(engine: RevealEngine, timers: number[]) {
   const duration = 0.64;
   const samples = createHeroAutonomousStroke();
+  engine.resetInputStream();
 
   samples.forEach((sample, index) => {
     const delay = (index / Math.max(1, samples.length - 1)) * duration * 1000;
@@ -141,7 +140,10 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
 
       if (phaseRef.current === 'heroInteractive' && !autonomousPlayed.current) {
         autonomousPlayed.current = true;
-        const delay = window.setTimeout(() => playAutonomousStroke(engine, autonomousTimers.current), reducedMotion ? 80 : 260);
+        const delay = window.setTimeout(
+          () => playAutonomousStroke(engine, autonomousTimers.current),
+          reducedMotion ? 80 : 260,
+        );
         autonomousTimers.current.push(delay);
       }
     };
@@ -166,6 +168,7 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
     if (!root || !engine || phase !== 'heroInteractive') return;
 
     engine.setMode('reveal');
+    engine.resetInputStream();
     const radius = root.clientWidth < 720 ? 0.10 : 0.078;
     const tracker = createPointerTracker({
       maxSpacing: 0.022,
@@ -173,39 +176,6 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       maxVelocity: 1.85,
       strength: 1,
     });
-
-    let idleTimer = 0;
-    const afterglideTimers: number[] = [];
-    let lastSample: RevealSample | null = null;
-    const inertiaVelocity = { x: 0, y: 0 };
-
-    const cancelAfterglide = () => {
-      if (idleTimer) window.clearTimeout(idleTimer);
-      idleTimer = 0;
-      afterglideTimers.forEach((id) => window.clearTimeout(id));
-      afterglideTimers.length = 0;
-    };
-
-    const scheduleAfterglide = (sample: RevealSample) => {
-      cancelAfterglide();
-      if (reducedMotion) return;
-
-      idleTimer = window.setTimeout(() => {
-        idleTimer = 0;
-        const emissions = createInertialAfterglide({
-          x: sample.x,
-          y: sample.y,
-          vx: sample.vx,
-          vy: sample.vy,
-          radius,
-          strength: sample.strength,
-        });
-        for (const emission of emissions) {
-          const id = window.setTimeout(() => engine.emit([emission.sample]), emission.delayMs);
-          afterglideTimers.push(id);
-        }
-      }, 48);
-    };
 
     const move = (event: PointerEvent) => {
       if (event.pointerType === 'touch') return;
@@ -215,34 +185,13 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
         y: Math.min(1, Math.max(0, (event.clientY - rect.top) / Math.max(1, rect.height))),
         time: performance.now() / 1000,
       };
-      const samples: RevealSample[] = tracker.push(point);
+      const samples = tracker.push(point);
       engine.emit(samples);
-
-      const newest = samples.at(-1);
-      if (!newest) return;
-
-      // Preserve a short recent-motion memory. Browsers may emit a final near-zero
-      // velocity event when the pointer stops; without this, the intended inertia
-      // disappears exactly when it should become visible.
-      const speed = Math.hypot(newest.vx, newest.vy);
-      const response = speed >= 0.14 ? 0.46 : 0.18;
-      inertiaVelocity.x = inertiaVelocity.x * (1 - response) + newest.vx * response;
-      inertiaVelocity.y = inertiaVelocity.y * (1 - response) + newest.vy * response;
-
-      lastSample = {
-        ...newest,
-        vx: inertiaVelocity.x,
-        vy: inertiaVelocity.y,
-      };
-      scheduleAfterglide(lastSample);
     };
 
     const leave = () => {
-      cancelAfterglide();
       tracker.reset();
-      lastSample = null;
-      inertiaVelocity.x = 0;
-      inertiaVelocity.y = 0;
+      engine.resetInputStream();
     };
 
     root.addEventListener('pointermove', move, { passive: true });
@@ -250,16 +199,19 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
     return () => {
       root.removeEventListener('pointermove', move);
       root.removeEventListener('pointerleave', leave);
-      cancelAfterglide();
       tracker.reset();
+      engine.resetInputStream();
     };
-  }, [engineRef, phase, reducedMotion, rootRef]);
+  }, [engineRef, phase, rootRef]);
 
   useEffect(() => {
     const engine = engineRef.current;
     if (!engine || phase !== 'heroInteractive' || autonomousPlayed.current) return;
     autonomousPlayed.current = true;
-    const delay = window.setTimeout(() => playAutonomousStroke(engine, autonomousTimers.current), reducedMotion ? 80 : 260);
+    const delay = window.setTimeout(
+      () => playAutonomousStroke(engine, autonomousTimers.current),
+      reducedMotion ? 80 : 260,
+    );
     autonomousTimers.current.push(delay);
   }, [engineRef, phase, reducedMotion]);
 
