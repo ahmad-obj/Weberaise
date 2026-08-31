@@ -107,6 +107,13 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
     const root = rootRef.current;
     if (!canvas || !root) return;
 
+    // React Strict Mode and legitimate dependency changes may replay effects.
+    // Re-arm one-shot lifecycle flags before beginning a new engine instance.
+    autonomousPlayed.current = false;
+    autonomousCancelled.current = false;
+    autonomousTimers.current.length = 0;
+    setEngineReady(false);
+
     let disposed = false;
     let resizeObserver: ResizeObserver | null = null;
     let brandImage: HTMLImageElement | null = null;
@@ -120,6 +127,11 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       }
       if (disposed) return;
 
+      if (!brandImage) {
+        fallbackCleanup.current = installFallbackPointer(root);
+        return;
+      }
+
       const rect = root.getBoundingClientRect();
       const engine = createRevealEngine(canvas, {
         width: rect.width,
@@ -129,8 +141,7 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
         deviceMemory: (navigator as NavigatorWithMemory).deviceMemory,
       });
 
-      if (!engine || !brandImage) {
-        engine?.dispose();
+      if (!engine) {
         fallbackCleanup.current = installFallbackPointer(root);
         return;
       }
