@@ -1,171 +1,347 @@
 # Weberaise Implementation Status
 
-**Milestone:** Signature intro + Explore handoff foundation  
-**Branch:** `feature/signature-intro`  
-**Date:** 2026-08-11
+**Milestone:** Nothin-fidelity hero reveal rebuild  
+**Branch:** `feature/hero-nothin-reveal-fidelity`  
+**Base:** `main` @ `dff8870b357e9bc87fe1d87e1a0dc67ca9dcc74c`  
+**Status:** implemented at reveal-core level; full Next.js regression/deployed visual QA still required before merge
 
-## Implemented
+## Scope
 
-### Experience flow
-- one-route experience reducer;
-- loader/hero scroll lock;
-- `EXPLORE` is the only transition into normal scrolling;
-- First Impression is prepared before the handoff.
+This branch changes the WEBERAISE signature hero reveal only.
 
-### Loader
-- truthful weighted critical-resource registry;
-- every integer 100→0 is traversable;
-- `0` is gated by actual critical readiness;
-- registry progress is React-observable, fixing the earlier stuck-at-100 bug;
-- all countdown numbers are fixed at viewport center;
-- digit cadence now slows progressively toward zero;
-- each digit transition finishes before the next cadence tick, avoiding repeated animation restarts;
-- digit replacement is now a stationary opacity/blur crossfade with no vertical jump or scale hop;
-- the real countdown `0` holds for `700ms` before the completion phase begins;
-- countdown `0` and completion `0` share `.loader-zero-glyph` font metrics and the same viewport-center registration;
-- tagline is exactly `Need a website for business?`;
-- tagline starts pre-hidden in CSS at `translateY(130%)`, preventing the pre-GSAP first-paint flicker;
-- horizontal line uses `min(92vw, 1100px)` and a reduced `48px–72px` offset so it sits closer to the centered zero/tagline;
-- before rotating vertical, the line animates to exact `top: 50%`;
-- vertical scale is computed against `window.innerHeight + 24`, giving a small overscan so the vertical line clears the full viewport height;
-- existing `0` → line → tagline → vertical/twin-line choreography is otherwise preserved.
+Preserved:
+- experience reducer/state sequence;
+- truthful loader;
+- loader completion choreography;
+- twin-line hero opening;
+- registered `WELCOME / TO` DOM typography;
+- approved WEBERAISE brand lockup composition;
+- hero vignette;
+- EXPLORE CTA;
+- EXPLORE bottom-fill transition;
+- post-Explore handoff;
+- no-WebGL CSS fallback;
+- Services / Work / About / navigation / ribbon sections.
 
-### Hero layout
-- front/reveal typography share one registered composition;
-- centered Inter Tight heavy typography;
-- approved horizontal WEBERAISE lockup;
-- shared typography/brand composition is raised to approximately `-4.2vh` on desktop, with a gentler mobile offset;
-- `EXPLORE` is now a real black front label placed below the reveal compositor (`z-index: 4` vs canvas `z-index: 5`);
-- the same difference compositor that reveals the black hero therefore inverts the black label to white only where the liquid passes over it;
-- no separate white-only Explore state is required in the normal WebGL path;
-- no-WebGL fallback retains difference blending explicitly;
-- light hero has an extremely faint radial edge vignette (~2–3% black at the far perimeter only).
+## Reference investigation
 
-### Interactive reveal — current architecture
-The earlier ping-pong feedback-density implementation has been replaced.
+The supplied Nothin site archive was inspected directly. Its shipped bundle confirms that the signature reveal is based on a real 2D fluid pipeline rather than a CPU metaball/primitive field.
 
-Current production model:
-- WebGL2 low-resolution **implicit liquid field**;
-- active pointer/autonomous samples stored as bounded time-stamped liquid primitives;
-- primitives are rendered as instanced rounded field contributions;
-- additive field union produces smooth metaball-like merging/necks;
-- visible surface is extracted through a narrow level-set threshold;
-- primitive opacity does not fade as the main healing mechanism;
-- primitives stay near full radius during the hold stage, then geometrically shrink;
-- aging therefore moves the contour inward rather than turning the trail into fog;
-- thin connections may naturally neck/pinch apart into rounded remnants;
-- terminal stroke remains a proper rounded blob;
-- subtle low-frequency threshold displacement affects only the contour;
-- no temporal hash grain, history dissipation, broad advection or smoke-like low-alpha field;
-- full/lite/fallback quality profiles remain explicit;
-- autonomous intro uses the same engine;
-- bottom-fill Explore mode remains separate inside the same compositor.
+Confirmed reference characteristics used as the WEBERAISE baseline:
 
-### Pointer footprint + inertia polish
-- normal pointer radius remains `0.078` desktop / `0.10` mobile;
-- interpolation spacing remains tightened for continuity;
-- pointer stop uses a short recent-velocity memory so the browser's final near-zero pointer event does not erase the intended inertial cue;
-- the main blob does **not** translate after the pointer stops;
-- only `2–4` small rogue satellite patches continue forward;
-- satellites start ahead of the cursor path instead of forming a second connected cursor sphere;
-- maximum carry is about `5%` viewport-space and typical fast-motion carry is lower;
-- small deterministic lateral offsets make the satellites irregular rather than symmetric;
-- satellite radii stay below ~42% of the main pointer radius;
-- satellite strength stays above the current implicit-surface threshold so the effect remains actually visible;
-- the sequence finishes in roughly `300ms`;
-- slow movement below the speed threshold produces no afterglide;
-- any new pointer input immediately cancels pending inertial emissions;
-- reduced-motion mode disables afterglide.
-
-Current full profile:
-- field short axis: adaptive up to `512px`;
-- display DPR cap: `1.5`;
-- lifetime: `3.6s`;
-- hold fraction: `0.60`;
-- max active primitives: `420`;
-- surface threshold: `0.40`;
-- contour warp: `0.010`.
-
-### Nothin reference inspection
-Public evidence confirms Nothin uses WebGL/custom shaders; GSAP's showcase material also identifies Three.js/WebGL/Webflow.
-
-The repo contains a dependency-free runtime probe:
-
-```bash
-npm run probe:nothin
+```text
+velocity / pressure simulation   256 × 256
+dye field                        512 × 512
+pressure iterations              20
+velocity retention / frame       0.962 at 60 Hz
+dye retention / frame            0.988 at 60 Hz
+curl strength                     0
+splat force                       5900
+Gaussian radius parameter         0.00006
+reveal gain                       3.9
+threshold                         0.50 → 0.51
+half-float render targets         yes
+DPR cap in reference              2
 ```
 
-It launches local Chrome/Chromium through CDP and records publicly delivered WebGL characteristics under `.diagnostics/`, including program/shader metadata, uniform names, framebuffer/texture allocations and draw-call structure. Captured shader text is analysis-only and must not be transplanted into Weberaise.
+Reference research/spec:
+- `docs/superpowers/specs/2026-08-31-nothin-reveal-fidelity-design.md`
 
-Reference:
-- `docs/reference/NOTHIN_RUNTIME_PROBE.md`
+Execution plan:
+- `docs/superpowers/plans/2026-08-31-nothin-fluid-reveal-rebuild.md`
 
-### Offline prototype
-`prototype/reveal-engine.js` mirrors the age-aware implicit-field model rather than the old density-feedback implementation.
+## Current interactive reveal architecture
 
-## Verification evidence
+The old production model has been removed from the active reveal path.
 
-### Latest loader/inertia correction
-A focused pre-change reproduction confirmed the loader digit animation duration was longer than the early countdown cadence, explaining the repeated restart/jumpy feel.
+Removed:
+- `LiquidPrimitive[]` CPU history;
+- instanced rounded field contributions;
+- additive metaball construction;
+- radius-contraction healing;
+- `liquidRadiusScale()`;
+- `createInertialAfterglide()`;
+- synthetic rogue satellite droplets;
+- interactive contour sine warp;
+- primitive lifetime module/test.
 
-After the latest correction:
-- focused timing/inertia contract script: **PASS**;
-- strict TypeScript compile of updated `countdownTiming.ts`, `inertia.ts`, and reveal sample types: **PASS**;
-- GitHub source inspection confirms the pre-hidden tagline, reduced line offset, line recenter-before-rotation, 24px vertical overscan, and black Explore-under-compositor stacking are present.
+Current full/lite model:
 
-### Earlier reveal-core verification
-The age-aware implicit liquid core previously verified:
-- pure lifetime behavior: 2/2 pass;
-- dependency-free TypeScript compile: pass;
-- field/composite GLSL compile + link in Chromium WebGL2: pass;
-- synthetic render: solid interior, rounded endpoint, geometric contraction, no fog halo.
+```text
+Pointer / touch / autonomous input
+→ PointerTracker interpolation
+→ one-time Gaussian velocity + dye splats
+→ velocity advection
+→ dye advection
+→ divergence
+→ pressure Jacobi solve
+→ pressure-gradient subtraction
+→ persistent dye field
+→ gain + narrow threshold
+→ existing WEBERAISE difference compositor
+```
 
-## Verification still required on the user's network-enabled machine
+The visible contour is produced by the simulated dye field itself rather than by procedural boundary noise.
 
-After pulling the latest branch, run:
+## GPU implementation
+
+New focused modules:
+
+- `src/webgl/reveal/fluid/types.ts`
+- `src/webgl/reveal/fluid/gl.ts`
+- `src/webgl/reveal/fluid/renderTargets.ts`
+- `src/webgl/reveal/fluid/shaders.ts`
+
+`RevealEngine.ts` now owns:
+
+```text
+velocity    double RGBA16F
+pressure    double RGBA16F
+dye        double RGBA16F
+divergence single RGBA16F
+```
+
+Fluid shader programs:
+
+1. Gaussian splat;
+2. advection;
+3. divergence;
+4. pressure Jacobi;
+5. pressure-gradient subtraction;
+6. final WEBERAISE composite.
+
+Curl/vorticity is intentionally omitted because the directly inspected Nothin production setting is `curlStrength = 0`.
+
+## Quality profiles
+
+### Full
+
+```text
+simulation resolution     256
+dye resolution            512
+pressure iterations       20
+display DPR cap           2
+velocity retention 60 Hz  0.962
+dye retention 60 Hz       0.988
+splat radius              0.00006
+splat force               5900
+reveal gain               3.9
+threshold start           0.50
+threshold width           0.01
+velocity enabled          yes
+```
+
+### Lite
+
+```text
+simulation resolution     128
+dye resolution            256
+pressure iterations       10
+display DPR cap           1.25
+same retention / threshold semantics
+velocity enabled          yes
+```
+
+### Reduced motion
+
+```text
+simulation resolution     96
+dye resolution            192
+pressure iterations       0
+display DPR cap           1
+velocity injection        disabled
+persistent dye reveal     enabled
+```
+
+### Fallback
+
+If WebGL2 or the required renderable half-float path cannot initialize, `createRevealEngine()` returns `null` and the existing CSS reveal/fill fallback is used.
+
+## Timing improvement over the reference
+
+Nothin's shipped dissipation values are frame-based. WEBERAISE retains the same 60 Hz appearance but converts them to elapsed-time-corrected retention.
+
+This prevents 120 Hz displays from healing materially faster than 60 Hz displays.
+
+Long hidden-tab gaps are not simulated. The frame-time anchor resets while `document.hidden` is true.
+
+## Pointer / touch behavior
+
+The previous synthetic afterglide path is gone.
+
+Current behavior:
+- pointer interpolation spacing remains `0.022`;
+- tracker max velocity remains `1.85`;
+- existing sample radius values remain as input-contract data but full fluid mode uses the solver `splatRadius`;
+- interpolated displacement is split across splats so path interpolation does not multiply total momentum;
+- residual movement comes from the persistent velocity texture;
+- new pointer/touch contact resets interpolation and engine delta history only;
+- persistent fluid state is not cleared between contacts;
+- mouse, pen and touch pointer movement use the same simulation input path;
+- `pointerup`, `pointercancel` and `pointerleave` reset stream history to prevent discontinuity jumps.
+
+## Autonomous reveal
+
+The existing short autonomous hero stroke remains.
+
+It still:
+- uses `createHeroAutonomousStroke()`;
+- runs over approximately `0.64s`;
+- crosses the intended lower brand region;
+- uses the same `RevealSample` input contract.
+
+Its samples now deposit dye/velocity into the real simulation instead of becoming visible circle primitives.
+
+## EXPLORE compatibility
+
+The public `RevealEngine` contract used by the hero is preserved.
+
+Before EXPLORE bottom-fill:
+
+```text
+engine.clear()
+engine.setBottomFillProgress(0)
+engine.setMode('bottomFill')
+```
+
+In `bottomFill` mode the expensive fluid solver is skipped. The existing authored black crest remains responsible for the hero-to-main transition.
+
+## Loader warm-up
+
+`warmRevealEngine()` now validates the actual fluid path rather than only importing the reveal module.
+
+Warm-up uses a small display canvas while allocating the real quality-profile solver resources. It:
+- constructs the engine;
+- verifies WebGL2 and `EXT_color_buffer_float`;
+- allocates RGBA16F targets;
+- compiles/links fluid programs;
+- runs `prime()`;
+- disposes the temporary engine.
+
+The existing loader `hero-code` critical task and weight are preserved.
+
+## Tests changed with the architecture
+
+Added:
+- `tests/fluid-reveal.test.mjs`
+
+Removed:
+- `tests/liquid-lifetime.test.mjs`
+
+Updated reveal-related contracts now assert:
+- Nothin baseline quality constants;
+- refresh-rate-independent timing math;
+- half-float ping-pong targets;
+- splat/advection/divergence/pressure/gradient shader suite;
+- persistent fluid ownership in `RevealEngine`;
+- no metaball primitive engine;
+- no interactive contour warp;
+- no synthetic afterglide;
+- touch input lifecycle/reset boundaries;
+- existing EXPLORE and loader behavior remains intact.
+
+Several stale historical loader/hero assertions were also aligned with the already-approved current `main` behavior rather than modifying working production UI to satisfy obsolete tests.
+
+## Verification evidence completed in this environment
+
+The current environment cannot obtain a complete GitHub checkout through the local container because external repository DNS resolution is blocked. Therefore a full project `npm test`, Next typecheck and Next build cannot honestly be claimed here.
+
+The new reveal core was independently reconstructed into a verification harness and checked directly.
+
+### TypeScript
+
+- fluid quality/timing/render-target modules: compile pass;
+- full `RevealEngine` + shader imports: compile pass.
+
+### Real Chromium WebGL2
+
+Verified through Chromium's DevTools runtime:
+
+```text
+WebGL2 context                      available
+EXT_color_buffer_float            available
+SPLAT_FRAGMENT                    compile/link pass
+ADVECTION_FRAGMENT                compile/link pass
+DIVERGENCE_FRAGMENT               compile/link pass
+PRESSURE_FRAGMENT                 compile/link pass
+GRADIENT_SUBTRACT_FRAGMENT        compile/link pass
+COMPOSITE_FRAGMENT                compile/link pass
+RGBA16F framebuffer               COMPLETE
+full pressure-solver frame        executed
+final gl.getError()               0
+```
+
+### Synthetic material sanity test
+
+A sequence of interpolated splats was rendered through the actual fluid pass graph using an S-shaped path.
+
+Observed result:
+- connected elongated material;
+- directional deformation;
+- bending/shearing through the path;
+- tapering/irregular edge behavior;
+- no visible chain-of-circular-metaballs construction.
+
+This confirms the core geometry model has moved into the intended Nothin-like directional-fluid family.
+
+## Verification still required before merge
+
+On a normal network-enabled checkout of this branch:
 
 ```bash
-npm install
+npm ci
 npm test
 npm run typecheck
 npm run build
+git diff --check
 npm run dev
 ```
 
-Then visually check:
-- EXPLORE is black on the untouched white hero and white only inside the liquid reveal;
-- horizontal loader line sits closer to the zero/tagline;
-- tagline never flashes before its intended entrance;
-- rotated vertical line reaches past both top and bottom viewport edges;
-- a fast mouse stop produces only a few visible rogue forward patches rather than moving the entire blob;
-- slow stops produce essentially no inertia;
-- digit changes crossfade softly without vertical jumping;
-- 10→0 progressively slows and `0` visibly rests before the line begins;
-- countdown zero does not jump when it becomes the completion zero.
+Then compare the complete WEBERAISE hero against the supplied/local Nothin reference with the same deliberate paths:
 
-Optional Nothin diagnostic:
-
-```bash
-npm run probe:nothin
+```text
+straight medium-speed stroke
+fast diagonal stroke
+slow 90° turn
+S-curve
+tight loop/self-overlap
+fast stroke then 3-second stop
+second stroke through an aging first stroke
+touch drag on a coarse-pointer device
 ```
 
-## Visual acceptance checklist
-- no smoke/fog tail;
-- no broad translucent residue;
-- proper rounded terminal blob;
-- smaller normal reveal radius;
-- visible but sparse velocity-based rogue patches after meaningful motion;
-- main blob remains anchored when pointer stops;
-- solid trail during hold stage;
-- oldest region retracts geometrically;
-- bridges may pinch naturally;
-- detached remnants stay rounded;
-- fast pointer path remains continuous;
-- front/back typography registration remains exact;
-- countdown/completion zero registration remains exact;
-- autonomous reveal still exposes the intended brand area;
-- Explore transition still hands directly into black First Impression.
+Acceptance:
+- no circle-chain construction;
+- movement direction stretches/deforms the surface;
+- dye continues moving briefly after pointer stops;
+- velocity damps rather than swimming indefinitely;
+- reveal interior remains solid;
+- edge remains narrow and clean;
+- no animated contour-noise crawl;
+- no fog halo;
+- healing occurs through dye loss/deformation rather than shrinking circles;
+- hero text/logo registration remains exact;
+- touch gestures do not jump between contacts;
+- EXPLORE handoff remains seamless;
+- no performance regression outside the hero.
 
-## Next design phase
+Do not retune the baseline constants until this comparison identifies a specific mismatch.
 
-Once this intro refinement is accepted, continue with **First Impression** art direction/copy/entrance, then Selected Work. Navigation remains intentionally undecided.
+## Merge gate
+
+This branch should not merge into `main` until all of the following are true:
+
+```text
+[ ] npm test passes
+[ ] npm run typecheck passes
+[ ] npm run build passes
+[ ] git diff --check passes
+[ ] full desktop hero visually matches the Nothin material family
+[ ] lite/mobile hero remains responsive
+[ ] reduced-motion path remains usable
+[ ] touch drag works without inter-gesture jumps
+[ ] forced fluid capability failure uses CSS fallback cleanly
+[ ] hidden-tab resume is stable
+[ ] EXPLORE transition remains correct
+[ ] branch diff contains no unrelated site changes
+```
