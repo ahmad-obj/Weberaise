@@ -3,32 +3,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { createInertialAfterglide } from '../src/webgl/reveal/inertia.ts';
 import { countdownDelay, FINAL_ZERO_HOLD_MS } from '../src/experience/loading/countdownTiming.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
-
-test('inertial afterglide advances a fast pointer briefly, decays, and stays bounded', () => {
-  const emissions = createInertialAfterglide({
-    x: 0.5,
-    y: 0.5,
-    vx: 1.4,
-    vy: 0.2,
-    radius: 0.085,
-    strength: 1,
-  });
-  assert.ok(emissions.length >= 4 && emissions.length <= 8);
-  assert.ok(emissions.at(-1).delayMs <= 450);
-  assert.ok(emissions.some((entry) => entry.sample.x > 0.5));
-  assert.ok(emissions.at(-1).sample.radius < emissions[0].sample.radius);
-  assert.ok(emissions.at(-1).sample.strength < emissions[0].sample.strength);
-});
-
-test('inertial afterglide is negligible for a nearly stationary pointer', () => {
-  const emissions = createInertialAfterglide({ x: 0.4, y: 0.4, vx: 0.03, vy: 0.02, radius: 0.085 });
-  assert.equal(emissions.length, 0);
-});
 
 test('countdown cadence slows progressively toward zero and holds zero', () => {
   assert.ok(countdownDelay(70, 0, false) < countdownDelay(20, 0, false));
@@ -38,11 +16,11 @@ test('countdown cadence slows progressively toward zero and holds zero', () => {
   assert.ok(FINAL_ZERO_HOLD_MS >= 600 && FINAL_ZERO_HOLD_MS <= 750);
 });
 
-test('hero uses the smaller pointer radius and schedules inertia on idle', () => {
+test('hero keeps the approved tight pointer sampling geometry', () => {
   const canvas = read('src/components/experience/Hero/HeroRevealCanvas.tsx');
-  assert.match(canvas, /root\.clientWidth < 720 \? 0\.11 : 0\.085/);
-  assert.match(canvas, /createInertialAfterglide/);
-  assert.match(canvas, /afterglide/i);
+  assert.match(canvas, /root\.clientWidth < 720 \? 0\.10 : 0\.078/);
+  assert.match(canvas, /maxSpacing:\s*0\.022/);
+  assert.match(canvas, /maxVelocity:\s*1\.85/);
 });
 
 test('loader zero shares typography contract with completion zero and transition is smoother', () => {
