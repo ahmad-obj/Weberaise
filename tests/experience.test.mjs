@@ -261,7 +261,7 @@ test('quality profiles preserve the fluid model while degrading intentionally', 
   assert.equal(fallback.mode, 'fallback');
 });
 
-test('reveal engine owns persistent pressure-projected fluid state', () => {
+test('reveal engine owns persistent pressure-projected fluid state and coalesces input per frame', () => {
   const engine = readProject('src/webgl/reveal/RevealEngine.ts');
   const shaders = readProject('src/webgl/reveal/shaders.ts');
   assert.match(engine, /velocity/);
@@ -269,9 +269,11 @@ test('reveal engine owns persistent pressure-projected fluid state', () => {
   assert.match(engine, /pressure/);
   assert.match(engine, /divergence/);
   assert.match(engine, /pressureIterations/);
-  assert.match(engine, /pendingSplats/);
+  assert.match(engine, /pendingSample/);
+  assert.match(engine, /samples\.at\(-1\)/);
+  assert.match(engine, /applyPendingSplat/);
   assert.match(engine, /resetInputStream/);
-  assert.doesNotMatch(engine, /LiquidPrimitive|liquidRadiusScale|drawArraysInstanced|primitives/);
+  assert.doesNotMatch(engine, /pendingSplats|LiquidPrimitive|liquidRadiusScale|drawArraysInstanced|primitives/);
   assert.match(shaders, /uDye/);
   assert.doesNotMatch(shaders, /FIELD_VERTEX|FIELD_FRAGMENT|uContourWarp/);
 });
