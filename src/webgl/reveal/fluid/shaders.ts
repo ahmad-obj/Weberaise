@@ -133,13 +133,9 @@ void main() {
   float lateralProfile = (left - right) * uLateralStrength;
   float upward = mix(uVelocityBase, uVelocityPeak, drive) * verticalProfile;
 
-  vec3 dyeInjection = vec3(sourceBand * uDyeStrength);
-  vec3 velocityInjection = vec3(
-    sourceBand * lateralProfile,
-    sourceBand * upward,
-    0.0
-  );
-
-  vec3 injection = mix(dyeInjection, velocityInjection, step(0.5, uVelocityPass));
-  outColor = vec4(base + injection, 1.0);
+  vec3 dyeDriven = base + vec3(sourceBand * uDyeStrength);
+  vec3 velocityTarget = vec3(lateralProfile, upward, 0.0);
+  vec3 velocityDriven = mix(base, velocityTarget, sourceBand);
+  vec3 result = mix(dyeDriven, velocityDriven, step(0.5, uVelocityPass));
+  outColor = vec4(result, 1.0);
 }`;
