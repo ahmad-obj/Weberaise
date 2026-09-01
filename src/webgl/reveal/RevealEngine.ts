@@ -1,7 +1,9 @@
 import { COMPOSITE_FRAGMENT, FULLSCREEN_VERTEX } from './shaders';
+import { EXIT_FLUID_CONFIG, clampExitProgress } from './exitFluid';
 import {
   ADVECTION_FRAGMENT,
   DIVERGENCE_FRAGMENT,
+  EXIT_SOURCE_FRAGMENT,
   FLUID_VERTEX,
   GRADIENT_SUBTRACT_FRAGMENT,
   PRESSURE_FRAGMENT,
@@ -25,7 +27,7 @@ import { referenceFrameScale, retentionFromReferenceFrame } from './math';
 import type { RevealQuality } from './quality';
 import type { RevealSample } from './emitters/types';
 
-export type RevealMode = 'reveal' | 'bottomFill' | 'disabled';
+export type RevealMode = 'reveal' | 'fluidExit' | 'disabled';
 export type RevealLayers = { brand: TexImageSource };
 
 function createBrandTexture(gl: WebGL2RenderingContext): WebGLTexture {
@@ -90,6 +92,7 @@ export class RevealEngine {
   readonly gl: WebGL2RenderingContext;
 
   private readonly splatProgram: ProgramBundle;
+  private readonly exitSourceProgram: ProgramBundle;
   private readonly advectionProgram: ProgramBundle;
   private readonly divergenceProgram: ProgramBundle;
   private readonly pressureProgram: ProgramBundle;
@@ -110,7 +113,7 @@ export class RevealEngine {
   private running = false;
   private raf = 0;
   private mode: RevealMode = 'reveal';
-  private fillProgress = 0;
+  private exitProgress = 0;
   private cssWidth = 1;
   private cssHeight = 1;
 
@@ -134,6 +137,7 @@ export class RevealEngine {
     this.gl = gl;
 
     this.splatProgram = createProgram(gl, FLUID_VERTEX, SPLAT_FRAGMENT);
+    this.exitSourceProgram = createProgram(gl, FLUID_VERTEX, EXIT_SOURCE_FRAGMENT);
     this.advectionProgram = createProgram(gl, FLUID_VERTEX, ADVECTION_FRAGMENT);
     this.divergenceProgram = createProgram(gl, FLUID_VERTEX, DIVERGENCE_FRAGMENT);
     this.pressureProgram = createProgram(gl, FLUID_VERTEX, PRESSURE_FRAGMENT);
@@ -177,17 +181,11 @@ export class RevealEngine {
   emit(samples: readonly RevealSample[]) {
     if (this.mode !== 'reveal' || samples.length === 0) return;
 
-    // Nothin's production loop stores the latest pointer position and injects
-    // once per RAF. Coalescing here prevents high-frequency pointer events or
-    // interpolation from multiplying dye/velocity passes within one frame.
     const latest = samples.at(-1);
     if (latest) this.pendingSample = latest;
   }
 
   resetInputStream() {
-    // Do not discard a sample already queued for the next RAF. A pointerup or
-    // touchend can arrive before that frame; dropping it would erase the final
-    // visible deposit. Only displacement history is discontinuous across contacts.
     this.lastInputPoint = null;
   }
 
@@ -201,12 +199,12 @@ export class RevealEngine {
     }
   }
 
-  setBottomFillProgress(progress: number) {
-    this.fillProgress = Math.min(1, Math.max(0, progress));
+  setExitProgress(progress: number) {
+    this.exitProgress = clampExitProgress(progress);
   }
 
-  getBottomFillProgress() {
-    return this.fillProgress;
+  getExitProgress() {
+    return this.exitProgress;
   }
 
   clear() {
@@ -222,6 +220,7 @@ export class RevealEngine {
     this.pendingSample = null;
     this.lastInputPoint = null;
     this.lastFrameTime = null;
+    this.exitProgress = 0;
   }
 
   start() {
@@ -240,7 +239,7 @@ export class RevealEngine {
   prime() {
     this.lastFrameTime = null;
     this.stepFluid(0);
-    this.renderComposite(0);
+    this.renderComposite();
     this.lastFrameTime = null;
   }
 
@@ -254,8 +253,8 @@ export class RevealEngine {
     }
 
     const now = nowMilliseconds / 1000;
-    if (this.mode === 'reveal') this.stepFluid(now);
-    this.renderComposite(now);
+    if (this.mode === 'reveal' || this.mode === 'fluidExit') this.stepFluid(now);
+    this.renderComposite();
     this.raf = requestAnimationFrame(this.frame);
   };
 
@@ -313,6 +312,22 @@ export class RevealEngine {
       ]);
     }
     this.applySplat(this.dye, splat, [splat.strength, splat.strength, splat.strength]);
+  }
+
+  private applyExitSource(target: DoubleFluidTarget, velocityPass: boolean) {
+    const gl = this.gl;
+    const program = this.exitSourceProgram;
+    this.drawProgram(program, target.write);
+    bindTextureUnit(gl, program, 'uTarget', target.read.texture, 0);
+    gl.uniform1f(getUniform(gl, program, 'uExitProgress'), this.exitProgress);
+    gl.uniform1f(getUniform(gl, program, 'uVelocityPass'), velocityPass ? 1 : 0);
+    gl.uniform1f(getUniform(gl, program, 'uSourceBandTop'), EXIT_FLUID_CONFIG.sourceBandTop);
+    gl.uniform1f(getUniform(gl, program, 'uDyeStrength'), EXIT_FLUID_CONFIG.dyeStrength);
+    gl.uniform1f(getUniform(gl, program, 'uVelocityBase'), EXIT_FLUID_CONFIG.velocityBase);
+    gl.uniform1f(getUniform(gl, program, 'uVelocityPeak'), EXIT_FLUID_CONFIG.velocityPeak);
+    gl.uniform1f(getUniform(gl, program, 'uLateralStrength'), EXIT_FLUID_CONFIG.lateralStrength);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    target.swap();
   }
 
   private advect(
@@ -402,7 +417,12 @@ export class RevealEngine {
       60,
     );
 
-    this.applyPendingSplat();
+    if (this.mode === 'reveal') {
+      this.applyPendingSplat();
+    } else if (this.mode === 'fluidExit') {
+      if (this.quality.enableVelocity) this.applyExitSource(this.velocity, true);
+      this.applyExitSource(this.dye, false);
+    }
 
     if (!this.quality.enableVelocity) {
       this.advect(this.dye, this.velocity.read.texture, dtFrames, dyeDissipation);
@@ -416,7 +436,7 @@ export class RevealEngine {
     this.subtractPressureGradient();
   }
 
-  private renderComposite(time: number) {
+  private renderComposite() {
     const gl = this.gl;
     const program = this.compositeProgram;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -430,12 +450,9 @@ export class RevealEngine {
     gl.uniform1f(getUniform(gl, program, 'uRevealGain'), this.quality.revealGain);
     gl.uniform1f(getUniform(gl, program, 'uEdgeSoftness'), this.quality.edgeSoftness);
     gl.uniform1f(getUniform(gl, program, 'uEdgeWidth'), this.quality.edgeWidth);
-    gl.uniform1f(getUniform(gl, program, 'uTime'), time);
-    gl.uniform1f(getUniform(gl, program, 'uFillProgress'), this.fillProgress);
-    gl.uniform1f(
-      getUniform(gl, program, 'uFillEnabled'),
-      this.mode === 'bottomFill' ? 1 : 0,
-    );
+    gl.uniform1f(getUniform(gl, program, 'uExitProgress'), this.exitProgress);
+    gl.uniform1f(getUniform(gl, program, 'uExitEnabled'), this.mode === 'fluidExit' ? 1 : 0);
+    gl.uniform1f(getUniform(gl, program, 'uExitSealStart'), EXIT_FLUID_CONFIG.sealStart);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
@@ -450,6 +467,7 @@ export class RevealEngine {
     gl.deleteBuffer(this.fullscreenBuffer);
     gl.deleteVertexArray(this.fullscreenVao);
     gl.deleteProgram(this.splatProgram.program);
+    gl.deleteProgram(this.exitSourceProgram.program);
     gl.deleteProgram(this.advectionProgram.program);
     gl.deleteProgram(this.divergenceProgram.program);
     gl.deleteProgram(this.pressureProgram.program);
