@@ -229,16 +229,17 @@ button, input { font: inherit; }
   min-width: 152px;
   min-height: 48px;
   padding: 6px 7px 6px 18px;
-  border: 1px solid rgba(255, 255, 255, .36);
-  border-radius: 14px;
-  background: rgba(7, 9, 13, .84);
+  border: 1px solid rgba(255, 255, 255, .48);
+  border-radius: 16px;
+  background: rgba(5, 7, 10, .90);
   color: #fff;
   -webkit-backdrop-filter: blur(12px) saturate(.9);
   backdrop-filter: blur(12px) saturate(.9);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, .24),
-    0 12px 30px rgba(0, 0, 0, .20),
-    inset 0 1px 0 rgba(255, 255, 255, .09);
+    0 0 0 1px rgba(255, 255, 255, .08),
+    0 14px 34px rgba(0, 0, 0, .24),
+    inset 0 1px 0 rgba(255, 255, 255, .12);
+  isolation: isolate;
   overflow: hidden;
   font: 750 11px/1 var(--font-body), Arial, sans-serif;
   letter-spacing: .16em;
@@ -254,7 +255,7 @@ button, input { font: inherit; }
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,0) 58%);
+  background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,0) 58%);
   pointer-events: none;
 }
 .hero-explore__label,
@@ -285,13 +286,13 @@ button, input { font: inherit; }
 }
 .hero-explore:hover,
 .hero-explore:focus-visible {
-  transform: translateX(-50%) translateY(-2px);
-  background: rgba(9, 11, 16, .92);
-  border-color: rgba(255,255,255,.52);
+  transform: translateX(-50%) translateY(-2px) scale(1.012);
+  background: rgba(7, 9, 13, .96);
+  border-color: rgba(255,255,255,.68);
   box-shadow:
-    0 0 0 1px rgba(0,0,0,.26),
-    0 16px 36px rgba(0,0,0,.22),
-    inset 0 1px 0 rgba(255,255,255,.12);
+    0 0 0 1px rgba(255,255,255,.11),
+    0 17px 38px rgba(0,0,0,.26),
+    inset 0 1px 0 rgba(255,255,255,.16);
 }
 .hero-explore:hover .hero-explore__icon,
 .hero-explore:focus-visible .hero-explore__icon {
