@@ -23,6 +23,14 @@ function fontReady(): Promise<void> {
   return document.fonts.ready.then(() => undefined);
 }
 
+async function warmHeroCode(): Promise<void> {
+  const [, revealModule] = await Promise.all([
+    import('@/components/experience/Hero/Hero'),
+    import('@/webgl/reveal/createRevealEngine'),
+  ]);
+  await revealModule.warmRevealEngine();
+}
+
 export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: LoaderProps) {
   const progress = useRef(createProgressController());
   const [display, setDisplay] = useState(100);
@@ -35,7 +43,7 @@ export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: Lo
     () => createCriticalAssetRegistry([
       { id: 'fonts', weight: 3, run: fontReady },
       { id: 'brand', weight: 1, run: () => preloadImage('/brand/weberaise-horizontal-on-dark.svg') },
-      { id: 'hero-code', weight: 2, run: () => import('@/webgl/reveal/createRevealEngine').then((module) => module.warmRevealEngine()).catch(() => undefined) },
+      { id: 'hero-code', weight: 2, run: warmHeroCode },
     ]),
     [],
   );
