@@ -10,17 +10,23 @@ test('WorkSphere redraw invalidation preserves all visual-change causes', () => 
   assert.equal(shouldDrawWorkFrame({ transformChanged: false, mediaChanged: false, force: true }), true);
 });
 
-test('WorkSphere keeps RAF cadence and forces the asynchronously prepared initial media frame', async () => {
-  const [engine, media] = await Promise.all([
+test('WorkSphere keeps RAF cadence and invalidates every visible-state path', async () => {
+  const [engine, media, page] = await Promise.all([
     readFile(new URL('../src/webgl/workSphere/WorkSphereEngine.ts', import.meta.url), 'utf8'),
     readFile(new URL('../src/webgl/workSphere/mediaPool.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/WorkPage/WorkPage.tsx', import.meta.url), 'utf8'),
   ]);
 
   assert.match(engine, /const mediaChanged = this\.mediaPool\.uploadReadyFrames\(\);/);
   assert.match(engine, /shouldDrawWorkFrame\(\{ transformChanged, mediaChanged, force: this\.forceRender \}\)/);
   assert.match(engine, /this\.scheduleFrame\(\);\n\s*};/);
-  assert.match(engine, /\.prepareInitial\([\s\S]*?\.finally\(\(\) => \{\n\s*this\.forceRender = true;\n\s*this\.callbacks\.onReady\?\.\(\);\n\s*\}\);/);
+  assert.match(engine, /setEntranceProgress\(progress: number\)[\s\S]*?this\.forceRender = true;/);
+  assert.match(engine, /getResolveStatus\(\)[\s\S]*?this\.freezeOrientation = true;\n\s*this\.forceRender = true;/);
+
   assert.match(media, /uploadReadyFrames\(\): boolean/);
   assert.match(media, /changed = true;/);
   assert.match(media, /return changed;/);
+
+  assert.match(page, /<WorkOpening[\s\S]*?ready=\{!projects\.length \|\| sphereReady \|\| capabilityFailed\}/);
+  assert.match(page, /state\.phase !== 'sphereEntering'[\s\S]*?sphere\.setEntranceProgress\(0\)/);
 });
