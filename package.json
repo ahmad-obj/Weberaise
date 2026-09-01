@@ -8,7 +8,8 @@
     "start": "next start",
     "test": "node --import=tsx --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
-    "probe:nothin": "node scripts/probe-nothin-webgl.mjs --headed"
+    "probe:nothin": "node scripts/probe-nothin-webgl.mjs --headed",
+    "perf:capture": "node scripts/capture-performance-qa.mjs"
   },
   "dependencies": {
     "framer-motion": "12.43.0",
