@@ -46,14 +46,14 @@ test('interactive composite thresholds dye without animated contour noise', () =
   assert.doesNotMatch(shader, /uContourWarp|contourWave/);
 });
 
-test('full quality profile encodes the confirmed Nothin fluid baseline', () => {
+test('full quality profile preserves the approved WEBERAISE fluid profile', () => {
   const quality = read('src/webgl/reveal/quality.ts');
   assert.match(quality, /simResolution:\s*256/);
   assert.match(quality, /dyeResolution:\s*512/);
   assert.match(quality, /pressureIterations:\s*20/);
   assert.match(quality, /velocityRetention60:\s*0\.962/);
   assert.match(quality, /dyeRetention60:\s*0\.988/);
-  assert.match(quality, /splatForce:\s*5900/);
+  assert.match(quality, /splatForce:\s*11800/);
   assert.match(quality, /revealGain:\s*3\.9/);
 });
 
