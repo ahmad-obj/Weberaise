@@ -2,102 +2,77 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make the hero EXPLORE control clearly actionable and replace the old sine-wave bottom fill with a solver-driven black fluid flood that rises from below and hands off seamlessly to the existing main/ribbon experience.
+**Goal:** Make EXPLORE visibly actionable without over-designing it, then replace the old sine-wave upward wipe with a solver-driven black fluid flood that rises from below and hands off seamlessly to the existing ribbon/main experience.
 
-**Architecture:** Keep the CTA as a DOM/CSS concern, but move its wrapper above the reveal compositor and use difference blending for automatic black/white contrast. Replace `bottomFill` with a `fluidExit` mode inside the existing `RevealEngine`; a dedicated fullscreen source pass continuously injects bottom-band velocity and dye, then the existing advection + pressure pipeline produces the evolving front. The composite shader renders thresholded exit dye as black and uses only a final 6% global seal to guarantee a fully black handoff.
+**Architecture:** Keep the CTA entirely in DOM/CSS, raise it above the reveal compositor, and use difference blending for automatic contrast. Replace `bottomFill` with a `fluidExit` mode in the existing `RevealEngine`; one fullscreen source pass is applied to velocity and one to dye each solver frame, then the existing advection + pressure pipeline creates the front. The compositor renders exit dye as black and uses only a final `0.94 → 1.0` global seal to guarantee a fully black handoff.
 
-**Tech Stack:** Next.js 16.3, React 19.2.8, TypeScript 7.0.2, GSAP 3.15, custom WebGL2/GLSL ES 3.00, Node test runner + `tsx`.
+**Tech Stack:** Next.js 16.3, React 19.2.8, TypeScript 7.0.2, GSAP 3.15, custom WebGL2 / GLSL ES 3.00, Node test runner + `tsx`.
 
 **Spec:** `docs/superpowers/specs/2026-09-01-explore-cta-fluid-exit-design.md`
 
 ## Global Constraints
 
-- WEBERAISE interactive reveal constants and pointer behavior must not change.
-- No glow, blue gradient, glassmorphism, pill button, bounce, or large CTA scale animation.
-- No new animation or rendering dependency.
-- No periodic sine/noise formula may control the visible exit edge.
-- Reuse existing velocity, dye, pressure, divergence, and solver render targets; do not raise solver/dye resolution.
-- `fluidExit` runs only for normal motion with a velocity-capable engine; reduced motion and WebGL failure use the DOM fallback.
-- Exit must be fully black before the existing `onExploreComplete`/main-ribbon handoff fires.
-- The final completion seal may begin only at exit progress `0.94` and must reach full black at `1.0`.
-- The EXPLORE target must remain at least `44px` high for touch affordance.
+- Do not change the approved interactive reveal pointer behavior, radius, force, dissipation, pressure iterations, threshold, or timing.
+- No glow, blue gradient, glassmorphism, pill CTA, bounce, or large scale animation.
+- No new animation/rendering dependency.
+- No `sin`, periodic wave, FBM, simplex, or hash noise may control the visible exit front.
+- Reuse existing velocity/dye/pressure/divergence render targets; do not raise simulation resolution.
+- `fluidExit` runs only when motion is normal and the engine has velocity enabled.
+- Reduced motion and engine failure use the existing DOM fallback layer, simplified to a plain black fill.
+- Viewport must be fully black before `onExploreComplete` fires.
+- EXPLORE must remain at least `44px` high.
+- Do not merge this branch without explicit user instruction.
 
 ---
 
-## File Structure
+## File Map
 
-### New
+**Create**
+- `src/webgl/reveal/exitFluid.ts` — exit-only solver constants + progress clamp.
+- `tests/explore-fluid-exit.test.mjs` — focused CTA/exit source contract.
 
-- `src/webgl/reveal/exitFluid.ts`
-  - Owns the exit-fluid numeric configuration and progress clamp helper.
-  - Keeps physics/coverage constants out of `RevealEngine.ts` and out of shader string literals where practical.
-- `tests/explore-fluid-exit.test.mjs`
-  - Focused source-contract tests for CTA affordance, engine mode, shader source pass, timeline selection, fallback, and removal of analytic bottom fill.
-
-### Modified
-
+**Modify**
 - `src/app/globals.css`
-  - EXPLORE frame/hover/active/focus treatment.
-  - Raise EXPLORE wrapper above reveal canvas/vignette.
-  - `fluidExit` canvas blend mode.
-  - Simplify `.hero-exit-fill` into a plain reliable fallback.
 - `src/webgl/reveal/fluid/shaders.ts`
-  - Add `EXIT_SOURCE_FRAGMENT`.
 - `src/webgl/reveal/shaders.ts`
-  - Remove analytic sine crest and bottom-fill uniforms.
-  - Add solver-dye exit compositing and completion seal.
 - `src/webgl/reveal/RevealEngine.ts`
-  - Add source program, `fluidExit` mode, exit progress API, per-frame source injection, and disposal.
 - `src/experience/motion/exploreTimeline.ts`
-  - Drive `fluidExit` for eligible engines.
-  - Use DOM fill for reduced motion/engine failure.
-  - Preserve button acknowledgement and existing completion callback.
 - `tests/fluid-reveal.test.mjs`
-  - Add shader/engine contracts for `fluidExit` and source pass.
 - `tests/interaction-polish.test.mjs`
-  - Replace the old black/normal EXPLORE contract with the framed difference-blended CTA contract.
 - `tests/visual-contract.test.mjs`
-  - Repair the stale pre-existing `splatForce: 5900` assertion to the already-approved `11800` profile.
-  - Assert no analytic sine-wave exit remains.
 - `docs/ARCHITECTURE.md`
-  - Record `fluidExit` as a second solver-driven presentation mode.
 - `docs/IMPLEMENTATION_STATUS.md`
-  - Record the new CTA/exit behavior and verification boundary.
 
-### Deleted
-
+**Delete**
 - `src/webgl/reveal/emitters/bottomFillEmitter.ts`
-  - Becomes obsolete once GSAP drives `engine.setExitProgress()` directly.
 
 ---
 
-### Task 1: Restore a truthful test baseline and add the new failing feature contract
+### Task 1: Restore a truthful test baseline and define the new RED contract
 
 **Files:**
 - Create: `tests/explore-fluid-exit.test.mjs`
 - Modify: `tests/visual-contract.test.mjs`
 
 **Interfaces:**
-- Consumes: current production branch state after the approved doubled reveal radius/force changes.
-- Produces: a truthful baseline plus failing contracts that later tasks must satisfy.
+- Consumes: current approved reveal profile.
+- Produces: a clean baseline plus failing CTA/exit tests.
 
-- [ ] **Step 1: Repair the stale force assertion before using the suite as evidence**
+- [ ] **Step 1: Repair the stale force assertion**
 
-Change the existing visual-contract test from the obsolete Nothin force value to the current approved WEBERAISE profile:
+The current visual contract still expects the superseded `5900` force. Change it to:
 
 ```js
 assert.match(quality, /splatForce:\s*11800/);
 ```
 
-Rename that test from wording that implies an untouched Nothin profile to wording such as:
+Rename that test so it does not claim the profile is an untouched Nothin baseline:
 
 ```js
 test('full quality profile preserves the approved WEBERAISE fluid profile', () => {
 ```
 
-Do not change production code in this step.
-
-- [ ] **Step 2: Run the existing reveal/visual contracts to verify the baseline is green**
+- [ ] **Step 2: Verify the existing reveal baseline**
 
 Run:
 
@@ -105,11 +80,11 @@ Run:
 node --import=tsx --test tests/fluid-reveal.test.mjs tests/visual-contract.test.mjs
 ```
 
-Expected: PASS. If another pre-existing assertion fails, stop and classify it as either stale expectation or real regression before touching the feature.
+Expected: PASS before new feature assertions are added.
 
-- [ ] **Step 3: Create the focused feature test with intentionally failing contracts**
+- [ ] **Step 3: Create `tests/explore-fluid-exit.test.mjs`**
 
-Create `tests/explore-fluid-exit.test.mjs` with these initial assertions:
+Use:
 
 ```js
 import test from 'node:test';
@@ -122,6 +97,7 @@ const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
 test('EXPLORE is a framed difference-blended CTA above the reveal compositor', () => {
   const css = read('src/app/globals.css');
+  assert.match(css, /\.hero-explore\s*\{[^}]*min-width:\s*126px/s);
   assert.match(css, /\.hero-explore\s*\{[^}]*min-height:\s*44px/s);
   assert.match(css, /\.hero-explore\s*\{[^}]*border:\s*1px solid currentColor/s);
   assert.match(css, /\.hero-explore\s*\{[^}]*border-radius:\s*4px/s);
@@ -131,7 +107,7 @@ test('EXPLORE is a framed difference-blended CTA above the reveal compositor', (
   assert.match(css, /\[data-hero-explore\][^}]*z-index:\s*7/s);
 });
 
-test('fluid exit replaces analytic bottomFill with a solver-driven source pass', () => {
+test('EXPLORE exit is solver-driven fluid rather than analytic bottomFill', () => {
   const engine = read('src/webgl/reveal/RevealEngine.ts');
   const fluidShaders = read('src/webgl/reveal/fluid/shaders.ts');
   const composite = read('src/webgl/reveal/shaders.ts');
@@ -143,14 +119,15 @@ test('fluid exit replaces analytic bottomFill with a solver-driven source pass',
   assert.match(engine, /exitSourceProgram/);
   assert.match(fluidShaders, /EXIT_SOURCE_FRAGMENT/);
   assert.match(composite, /uExitProgress/);
-  assert.match(composite, /smoothstep\(0\.94,\s*1\.0,\s*uExitProgress\)/);
+  assert.match(composite, /uExitSealStart/);
+  assert.match(composite, /smoothstep\(uExitSealStart,\s*1\.0,\s*clamp\(uExitProgress/);
   assert.doesNotMatch(composite, /sin\s*\(/);
   assert.doesNotMatch(engine, /bottomFill/);
   assert.doesNotMatch(timeline, /bottomFillState|setBottomFillProgress|setMode\('bottomFill'\)/);
 });
 ```
 
-- [ ] **Step 4: Run the new test and verify RED for the intended reasons**
+- [ ] **Step 4: Verify RED**
 
 Run:
 
@@ -158,9 +135,9 @@ Run:
 node --import=tsx --test tests/explore-fluid-exit.test.mjs
 ```
 
-Expected: FAIL because the CTA is still transparent/normal-blended and `fluidExit`/`EXIT_SOURCE_FRAGMENT` do not yet exist.
+Expected: FAIL because the current CTA is unframed/normal-blended and `fluidExit` does not exist.
 
-- [ ] **Step 5: Commit the test baseline**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add tests/visual-contract.test.mjs tests/explore-fluid-exit.test.mjs
@@ -169,7 +146,7 @@ git commit -m "test: define explore CTA and fluid exit contract"
 
 ---
 
-### Task 2: Make EXPLORE clearly button-like without disturbing the hero
+### Task 2: Upgrade EXPLORE affordance without changing hero composition
 
 **Files:**
 - Modify: `src/app/globals.css`
@@ -177,12 +154,12 @@ git commit -m "test: define explore CTA and fluid exit contract"
 - Test: `tests/explore-fluid-exit.test.mjs`
 
 **Interfaces:**
-- Consumes: existing `HeroExploreButton` markup (`.hero-explore`, `.hero-explore__rule`) without requiring new React state.
-- Produces: the final framed CTA visual contract; later timeline work continues fading the existing `[data-hero-explore]` wrapper.
+- Uses the existing `HeroExploreButton` markup and existing GSAP wrapper `[data-hero-explore]`.
+- Produces no new React state or component API.
 
-- [ ] **Step 1: Update the existing interaction test to require the new CTA contract**
+- [ ] **Step 1: Change the existing interaction contract to the new CTA design**
 
-Replace the old assertions that require black text and `mix-blend-mode: normal` with:
+Replace the old assertions requiring `color:#000` and `mix-blend-mode:normal` with:
 
 ```js
 assert.match(css, /\.hero-explore[\s\S]*min-width:\s*126px/);
@@ -193,19 +170,19 @@ assert.match(css, /\.hero-explore[\s\S]*mix-blend-mode:\s*difference/);
 assert.match(css, /\[data-hero-explore\][\s\S]*z-index:\s*7/);
 ```
 
-- [ ] **Step 2: Run the CTA tests and verify RED**
+- [ ] **Step 2: Verify CTA RED**
 
-Run:
+Run only the CTA contract while the fluid-exit contract remains intentionally RED:
 
 ```bash
-node --import=tsx --test tests/interaction-polish.test.mjs tests/explore-fluid-exit.test.mjs
+node --import=tsx --test --test-name-pattern="EXPLORE is a framed" tests/explore-fluid-exit.test.mjs
 ```
 
-Expected: FAIL on the old transparent/unframed styling.
+Expected: FAIL.
 
-- [ ] **Step 3: Implement the restrained CTA styling**
+- [ ] **Step 3: Implement the CTA styling**
 
-Replace the current `.hero-explore` block and related hover rules with this behavior:
+Replace the current EXPLORE styling with:
 
 ```css
 .hero-explore {
@@ -221,7 +198,7 @@ Replace the current `.hero-explore` block and related hover rules with this beha
   padding: 9px 18px 8px;
   border: 1px solid currentColor;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0);
+  background: rgba(255,255,255,0);
   color: #fff;
   mix-blend-mode: difference;
   font: 700 11px/1 var(--font-body), Arial, sans-serif;
@@ -254,13 +231,9 @@ Replace the current `.hero-explore` block and related hover rules with this beha
 .hero-explore:active {
   transform: translateX(-50%) translateY(0) scale(.985);
 }
-
-.hero-explore:disabled {
-  cursor: default;
-}
 ```
 
-Keep focus-visible outline support. Change the wrapper layer to:
+Keep the existing focus-visible outline. Change the wrapper to:
 
 ```css
 .hero-experience [data-hero-explore] {
@@ -271,30 +244,22 @@ Keep focus-visible outline support. Change the wrapper layer to:
 }
 ```
 
-Remove the old fallback override that forces EXPLORE to white/difference only for fallback; the new difference treatment is universal.
+Remove the old fallback-only EXPLORE color override; difference blending is now universal.
 
-- [ ] **Step 4: Keep reduced-motion behavior intentional**
+- [ ] **Step 4: Preserve reduced-motion behavior**
 
-Extend the existing reduced-motion selector so CTA transforms/background transitions collapse to `1ms` without changing its static framed appearance:
+Add `.hero-explore` to the reduced-motion transition-duration collapse so its static framed appearance remains but hover movement is effectively disabled.
 
-```css
-@media (prefers-reduced-motion: reduce) {
-  .hero-explore,
-  .hero-explore__rule {
-    transition-duration: 1ms;
-  }
-}
-```
-
-- [ ] **Step 5: Run focused tests and verify GREEN**
+- [ ] **Step 5: Verify CTA GREEN**
 
 Run:
 
 ```bash
-node --import=tsx --test tests/interaction-polish.test.mjs tests/explore-fluid-exit.test.mjs
+node --import=tsx --test --test-name-pattern="EXPLORE is a framed" tests/explore-fluid-exit.test.mjs
+node --import=tsx --test tests/interaction-polish.test.mjs
 ```
 
-Expected: CTA assertions pass; fluid-exit assertions remain RED until later tasks. If running files together makes the overall command fail because the fluid-exit test still contains intentional RED assertions, run only the CTA-named test using Node's `--test-name-pattern` and confirm that named test passes.
+Expected: PASS.
 
 - [ ] **Step 6: Commit**
 
@@ -305,27 +270,23 @@ git commit -m "feat: strengthen explore button affordance"
 
 ---
 
-### Task 3: Add a deterministic fullscreen exit-fluid source shader
+### Task 3: Add the deterministic exit-fluid source module and shader
 
 **Files:**
 - Create: `src/webgl/reveal/exitFluid.ts`
 - Modify: `src/webgl/reveal/fluid/shaders.ts`
 - Modify: `tests/fluid-reveal.test.mjs`
-- Test: `tests/explore-fluid-exit.test.mjs`
 
 **Interfaces:**
-- Produces:
-  - `EXIT_FLUID_CONFIG` with stable numeric parameters.
-  - `clampExitProgress(progress: number): number`.
-  - `EXIT_SOURCE_FRAGMENT` consuming `uTarget`, `uExitProgress`, `uVelocityPass`, `uSourceBandTop`, `uDyeStrength`, `uVelocityBase`, `uVelocityPeak`, and `uLateralStrength`.
-- Consumed by: `RevealEngine` in Task 4.
+- Produces `EXIT_FLUID_CONFIG`, `clampExitProgress()`, and `EXIT_SOURCE_FRAGMENT`.
+- `RevealEngine` consumes them in Task 4.
 
-- [ ] **Step 1: Add failing shader/config assertions**
+- [ ] **Step 1: Add the failing source/config test**
 
-Extend `tests/fluid-reveal.test.mjs`:
+Append to `tests/fluid-reveal.test.mjs`:
 
 ```js
-test('fluid exit source is one deterministic fullscreen pass, not periodic wave math', async () => {
+test('fluid exit source is deterministic fullscreen injection without periodic wave math', async () => {
   const shaders = read('src/webgl/reveal/fluid/shaders.ts');
   const exit = await import('../src/webgl/reveal/exitFluid.ts');
 
@@ -346,17 +307,15 @@ test('fluid exit source is one deterministic fullscreen pass, not periodic wave 
 });
 ```
 
-- [ ] **Step 2: Run and verify RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --import=tsx --test tests/fluid-reveal.test.mjs
 ```
 
-Expected: FAIL because `exitFluid.ts` and `EXIT_SOURCE_FRAGMENT` do not exist.
+Expected: FAIL on missing module/shader.
 
-- [ ] **Step 3: Create the exit-fluid configuration module**
-
-Create `src/webgl/reveal/exitFluid.ts`:
+- [ ] **Step 3: Create `src/webgl/reveal/exitFluid.ts`**
 
 ```ts
 export const EXIT_FLUID_CONFIG = {
@@ -373,11 +332,9 @@ export function clampExitProgress(progress: number) {
 }
 ```
 
-Do not put duration/easing constants here; this file owns solver/material parameters only.
+- [ ] **Step 4: Add `EXIT_SOURCE_FRAGMENT` to `fluid/shaders.ts`**
 
-- [ ] **Step 4: Add `EXIT_SOURCE_FRAGMENT`**
-
-Append a shader with this structure to `src/webgl/reveal/fluid/shaders.ts`:
+Use one shader for both targets via `uVelocityPass`:
 
 ```glsl
 export const EXIT_SOURCE_FRAGMENT = `#version 300 es
@@ -418,33 +375,25 @@ void main() {
     0.0
   );
 
-  float velocityPass = step(0.5, uVelocityPass);
-  vec3 injection = mix(dyeInjection, velocityInjection, velocityPass);
+  vec3 injection = mix(dyeInjection, velocityInjection, step(0.5, uVelocityPass));
   outColor = vec4(base + injection, 1.0);
 }`;
 ```
 
-The exact broad Gaussian constants above are deliberate; do not introduce time oscillation or periodic functions.
+Do not add time oscillation.
 
-- [ ] **Step 5: Run shader/config tests and verify GREEN**
+- [ ] **Step 5: Verify GREEN and shader compilation**
+
+Run:
 
 ```bash
 node --import=tsx --test tests/fluid-reveal.test.mjs
-```
-
-Expected: PASS for the new source/config contract.
-
-- [ ] **Step 6: Compile the shader in the existing WebGL probe/harness if available**
-
-Run the repo probe if dependencies/browser are available:
-
-```bash
 npm run probe:nothin
 ```
 
-If the probe does not yet include `EXIT_SOURCE_FRAGMENT`, add it to the same shader compilation list used for the reveal programs before treating this step as passed.
+If the probe's compile list does not include the new shader, add `EXIT_SOURCE_FRAGMENT` to that existing compile list before counting this step as verified.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/webgl/reveal/exitFluid.ts src/webgl/reveal/fluid/shaders.ts tests/fluid-reveal.test.mjs
@@ -453,32 +402,26 @@ git commit -m "feat: add fluid exit source pass"
 
 ---
 
-### Task 4: Replace `bottomFill` with solver-driven `fluidExit` end-to-end
+### Task 4: Replace `bottomFill` with `fluidExit` across engine, compositor, timeline, and fallback
 
 **Files:**
 - Modify: `src/webgl/reveal/RevealEngine.ts`
 - Modify: `src/webgl/reveal/shaders.ts`
 - Modify: `src/experience/motion/exploreTimeline.ts`
 - Modify: `src/app/globals.css`
-- Delete: `src/webgl/reveal/emitters/bottomFillEmitter.ts`
 - Modify: `tests/fluid-reveal.test.mjs`
 - Modify: `tests/explore-fluid-exit.test.mjs`
 - Modify: `tests/visual-contract.test.mjs`
+- Delete: `src/webgl/reveal/emitters/bottomFillEmitter.ts`
 
 **Interfaces:**
-- Consumes:
-  - `EXIT_SOURCE_FRAGMENT`.
-  - `EXIT_FLUID_CONFIG` and `clampExitProgress`.
-  - existing `RevealEngine.quality.enableVelocity`.
-- Produces:
-  - `RevealMode = 'reveal' | 'fluidExit' | 'disabled'`.
-  - `RevealEngine.setExitProgress(progress: number): void`.
-  - `RevealEngine.getExitProgress(): number`.
-  - `runExploreTimeline` choosing solver exit vs DOM fallback.
+- Produces `RevealMode = 'reveal' | 'fluidExit' | 'disabled'`.
+- Produces `setExitProgress(progress: number)` and `getExitProgress()`.
+- `runExploreTimeline` drives only `setExitProgress` and does not know solver internals.
 
-- [ ] **Step 1: Strengthen the failing engine/timeline contract**
+- [ ] **Step 1: Strengthen engine/timeline RED assertions**
 
-Add assertions to `tests/explore-fluid-exit.test.mjs`:
+Add:
 
 ```js
 assert.match(engine, /export type RevealMode = 'reveal' \| 'fluidExit' \| 'disabled'/);
@@ -489,46 +432,45 @@ assert.match(timeline, /engine\.quality\.enableVelocity/);
 assert.match(timeline, /!options\.reducedMotion/);
 assert.match(timeline, /engine\.setMode\('fluidExit'\)/);
 assert.match(timeline, /engine\.setExitProgress\(progress\.value\)/);
-assert.match(timeline, /duration:\s*1\.6/);
-assert.match(timeline, /duration:\s*0\.06/);
-assert.match(css, /hero-reveal-canvas\[data-reveal-mode='fluidExit'\][^}]*mix-blend-mode:\s*normal/s);
+assert.match(timeline, /fluidDuration = 1\.6/);
+assert.match(timeline, /finalBlackHold = options\.reducedMotion \? 0 : 0\.06/);
 ```
 
-Add/adjust `tests/fluid-reveal.test.mjs` to require `exitSourceProgram` disposal and continued solver stepping in `fluidExit`.
-
-- [ ] **Step 2: Run and verify RED**
+Verify RED:
 
 ```bash
 node --import=tsx --test tests/explore-fluid-exit.test.mjs tests/fluid-reveal.test.mjs
 ```
 
-Expected: FAIL on engine/timeline/composite assertions.
+- [ ] **Step 2: Convert `RevealEngine` mode/API**
 
-- [ ] **Step 3: Convert the engine mode/API**
-
-In `RevealEngine.ts`:
+Import:
 
 ```ts
 import { EXIT_FLUID_CONFIG, clampExitProgress } from './exitFluid';
 import { EXIT_SOURCE_FRAGMENT, ... } from './fluid/shaders';
+```
 
+Change:
+
+```ts
 export type RevealMode = 'reveal' | 'fluidExit' | 'disabled';
 ```
 
-Add fields:
+Add:
 
 ```ts
 private readonly exitSourceProgram: ProgramBundle;
 private exitProgress = 0;
 ```
 
-Compile the source program in the constructor:
+Compile:
 
 ```ts
 this.exitSourceProgram = createProgram(gl, FLUID_VERTEX, EXIT_SOURCE_FRAGMENT);
 ```
 
-Replace the bottom-fill methods with:
+Replace bottom-fill API:
 
 ```ts
 setExitProgress(progress: number) {
@@ -540,11 +482,11 @@ getExitProgress() {
 }
 ```
 
-`clear()` must reset `exitProgress = 0` in addition to clearing targets/input/timing.
+`clear()` must also reset `this.exitProgress = 0`.
 
-- [ ] **Step 4: Add the two-pass exit source injection**
+- [ ] **Step 3: Add source injection to the existing solver**
 
-Add a method that reuses the same fullscreen geometry and ping-pong targets:
+Add:
 
 ```ts
 private applyExitSource(target: DoubleFluidTarget, velocityPass: boolean) {
@@ -564,7 +506,7 @@ private applyExitSource(target: DoubleFluidTarget, velocityPass: boolean) {
 }
 ```
 
-In `stepFluid(now)`:
+At the start of `stepFluid(now)`:
 
 ```ts
 if (this.mode === 'reveal') {
@@ -575,26 +517,17 @@ if (this.mode === 'reveal') {
 }
 ```
 
-Keep the existing advection/projection sequence after this branch.
+Leave the existing advection → divergence → pressure → gradient sequence unchanged.
 
-Change the RAF condition from reveal-only to:
+RAF condition becomes:
 
 ```ts
 if (this.mode === 'reveal' || this.mode === 'fluidExit') this.stepFluid(now);
 ```
 
-- [ ] **Step 5: Replace analytic fill compositing with dye-based black compositing**
+- [ ] **Step 4: Replace analytic crest compositing**
 
-In `src/webgl/reveal/shaders.ts` remove:
-
-```glsl
-uTime
-uFillProgress
-uFillEnabled
-sin(...)
-crest
-fill
-```
+In `src/webgl/reveal/shaders.ts`, delete `uTime`, `uFillProgress`, `uFillEnabled`, `edgeDamping`, `crest`, and the sine expressions.
 
 Add:
 
@@ -604,20 +537,24 @@ uniform float uExitEnabled;
 uniform float uExitSealStart;
 ```
 
-Use this branch after computing the thresholded dye mask:
+After the existing dye threshold:
 
 ```glsl
 if (uExitEnabled > 0.5) {
-  float seal = smoothstep(uExitSealStart, 1.0, clamp(uExitProgress, 0.0, 1.0));
+  float seal = smoothstep(
+    uExitSealStart,
+    1.0,
+    clamp(uExitProgress, 0.0, 1.0)
+  );
   float alpha = max(reveal, seal);
   outColor = vec4(0.0, 0.0, 0.0, alpha);
   return;
 }
 ```
 
-Keep the existing registered-brand difference composite unchanged for normal reveal mode.
+Keep the normal registered-brand difference composite unchanged for `reveal`.
 
-Update `renderComposite` uniforms:
+Update engine uniforms:
 
 ```ts
 gl.uniform1f(getUniform(gl, program, 'uExitProgress'), this.exitProgress);
@@ -625,38 +562,33 @@ gl.uniform1f(getUniform(gl, program, 'uExitEnabled'), this.mode === 'fluidExit' 
 gl.uniform1f(getUniform(gl, program, 'uExitSealStart'), EXIT_FLUID_CONFIG.sealStart);
 ```
 
-Remove the old time/fill uniforms. `renderComposite` no longer needs a `time` argument unless another current caller genuinely uses it.
+Delete the old fill/time uniform writes.
 
-- [ ] **Step 6: Dispose the new program and remove old bottom-fill semantics**
+- [ ] **Step 5: Finish engine cleanup**
 
-Add:
+Delete all `fillProgress`, `setBottomFillProgress`, `getBottomFillProgress`, and `'bottomFill'` references.
+
+Dispose:
 
 ```ts
 gl.deleteProgram(this.exitSourceProgram.program);
 ```
 
-Delete all `fillProgress`, `setBottomFillProgress`, `getBottomFillProgress`, and `'bottomFill'` references from `RevealEngine.ts`.
+Delete `src/webgl/reveal/emitters/bottomFillEmitter.ts`.
 
-Delete:
+- [ ] **Step 6: Rewrite `runExploreTimeline` orchestration**
 
-```text
-src/webgl/reveal/emitters/bottomFillEmitter.ts
-```
+Remove the `bottomFillState` import.
 
-- [ ] **Step 7: Drive the new mode from the EXPLORE timeline**
-
-In `exploreTimeline.ts`, remove the `bottomFillState` import.
-
-Use explicit durations:
+Use:
 
 ```ts
+const progress = { value: 0 };
 const fluidDuration = 1.6;
 const fallbackDuration = options.reducedMotion ? 0.24 : 0.9;
 const finalBlackHold = options.reducedMotion ? 0 : 0.06;
 const canFluidExit = Boolean(
-  engine &&
-  engine.quality.enableVelocity &&
-  !options.reducedMotion
+  engine && engine.quality.enableVelocity && !options.reducedMotion
 );
 ```
 
@@ -679,7 +611,7 @@ if (canFluidExit && engine) {
 }
 ```
 
-Keep the button acknowledgement restrained:
+Button acknowledgement:
 
 ```ts
 timeline.to(button, {
@@ -711,26 +643,30 @@ if (canFluidExit && engine) {
 timeline.to({}, { duration: finalBlackHold });
 ```
 
-On completion, if the engine is in fluid exit, force the driver to exactly `1` before invoking the existing callback:
+On completion:
 
 ```ts
 if (canFluidExit && engine) engine.setExitProgress(1);
 options.onComplete();
 ```
 
-Do not change the navigation/hash handoff in `Hero.tsx`.
+Do not change navigation/hash logic in `Hero.tsx`.
 
-- [ ] **Step 8: Make the DOM fallback deliberately simple**
+- [ ] **Step 7: Simplify CSS mode/fallback**
 
-Change the canvas mode rule:
+Replace:
+
+```css
+.hero-reveal-canvas[data-reveal-mode='bottomFill']
+```
+
+with:
 
 ```css
 .hero-reveal-canvas[data-reveal-mode='fluidExit'] { mix-blend-mode: normal; }
 ```
 
-Remove the old `bottomFill` selector.
-
-Change `.hero-exit-fill` to a plain black layer without the fake organic rounded crest:
+Make fallback a plain full layer:
 
 ```css
 .hero-exit-fill {
@@ -744,22 +680,26 @@ Change `.hero-exit-fill` to a plain black layer without the fake organic rounded
 }
 ```
 
-- [ ] **Step 9: Update visual contracts to reject the old wave implementation**
+Remove its rounded top.
 
-In `tests/visual-contract.test.mjs` add:
+- [ ] **Step 8: Update visual contracts**
+
+Add to `tests/visual-contract.test.mjs`:
 
 ```js
 test('EXPLORE exit uses solver dye rather than an analytic sine crest', () => {
   const shader = read('src/webgl/reveal/shaders.ts');
   const engine = read('src/webgl/reveal/RevealEngine.ts');
   assert.match(shader, /uExitProgress/);
-  assert.match(shader, /uExitEnabled/);
+  assert.match(shader, /uExitSealStart/);
   assert.doesNotMatch(shader, /sin\s*\(/);
   assert.doesNotMatch(engine, /bottomFill/);
 });
 ```
 
-- [ ] **Step 10: Run focused tests and verify GREEN**
+- [ ] **Step 9: Verify integrated GREEN**
+
+Run:
 
 ```bash
 node --import=tsx --test \
@@ -767,19 +707,12 @@ node --import=tsx --test \
   tests/fluid-reveal.test.mjs \
   tests/interaction-polish.test.mjs \
   tests/visual-contract.test.mjs
-```
-
-Expected: all focused tests PASS with zero failures.
-
-- [ ] **Step 11: Run typecheck before committing the integrated behavior**
-
-```bash
 npm run typecheck
 ```
 
-Expected: exit `0`.
+Expected: all focused tests pass and typecheck exits `0`.
 
-- [ ] **Step 12: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add \
@@ -796,96 +729,90 @@ git commit -m "feat: replace explore wipe with fluid exit"
 
 ---
 
-### Task 5: Verify visual character, fallback behavior, and performance without retuning the interactive reveal
+### Task 5: Visual/performance QA with bounded exit-only tuning
 
 **Files:**
-- Modify only if QA proves a named mismatch: `src/webgl/reveal/exitFluid.ts`
-- Modify only if QA proves a named timing mismatch: `src/experience/motion/exploreTimeline.ts`
-- Test: `tests/explore-fluid-exit.test.mjs`
+- Modify only if a named QA failure occurs: `src/webgl/reveal/exitFluid.ts`
+- Modify only if timing itself is wrong: `src/experience/motion/exploreTimeline.ts`
 
 **Interfaces:**
-- Consumes: completed CTA + `fluidExit` implementation.
-- Produces: visually accepted constants with no changes to normal reveal physics.
+- Must not touch `src/webgl/reveal/quality.ts`.
+- Tuning is restricted to exit-specific constants.
 
-- [ ] **Step 1: Start the real site and verify the normal hero before clicking EXPLORE**
-
-Run:
+- [ ] **Step 1: Run the real site**
 
 ```bash
 npm run dev
 ```
 
-At `1920×1080` and `390×844`, verify before click:
+Verify at `1920×1080`, `1440×900`, `1280×800`, tablet, and `390×844`:
 
-- interactive reveal still has the approved doubled footprint and `11800` force;
-- EXPLORE remains readable over both white and revealed black regions;
-- CTA is visibly framed but not visually dominant;
-- hover lift is approximately `2px`, rule expansion is smooth, active press is restrained;
-- navigation and pointer interaction remain unaffected.
+- CTA is immediately visible as a control.
+- It remains restrained relative to WELCOME/TO and the WEBERAISE lockup.
+- Difference blending keeps it readable over white and revealed black.
+- Hover lift is subtle; no glow/bounce/pill reading.
+- Interactive reveal before click is visually unchanged.
 
-Do not change `quality.ts` during this task.
+- [ ] **Step 2: Exercise fluid exit from different hero states**
 
-- [ ] **Step 2: Verify the GPU exit character on full and lite profiles**
+Test:
 
-Exercise:
-
-1. Click EXPLORE with no prior reveal strokes.
-2. Draw a large reveal stroke, then click EXPLORE.
-3. Click EXPLORE after leaving the hero idle for several seconds.
-4. Repeat at desktop, tablet, and a low-memory/mobile profile that selects `lite`.
+1. click EXPLORE immediately;
+2. draw a large reveal stroke, then click;
+3. leave the hero idle, then click;
+4. repeat on full and lite profiles.
 
 Acceptance:
 
-- material begins from the bottom;
-- front has 2–4 broad asymmetric shoulders, not a repeating wave;
-- no obvious circle chain or splat stamps;
-- no smoke/flame/ocean-wave reading;
-- takeover reaches the top within the `1.6s` driver window;
-- the last seal is not perceptible as a separate flash;
-- viewport is already fully black during the `0.06s` hold;
-- main/ribbon state appears without a luminance flash.
+- material originates from below;
+- front forms roughly 2–4 broad asymmetric shoulders;
+- no repeating wavelength;
+- no visible Gaussian circle stamps;
+- no ocean-wave/slime/smoke/flame reading;
+- front reaches the top during the `1.6s` driver;
+- last seal is not visible as a separate flash;
+- black hold is continuous into main/ribbon state.
 
-- [ ] **Step 3: Apply only bounded exit-specific tuning if one of two named failures occurs**
+- [ ] **Step 3: Apply only the defined corrective tuning if needed**
 
-If the fluid front **stalls below the top before the completion seal**, change only:
+If the front **stalls below the top** before the seal, change only:
 
 ```ts
 velocityPeak: 7.0 -> 8.0
 ```
 
-Re-test before changing anything else. Do not exceed `9.0` without a new design decision.
+Re-test. Do not exceed `9.0` without a new design decision.
 
-If the front is **too vertically uniform/flat**, change only:
+If the front is **too flat/uniform**, change only:
 
 ```ts
 lateralStrength: 0.35 -> 0.45
 ```
 
-Re-test before changing anything else. Do not add sine/time noise.
+Re-test. Do not add time oscillation/noise.
 
-If neither named failure occurs, keep the design constants exactly as specified.
+If neither named issue exists, leave constants unchanged.
 
 - [ ] **Step 4: Verify reduced motion**
 
 With `prefers-reduced-motion: reduce`:
 
-- EXPLORE remains framed/static.
-- button transition durations collapse.
-- engine fluid exit is not used.
+- CTA remains framed.
+- fluid exit is bypassed.
+- engine is disabled for the exit.
 - DOM black fill completes in approximately `0.24s`.
-- no fluid source passes run during exit.
-- handoff remains fully black.
+- no fluid source passes are required.
 
-- [ ] **Step 5: Verify forced WebGL fallback**
+- [ ] **Step 5: Verify forced engine fallback**
 
-Force `createRevealEngine` to return `null` through the existing fallback/test mechanism or browser capability override. Verify:
+Force the existing reveal engine creation path to fail/return `null` using the repo's existing fallback mechanism. Verify:
 
-- EXPLORE remains visible and clickable;
-- DOM fill uses approximately `0.9s`;
-- fallback has no rounded fake-wave crest;
-- main/ribbon handoff still completes.
+- CTA remains clickable;
+- plain DOM black fill uses approximately `0.9s`;
+- no rounded fake crest remains;
+- handoff remains black.
 
-- [ ] **Step 6: Re-run focused tests after any tuning**
+- [ ] **Step 6: Re-run focused verification after any tuning**
 
 ```bash
 node --import=tsx --test \
@@ -895,94 +822,58 @@ node --import=tsx --test \
   tests/visual-contract.test.mjs
 ```
 
-Expected: PASS.
-
-- [ ] **Step 7: Commit only if tuning changed code**
-
-If constants changed within the bounded rules above:
+- [ ] **Step 7: Commit only if QA tuning changed code**
 
 ```bash
-git add src/webgl/reveal/exitFluid.ts src/experience/motion/exploreTimeline.ts tests/explore-fluid-exit.test.mjs
+git add src/webgl/reveal/exitFluid.ts src/experience/motion/exploreTimeline.ts
 git commit -m "fix: tune fluid exit takeover"
 ```
 
-If no tuning was needed, do not create an empty commit.
+Skip this commit if no tuning was necessary.
 
 ---
 
-### Task 6: Synchronize architecture/status docs and run the full release gate
+### Task 6: Synchronize docs and run the full release gate
 
 **Files:**
 - Modify: `docs/ARCHITECTURE.md`
 - Modify: `docs/IMPLEMENTATION_STATUS.md`
 
-**Interfaces:**
-- Consumes: final verified behavior.
-- Produces: documentation that matches production and a release-ready verification record.
-
 - [ ] **Step 1: Update architecture documentation**
 
-In `docs/ARCHITECTURE.md`, replace references to the authored `bottomFill` crest with this production model:
+Record the production flows explicitly:
 
 ```text
 heroInteractive:
   pointer -> latest sample/RAF -> persistent pressure-projected fluid -> difference composite
 
 heroExiting:
-  bottom source pass (velocity + dye) -> same advection/projection solver -> thresholded black composite -> final 6% seal -> main
+  bottom source pass (velocity + dye) -> same solver -> thresholded black composite -> final 6% seal -> main
 ```
 
-Explicitly record:
+Also record:
 
-- `fluidExit` uses the same solver targets as reveal;
-- source cost is two fullscreen passes/frame;
-- no periodic crest shader remains;
-- reduced-motion/WebGL failure use a plain DOM black fill.
+- two extra fullscreen passes/frame during `fluidExit`;
+- no new render targets;
+- no periodic crest shader;
+- reduced motion/WebGL failure use the plain DOM fill.
 
 - [ ] **Step 2: Update implementation status**
 
-In `docs/IMPLEMENTATION_STATUS.md`, record:
+Document the CTA, fluid exit, fallback behavior, exact verification performed, and any environment limitations. Do not report unrun commands as passing.
 
-- framed/difference-blended EXPLORE CTA;
-- fluid solver takeover on normal motion;
-- simple fallback path;
-- exact verification commands actually run and any environment limitations.
-
-Do not claim browser/build/test evidence that was not actually executed.
-
-- [ ] **Step 3: Run the complete test suite**
+- [ ] **Step 3: Run the full gate**
 
 ```bash
 npm test
-```
-
-Expected: all tests pass, zero failures.
-
-- [ ] **Step 4: Run typecheck**
-
-```bash
 npm run typecheck
-```
-
-Expected: exit `0`.
-
-- [ ] **Step 5: Run production build**
-
-```bash
 npm run build
-```
-
-Expected: exit `0`.
-
-- [ ] **Step 6: Check whitespace/patch integrity**
-
-```bash
 git diff --check
 ```
 
-Expected: no output and exit `0`.
+Expected: every command exits `0`; `git diff --check` prints nothing.
 
-- [ ] **Step 7: Inspect final branch scope**
+- [ ] **Step 4: Inspect final scope**
 
 ```bash
 git status --short
@@ -996,33 +887,32 @@ git diff origin/main...HEAD -- \
   docs
 ```
 
-Verify no unrelated page/service/work/footer changes entered this feature.
+Verify no unrelated site sections entered this work.
 
-- [ ] **Step 8: Commit docs**
+- [ ] **Step 5: Commit docs**
 
 ```bash
 git add docs/ARCHITECTURE.md docs/IMPLEMENTATION_STATUS.md
 git commit -m "docs: record explore fluid exit architecture"
 ```
 
-- [ ] **Step 9: Do not merge automatically**
+- [ ] **Step 6: Stop for user review**
 
-Leave `feature/hero-nothin-reveal-fidelity` intact for user review. Merge only after explicit user instruction.
+Do not merge. Leave `feature/hero-nothin-reveal-fidelity` ready for explicit review/merge instruction.
 
 ---
 
 ## Final Acceptance Checklist
 
-- [ ] EXPLORE has a visible 1px frame, 4px radius, 126px minimum width, 44px minimum height.
-- [ ] EXPLORE uses `#fff` + `mix-blend-mode: difference` and sits above the reveal compositor.
-- [ ] Hover is a 2px lift + faint wash + rule expansion; active press is `.985`; no glow/pill/bounce.
-- [ ] `bottomFill` mode and `bottomFillEmitter.ts` are removed.
-- [ ] `COMPOSITE_FRAGMENT` contains no sine-wave exit crest.
-- [ ] `fluidExit` injects one velocity source pass + one dye source pass per solver frame.
-- [ ] Existing advection/divergence/pressure/gradient passes remain the motion engine.
-- [ ] Normal interactive reveal constants/pointer behavior remain unchanged.
-- [ ] Final completion seal starts only at `0.94` and reaches fully black at `1.0`.
-- [ ] Reduced motion bypasses fluid exit and uses the short DOM fill.
-- [ ] WebGL failure uses the plain DOM fill.
-- [ ] Full viewport is black before `onExploreComplete` changes state.
+- [ ] EXPLORE: `126px` minimum width, `44px` minimum height, `1px` frame, `4px` radius.
+- [ ] EXPLORE: `#fff` source color + `mix-blend-mode:difference` above reveal/vignette.
+- [ ] Hover: `2px` lift + faint interior wash + rule expansion; active press `.985`.
+- [ ] No `bottomFill` production mode or `bottomFillEmitter.ts` remains.
+- [ ] No sine-wave exit crest remains in `COMPOSITE_FRAGMENT`.
+- [ ] `fluidExit` performs one velocity-source + one dye-source fullscreen pass per solver frame.
+- [ ] Existing advection/divergence/pressure/gradient pipeline drives the front.
+- [ ] Normal interactive reveal behavior remains unchanged.
+- [ ] Completion seal is configured by `EXIT_FLUID_CONFIG.sealStart === 0.94` and passed as `uExitSealStart`.
+- [ ] Reduced motion and engine failure use the plain DOM fill.
+- [ ] Viewport is fully black before `onExploreComplete`.
 - [ ] Focused tests, full tests, typecheck, build, and `git diff --check` have fresh passing evidence before completion is claimed.
