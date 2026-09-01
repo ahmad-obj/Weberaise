@@ -101,3 +101,45 @@ void main() {
   velocity -= 0.5 * vec2(right - left, top - bottom);
   outColor = vec4(velocity, 0.0, 1.0);
 }`;
+
+export const EXIT_SOURCE_FRAGMENT = `#version 300 es
+precision highp float;
+in vec2 vUv;
+out vec4 outColor;
+uniform sampler2D uTarget;
+uniform float uExitProgress;
+uniform float uVelocityPass;
+uniform float uSourceBandTop;
+uniform float uDyeStrength;
+uniform float uVelocityBase;
+uniform float uVelocityPeak;
+uniform float uLateralStrength;
+
+float gaussian(float x, float center, float width) {
+  float d = (x - center) / width;
+  return exp(-(d * d));
+}
+
+void main() {
+  vec3 base = texture(uTarget, vUv).xyz;
+  float sourceBand = 1.0 - smoothstep(uSourceBandTop - 0.04, uSourceBandTop, vUv.y);
+  float drive = smoothstep(0.0, 0.72, clamp(uExitProgress, 0.0, 1.0));
+
+  float left = gaussian(vUv.x, 0.22, 0.24);
+  float middle = gaussian(vUv.x, 0.58, 0.30);
+  float right = gaussian(vUv.x, 0.84, 0.18);
+
+  float verticalProfile = 0.92 + 0.16 * left - 0.08 * middle + 0.12 * right;
+  float lateralProfile = (left - right) * uLateralStrength;
+  float upward = mix(uVelocityBase, uVelocityPeak, drive) * verticalProfile;
+
+  vec3 dyeInjection = vec3(sourceBand * uDyeStrength);
+  vec3 velocityInjection = vec3(
+    sourceBand * lateralProfile,
+    sourceBand * upward,
+    0.0
+  );
+
+  vec3 injection = mix(dyeInjection, velocityInjection, step(0.5, uVelocityPass));
+  outColor = vec4(base + injection, 1.0);
+}`;
