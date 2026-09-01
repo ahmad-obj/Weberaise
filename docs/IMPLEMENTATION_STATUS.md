@@ -3,7 +3,7 @@
 **Milestone:** hero fluid reveal + EXPLORE fluid exit polish  
 **Branch:** `feature/hero-nothin-reveal-fidelity`  
 **Base:** `main` @ `dff8870b357e9bc87fe1d87e1a0dc67ca9dcc74c`  
-**Status:** production implementation is in the feature branch; focused contracts, isolated TypeScript integration, real WebGL shader compilation, and standalone solver sanity are complete. Full repository/build and full in-site QA remain required before merge.
+**Status:** production implementation is in the feature branch. Focused source contracts, isolated TypeScript interface verification, real Chromium shader compilation, and a standalone full solver reproduction have been completed. Full repository/build and full in-site QA remain required before merge.
 
 ## Scope
 
@@ -45,8 +45,6 @@ Input remains coalesced to at most one velocity + one dye splat per RAF.
 
 ### Approved current profile
 
-Reference-derived solver semantics remain:
-
 ```text
 full sim                       256 × 256
 full dye                       512 × 512
@@ -55,21 +53,14 @@ velocity retention @ 60 Hz     0.962
 dye retention @ 60 Hz          0.988
 reveal gain                    3.9
 threshold                      0.50 → 0.51
-```
-
-Approved WEBERAISE scale adjustment:
-
-```text
 full/lite splat radius         0.00024
 full/lite splat force          11800
 reduced-motion radius          0.00032
 ```
 
-Pressure, retention, threshold, solver resolution, and interactive input cadence were not increased with the scale adjustment.
+Pressure, retention, threshold, solver resolution, and interactive input cadence were not increased with the approved scale adjustment.
 
 ## EXPLORE CTA
-
-The previous EXPLORE treatment was only small text + a rule on a transparent hit area and could disappear visually against the hero.
 
 Current production CTA:
 
@@ -102,74 +93,104 @@ Removed:
 - analytic sine-wave crest in `COMPOSITE_FRAGMENT`;
 - rounded fake-wave fallback top.
 
-Repository code search currently returns no `bottomFill` references.
-
 Current normal-motion exit:
 
 ```text
 EXPLORE
 → button fades/acknowledges
-→ engine.clear()
+→ preserve current dye + residual velocity
 → mode = fluidExit
-→ bottom velocity source pass
-→ bottom dye source pass
+→ full-domain bounded velocity-drive pass
+→ bottom dye-source pass
 → existing fluid advection + pressure projection
 → thresholded solver dye rendered as black
-→ final seal from progress 0.94 → 1.0
+→ last-frame seal from progress 0.9997 → 1.0
 → 0.06s fully-black hold
 → existing main/ribbon state
 ```
 
 The WebGL canvas switches to normal blend mode during `fluidExit`.
 
+### Continuity correction
+
+The production timeline intentionally does **not** call `engine.clear()` when EXPLORE is pressed.
+
+Existing user/autonomous dye and residual velocity remain alive as the mode changes to `fluidExit`. This prevents a reset/flash and makes the exit feel like the same material taking over the viewport.
+
 ### Exit source configuration
 
 New module:
 - `src/webgl/reveal/exitFluid.ts`
 
-Production constants:
+Current production constants:
 
 ```text
 sourceBandTop    0.14
 dyeStrength      0.24
 velocityBase     4.2
-velocityPeak     7.0
-lateralStrength  0.35
-sealStart        0.94
+velocityPeak     8.0
+lateralStrength  0.45
+sealStart        0.9997
 ```
 
-`EXIT_SOURCE_FRAGMENT` uses three broad Gaussian horizontal profiles for deterministic asymmetry. It contains no time oscillation, sine, FBM, simplex, or hash noise.
+`EXIT_SOURCE_FRAGMENT` uses four broad Gaussian horizontal profiles and monotonically morphs between two profile arrangements as progress advances. It contains no time oscillation, sine, FBM, simplex, or hash noise.
 
-### Velocity-source stability correction
+### Solver-source corrections found during verification
 
-The first implementation followed the initial plan literally and **added** source velocity each frame. Standalone solver reproduction showed that was too aggressive:
+Two initial source variants were rejected by real WebGL solver reproduction:
 
-```text
-frame 5     thin bottom band
-frame 15    roughly half screen
-frame 30    effectively full screen
-```
+1. **Additive target velocity each RAF** accumulated too much momentum under the `.962` velocity retention.
+2. **Velocity limited to the bottom 14% source band** could not transport the dye through the viewport; the visible material stalled around that region.
 
-Root cause: the source added another `4.2–7.0` vertical velocity every frame while the field retained `.962` momentum, so the source boundary accumulated velocity instead of defining a stable inflow.
+Production now uses:
 
-Production now bounds the source velocity:
+- dye supplied only from the bottom band;
+- a full-domain velocity target field;
+- a bounded convergence factor instead of additive velocity growth.
+
+Core production behavior:
 
 ```glsl
-velocityTarget = vec3(lateralProfile, upward, 0.0)
-velocityDriven = mix(base, velocityTarget, sourceBand)
+vec3 velocityTarget = vec3(lateralProfile, upward, 0.0);
+float velocityDrive = mix(0.18, 0.26, drive);
+vec3 velocityDriven = mix(base, velocityTarget, velocityDrive);
 ```
 
-Dye is still additive. Velocity in the source band converges to the desired profile rather than increasing without bound.
+The completion seal was also moved from the originally planned `0.94` to `0.9997`. A `0.94` seal would begin globally darkening the viewport while the natural fluid front was still visibly travelling. `0.9997` leaves the visible transition solver-driven and acts only as a final handoff guard.
 
-Standalone 60 Hz solver sanity after that correction:
+## Verified solver progression
+
+A real standalone WebGL2 reproduction used:
+- 256×256 velocity;
+- 512×512 dye;
+- RGBA16F targets;
+- `.962` velocity retention;
+- `.988` dye retention;
+- divergence;
+- 20 pressure Jacobi iterations;
+- pressure-gradient subtraction;
+- production gain/threshold;
+- current exit source and `power2.inOut` progress over 96 frames.
+
+Observed thresholded coverage:
 
 ```text
-frame 30 / ~0.5s    41.9% black coverage
-frame 60 / ~1.0s    70.1% black coverage
-frame 84 / ~1.4s    91.6% black coverage
+frame 48 / ~0.80s   44.26%
+frame 72 / ~1.20s   75.56%
+frame 84 / ~1.40s   91.76%, front near top
+frame 88 / ~1.47s   96.54%, top reached
+frame 92             98.84%
+frame 94             99.49%
+frame 96 / ~1.60s   99.91%, top-row coverage 95.27%
 ```
 
-At frame 84 the front is already near the top with broad asymmetric shoulders, just before the `0.94` completion seal begins.
+The solver run completed with:
+
+```text
+glError=0
+```
+
+This verifies that the visible flood itself reaches the top before the last-frame safety seal finishes.
 
 ## Exit fallback behavior
 
@@ -204,12 +225,10 @@ New program:
 - `EXIT_SOURCE_FRAGMENT`.
 
 During `fluidExit` only, the solver performs two additional fullscreen writes per frame:
-1. velocity source;
+1. velocity target drive;
 2. dye source.
 
-It then reuses the existing advection, divergence, pressure, and gradient passes.
-
-Normal interactive reveal cost is unchanged.
+It then reuses the existing advection, divergence, pressure, and gradient passes. Normal interactive reveal cost is unchanged.
 
 ## Files introduced / retired for this EXPLORE change
 
@@ -226,7 +245,7 @@ Modified:
 - `src/webgl/reveal/RevealEngine.ts`
 - `src/experience/motion/exploreTimeline.ts`
 - reveal/interaction/visual contract tests
-- architecture/status docs
+- architecture/status/design docs
 
 Removed:
 - `src/webgl/reveal/emitters/bottomFillEmitter.ts`
@@ -235,7 +254,7 @@ Removed:
 
 ### Focused source contracts
 
-An isolated harness using the current EXPLORE/engine/timeline source contracts reports:
+Fresh mirrored-source run:
 
 ```text
 tests 2
@@ -249,13 +268,15 @@ The contracts cover:
 - `fluidExit` engine mode/API;
 - source program presence;
 - solver execution in `fluidExit`;
+- bounded full-domain velocity drive;
+- preservation of existing fluid state (`engine.clear()` absent from exit timeline);
 - timeline eligibility/timing;
 - absence of `bottomFill` orchestration;
 - absence of analytic sine exit compositing.
 
-### TypeScript integration
+### TypeScript interface verification
 
-An isolated TypeScript harness containing the current `RevealEngine`, exit configuration, shader interfaces, timeline integration, and required type stubs compiles with:
+An isolated TypeScript harness containing the current exit configuration, timeline integration, RevealEngine-facing interface, and required stubs compiles with:
 
 ```bash
 tsc -p tsconfig.json --noEmit
@@ -263,11 +284,11 @@ tsc -p tsconfig.json --noEmit
 
 Result: pass / no diagnostics.
 
-This is **not** a claim that the complete repository `npm run typecheck` has run.
+This verifies the new exit interfaces only. It is **not** a claim that complete-repository `npm run typecheck` has run.
 
 ### Real Chromium WebGL2
 
-Fresh real Chromium/Xvfb WebGL2 verification for the bounded production source:
+Fresh real Chromium verification:
 
 ```text
 webgl2=ok
@@ -276,30 +297,19 @@ EXIT_SOURCE_FRAGMENT=ok
 COMPOSITE_FRAGMENT=ok
 ```
 
-Existing core fluid shaders/half-float solver had already been independently verified earlier on this branch.
+### Full standalone solver reproduction
 
-### Standalone solver visual sanity
+Fresh current-source reproduction completed all 96 simulated frames with:
 
-A real WebGL solver reproduction used:
-- exit velocity source;
-- exit dye source;
-- velocity advection;
-- dye advection;
-- divergence;
-- 20 pressure Jacobi iterations;
-- pressure-gradient subtraction;
-- production reveal threshold.
-
-It verified:
-- bottom-origin takeover;
-- paced rise instead of instant fill;
-- broad asymmetric front;
-- no repeated sine wavelength;
-- front naturally reaches near the top before the completion seal.
+```text
+glError=0
+99.91% thresholded coverage at final frame
+natural top reach around frame 88
+```
 
 ## Still required before merge
 
-This runtime does not have a complete checked-out Next.js repository with installed project dependencies, so the following full-project claims are intentionally **not** made yet:
+This runtime does not have a complete checked-out Next.js repository with installed project dependencies, so the following full-project claims are intentionally **not** made:
 
 ```bash
 npm test
@@ -327,6 +337,7 @@ Test EXPLORE:
 Acceptance:
 - CTA is clearly discoverable but visually restrained;
 - interactive reveal before click is unchanged;
+- existing revealed fluid continues into the exit without reset;
 - exit starts from below;
 - front has broad material irregularity, not a periodic wave;
 - no sudden early full-screen boom;
