@@ -9,6 +9,7 @@ import {
 } from './activation';
 import { cameraTargetZ, stepCameraZ } from './camera';
 import { WORK_SPHERE } from './constants';
+import { shouldDrawWorkFrame } from './frameInvalidation';
 import { buildProjectSlots, createProjectSurfaceMesh } from './geometry';
 import {
   cloneQuat,
@@ -85,20 +86,25 @@ function createProgram(gl: WebGL2RenderingContext) {
   return program;
 }
 
-function translationMatrix(x: number, y: number, z: number): Mat4 {
-  const matrix = mat4Identity();
-  matrix[12] = x;
-  matrix[13] = y;
-  matrix[14] = z;
-  return matrix;
+function setIdentity(out: Mat4) {
+  out.fill(0);
+  out[0] = out[5] = out[10] = out[15] = 1;
+  return out;
 }
 
-function scaleMatrix(scale: number): Mat4 {
-  const matrix = mat4Identity();
-  matrix[0] = scale;
-  matrix[5] = scale;
-  matrix[10] = scale;
-  return matrix;
+function setTranslation(out: Mat4, x: number, y: number, z: number) {
+  setIdentity(out);
+  out[12] = x;
+  out[13] = y;
+  out[14] = z;
+  return out;
+}
+
+function setScale(out: Mat4, scale: number) {
+  out.fill(0);
+  out[0] = out[5] = out[10] = scale;
+  out[15] = 1;
+  return out;
 }
 
 export class WorkSphereEngine {
@@ -118,6 +124,9 @@ export class WorkSphereEngine {
   private readonly callbacks: WorkSphereCallbacks;
   private readonly profile: (typeof WORK_QUALITY_PROFILES)[keyof typeof WORK_QUALITY_PROFILES];
   private readonly scaleFactor: number;
+  private readonly translationScratch = mat4Identity();
+  private readonly scaleScratch = mat4Identity();
+  private readonly facingScratch = mat4Identity();
 
   private projection = mat4Identity();
   private view = mat4Identity();
@@ -137,6 +146,7 @@ export class WorkSphereEngine {
   private selectedSlotHidden = false;
   private projectOpenProgress = 0;
   private freezeOrientation = false;
+  private forceRender = true;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -261,6 +271,7 @@ export class WorkSphereEngine {
   start() {
     if (this.destroyed || this.started) return;
     this.started = true;
+    this.forceRender = true;
     this.lastFrame = performance.now();
     this.mediaPool.resumePriority();
     this.scheduleFrame();
@@ -297,6 +308,7 @@ export class WorkSphereEngine {
   setEntranceProgress(progress: number) {
     this.entranceProgress = Math.max(0, Math.min(1, progress));
     this.updateMatrices();
+    this.forceRender = true;
   }
 
   snapToSlot(slotId: number) {
@@ -307,6 +319,7 @@ export class WorkSphereEngine {
     this.activeSlotId = slotId;
     this.callbacks.onActiveSlotChange?.(slotId);
     this.refreshMediaPriorities();
+    this.forceRender = true;
   }
 
   captureTransitionSnapshot(): WorkSphereTransitionSnapshot {
@@ -329,6 +342,7 @@ export class WorkSphereEngine {
     this.selectedSlotHidden = false;
     this.activeSlotId = slotId;
     this.callbacks.onActiveSlotChange?.(slotId);
+    this.forceRender = true;
   }
 
   getResolveStatus(): WorkResolveStatus | null {
@@ -349,6 +363,7 @@ export class WorkSphereEngine {
       this.updateView();
       this.updateMatrices();
       this.freezeOrientation = true;
+      this.forceRender = true;
     }
     return {
       slotId: slot.id,
@@ -368,6 +383,7 @@ export class WorkSphereEngine {
     this.updateMatrices();
     this.refreshMediaPriorities();
     this.callbacks.onActiveSlotChange?.(this.activeSlotId);
+    this.forceRender = true;
   }
 
   getSlotScreenBounds(slotId: number): ScreenBounds | null {
@@ -380,10 +396,12 @@ export class WorkSphereEngine {
   setSelectedSlotHidden(slotId: number | null) {
     if (slotId !== null) this.selectedSlotId = slotId;
     this.selectedSlotHidden = slotId !== null;
+    this.forceRender = true;
   }
 
   setProjectOpenProgress(progress: number) {
     this.projectOpenProgress = Math.max(0, Math.min(1, progress));
+    this.forceRender = true;
   }
 
   getProjectIndexForSlot(slotId: number) {
@@ -417,6 +435,7 @@ export class WorkSphereEngine {
     perspectiveMat4(this.projection, fov, aspect, WORK_SPHERE.cameraNear, WORK_SPHERE.cameraFar);
     this.updateView();
     this.updateMatrices();
+    this.forceRender = true;
   };
 
   private scheduleFrame() {
@@ -428,6 +447,11 @@ export class WorkSphereEngine {
     if (!this.started || this.destroyed) return;
     const deltaMs = Math.min(32, Math.max(1, now - this.lastFrame));
     this.lastFrame = now;
+    const q0 = this.controller.orientation[0];
+    const q1 = this.controller.orientation[1];
+    const q2 = this.controller.orientation[2];
+    const q3 = this.controller.orientation[3];
+    const cameraBefore = this.cameraZ;
 
     if (!this.freezeOrientation && this.resolvingSlotId !== null) {
       const resolvingSlot = this.slots[this.resolvingSlotId];
@@ -466,10 +490,23 @@ export class WorkSphereEngine {
 
     const targetZ = cameraTargetZ(this.scaleFactor, snapshot.rotationVelocity, this.controller.isPointerDown);
     this.cameraZ = stepCameraZ(this.cameraZ, targetZ, deltaMs, this.controller.isPointerDown);
-    this.updateView();
-    this.updateMatrices();
-    this.mediaPool.uploadReadyFrames();
-    this.render();
+
+    const orientationChanged =
+      q0 !== this.controller.orientation[0]
+      || q1 !== this.controller.orientation[1]
+      || q2 !== this.controller.orientation[2]
+      || q3 !== this.controller.orientation[3];
+    const cameraChanged = cameraBefore !== this.cameraZ;
+
+    if (cameraChanged) this.updateView();
+    if (orientationChanged) this.updateMatrices();
+    const mediaChanged = this.mediaPool.uploadReadyFrames();
+    const transformChanged = orientationChanged || cameraChanged;
+
+    if (shouldDrawWorkFrame({ transformChanged, mediaChanged, force: this.forceRender })) {
+      this.render();
+      this.forceRender = false;
+    }
     this.scheduleFrame();
   };
 
@@ -494,17 +531,17 @@ export class WorkSphereEngine {
       const finalScale = WORK_SPHERE.baseSurfaceScale * depthScale * entranceScale;
 
       const matrix = this.models[slot.id];
-      matrix.set(mat4Identity());
-      multiplyMat4(matrix, matrix, translationMatrix(-px, -py, -pz));
-      const facing = targetToMat4(
-        mat4Identity(),
+      setIdentity(matrix);
+      multiplyMat4(matrix, matrix, setTranslation(this.translationScratch, -px, -py, -pz));
+      targetToMat4(
+        this.facingScratch,
         [0, 0, 0],
         [px, py, pz],
         Math.abs(py / effectiveRadius) > 0.98 ? [1, 0, 0] : [0, 1, 0],
       );
-      multiplyMat4(matrix, matrix, facing);
-      multiplyMat4(matrix, matrix, scaleMatrix(finalScale));
-      multiplyMat4(matrix, matrix, translationMatrix(0, 0, -effectiveRadius));
+      multiplyMat4(matrix, matrix, this.facingScratch);
+      multiplyMat4(matrix, matrix, setScale(this.scaleScratch, finalScale));
+      multiplyMat4(matrix, matrix, setTranslation(this.translationScratch, 0, 0, -effectiveRadius));
       this.instanceMatrices.set(matrix, slot.id * 16);
     }
 
@@ -645,6 +682,7 @@ export class WorkSphereEngine {
     }
     if (this.started) {
       this.lastFrame = performance.now();
+      this.forceRender = true;
       this.mediaPool.resumePriority();
       this.scheduleFrame();
     }
