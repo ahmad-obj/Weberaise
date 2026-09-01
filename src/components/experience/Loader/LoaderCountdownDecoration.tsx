@@ -1,0 +1,27 @@
+import Image from 'next/image';
+import styles from './LoaderCountdownDecoration.module.css';
+
+type LoaderCountdownDecorationProps = {
+  hidden: boolean;
+};
+
+export function LoaderCountdownDecoration({ hidden }: LoaderCountdownDecorationProps) {
+  return (
+    <div
+      className={styles.root}
+      data-hidden={hidden ? 'true' : 'false'}
+      aria-hidden="true"
+    >
+      <Image
+        src="/brand/weberaise-horizontal-on-dark.svg"
+        alt=""
+        width={1800}
+        height={430}
+        priority
+        draggable={false}
+        className={styles.logo}
+      />
+      <span className={styles.label}>LOADING</span>
+    </div>
+  );
+}
