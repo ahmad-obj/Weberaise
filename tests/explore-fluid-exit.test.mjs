@@ -24,15 +24,24 @@ test('EXPLORE exit is solver-driven fluid rather than analytic bottomFill', () =
   const composite = read('src/webgl/reveal/shaders.ts');
   const timeline = read('src/experience/motion/exploreTimeline.ts');
 
-  assert.match(engine, /'fluidExit'/);
+  assert.match(engine, /export type RevealMode = 'reveal' \| 'fluidExit' \| 'disabled'/);
   assert.match(engine, /setExitProgress\(/);
   assert.match(engine, /getExitProgress\(/);
   assert.match(engine, /exitSourceProgram/);
+  assert.match(engine, /this\.mode === 'reveal' \|\| this\.mode === 'fluidExit'/);
+  assert.match(engine, /applyExitSource\(this\.velocity/);
+  assert.match(engine, /applyExitSource\(this\.dye/);
   assert.match(fluidShaders, /EXIT_SOURCE_FRAGMENT/);
   assert.match(composite, /uExitProgress/);
   assert.match(composite, /uExitSealStart/);
   assert.match(composite, /smoothstep\(\s*uExitSealStart,\s*1\.0,\s*clamp\(uExitProgress/s);
   assert.doesNotMatch(composite, /sin\s*\(/);
   assert.doesNotMatch(engine, /bottomFill/);
+  assert.match(timeline, /engine\.quality\.enableVelocity/);
+  assert.match(timeline, /!options\.reducedMotion/);
+  assert.match(timeline, /engine\.setMode\('fluidExit'\)/);
+  assert.match(timeline, /engine\.setExitProgress\(progress\.value\)/);
+  assert.match(timeline, /fluidDuration = 1\.6/);
+  assert.match(timeline, /finalBlackHold = options\.reducedMotion \? 0 : 0\.06/);
   assert.doesNotMatch(timeline, /bottomFillState|setBottomFillProgress|setMode\('bottomFill'\)/);
 });
