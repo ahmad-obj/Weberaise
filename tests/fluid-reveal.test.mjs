@@ -12,7 +12,7 @@ import {
 const root = resolve(import.meta.dirname, '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
-test('full profile preserves the Nothin fluid baseline with the approved doubled footprint', () => {
+test('full profile preserves the approved doubled footprint with proportional momentum', () => {
   const full = chooseRevealQuality({
     width: 1440,
     height: 900,
@@ -31,7 +31,8 @@ test('full profile preserves the Nothin fluid baseline with the approved doubled
   // The splat shader is exp(-distance^2 / radius), so doubling the visible
   // linear footprint requires 4x the radius parameter: 0.00006 -> 0.00024.
   assert.equal(full.splatRadius, 0.00024);
-  assert.equal(full.splatForce, 5900);
+  // The visible footprint is 2x wider, so directional momentum scales 2x.
+  assert.equal(full.splatForce, 11800);
   assert.equal(full.revealGain, 3.9);
   assert.equal(full.edgeSoftness, 0.5);
   assert.equal(full.edgeWidth, 0.01);
@@ -48,7 +49,7 @@ test('reference-frame retention matches 60 Hz and is refresh-rate independent', 
   assert.ok(Math.abs(at60 - twoAt120) < 1e-9);
 });
 
-test('lite and reduced profiles keep the same doubled linear footprint', () => {
+test('lite and reduced profiles keep the same doubled footprint contract', () => {
   const lite = chooseRevealQuality({
     width: 390,
     height: 844,
@@ -71,7 +72,7 @@ test('lite and reduced profiles keep the same doubled linear footprint', () => {
   assert.equal(lite.dyeResolution, 256);
   assert.equal(lite.pressureIterations, 10);
   assert.equal(lite.splatRadius, 0.00024);
-  assert.equal(lite.splatForce, 5900);
+  assert.equal(lite.splatForce, 11800);
   assert.equal(lite.edgeSoftness, 0.5);
   assert.equal(lite.edgeWidth, 0.01);
 
