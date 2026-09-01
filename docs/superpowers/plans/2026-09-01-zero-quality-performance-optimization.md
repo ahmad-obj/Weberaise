@@ -2,75 +2,85 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make WEBERAISE measurably faster by deferring unnecessary JavaScript, removing unused work/bytes, shrinking runtime assets losslessly, and eliminating redundant WorkSphere computation without changing a single visible design or motion characteristic.
+**Goal:** Make WEBERAISE measurably faster by deferring unnecessary JavaScript, removing proven-dead work/bytes, shrinking runtime assets losslessly, and eliminating redundant WorkSphere computation without changing any visible design, motion, timing, typography, interaction, or decoded image pixel.
 
-**Architecture:** Treat performance as an invalidation/scheduling problem rather than a quality-reduction problem. First establish reproducible production evidence, then split code by experience phase, remove only mechanically proven dead resources, optimize only losslessly, and finally reduce hot-loop allocations/draws while preserving the exact existing RAF/controller cadence and rendering math.
+**Architecture:** Performance gains come from changing *when* work happens and avoiding work whose output would be identical. Establish a production baseline first, then split code by experience phase, remove only mechanically proven unused resources, recompress images only losslessly, and optimize WorkSphere without changing its RAF/controller cadence or rendering math.
 
-**Tech Stack:** Next.js 16.3.0 App Router, React 19.2.8, TypeScript 7.0.2, GSAP 3.15.0, Framer Motion 12.43.0, custom WebGL/WebGL2, Node test runner, Chrome DevTools Protocol.
+**Tech Stack:** Next.js 16.3.0 App Router, React 19.2.8, TypeScript 7.0.2, GSAP 3.15.0, Framer Motion 12.43.0, WebGL/WebGL2, Node test runner, Chrome DevTools Protocol.
 
 **Spec:** `docs/superpowers/specs/2026-09-01-zero-quality-performance-optimization-design.md`
 
 ## Global Constraints
 
-- Do not change any hero fluid quality-profile value, shader equation, solver pass, blend mode, DPR cap, pressure iteration count, splat radius/force, dissipation, reveal gain, edge softness, or edge width.
-- Do not change loader countdown timing, zero hold, loader completion choreography, hero opening choreography, EXPLORE choreography, GSAP ease, duration, or sequencing.
+- Do not change any Hero fluid quality-profile value, shader equation, solver pass, blend mode, DPR cap, pressure iteration count, splat radius/force, dissipation, reveal gain, edge softness, or edge width.
+- Do not change loader countdown timing, zero hold, loader completion choreography, Hero opening choreography, EXPLORE choreography, GSAP ease, duration, or sequencing.
 - Do not lower animation FPS, WorkSphere mesh detail, Silk quality, DriftWall quality, live-video count, or media cadence.
 - Do not change typography, copy, metadata, semantic/SEO content, accessibility behavior, or reduced-motion behavior.
-- Do not use lossy image conversion. Any modified runtime PNG must decode to exactly the same RGBA pixels.
+- Do not use lossy image conversion. Every modified runtime PNG must decode to exactly the same RGBA pixels.
 - Do not upgrade Next.js, React, GSAP, Framer Motion, TypeScript, or any production dependency in this pass.
-- Keep `feature/hero-nothin-reveal-fidelity` intact. At execution time create an isolated worktree/branch from its then-current HEAD; do not merge unless explicitly requested.
-- Every optimization is independently revertible and gets its own focused test cycle and commit.
-- A faster metric with any visual/loading flash, delayed transition, missing first interaction, geometry drift, font flash, or changed animation is a failed optimization and must be reverted.
+- At execution time branch from the then-current `feature/hero-nothin-reveal-fidelity` HEAD using the worktree skill. Do not merge unless explicitly requested.
+- Every optimization receives its own focused test cycle, visual gate, and commit.
+- A faster metric with any blank frame, delayed transition, missing first interaction, geometry drift, font flash, changed animation, or changed image pixel is a failed optimization and is reverted.
 
 ---
 
-## File Structure
+## File Map
 
 ### New files
 
 - `scripts/capture-performance-qa.mjs` — reproducible CDP capture of homepage phase resources, timing, screenshots, and long tasks.
-- `tests/performance-hero-loading.test.mjs` — source contract for Hero code splitting/prewarm.
-- `src/components/MainSite/PostExploreNarrative/postExploreRuntime.ts` — one cached dynamic-import boundary for heavy post-EXPLORE runtime modules.
-- `src/components/ui/ShutterTextPlaceholder.tsx` — Framer-free hidden layout placeholder matching inactive ShutterText geometry.
-- `tests/post-explore-runtime-loading.test.mjs` — verifies heavy ribbon/Framer code is no longer statically pulled into `JourneyNarrative` and is preloaded during Hero interaction.
-- `tests/font-runtime-contract.test.mjs` — proves the technical font is not referenced before removing it.
-- `tests/public-artwork-contract.test.mjs` — proves runtime artwork references use only the display tree.
-- `tests/work-frame-invalidation.test.mjs` — pure draw-invalidation contract for WorkSphere.
+- `tests/performance-hero-loading.test.mjs` — Hero split/prewarm source contract.
+- `src/components/MainSite/PostExploreNarrative/postExploreRuntime.ts` — cached dynamic-import boundary for heavy post-EXPLORE modules.
+- `src/components/ui/ShutterTextPlaceholder.tsx` — hidden, Framer-free placeholder that preserves inactive ShutterText layout.
+- `tests/post-explore-runtime-loading.test.mjs` — verifies ribbon/Framer runtime is dynamically loaded and prewarmed later.
+- `tests/font-runtime-contract.test.mjs` — proves the technical font is unused before removal.
+- `tests/public-artwork-contract.test.mjs` — proves runtime code references only display artwork.
+- `src/webgl/workSphere/frameInvalidation.ts` — pure WorkSphere draw-invalidation policy.
+- `tests/work-frame-invalidation.test.mjs` — invalidation behavior contract.
+- `docs/PERFORMANCE_OPTIMIZATION_REPORT_2026-09-01.md` — measured before/after results.
 
 ### Existing files modified
 
-- `src/components/experience/ExperienceShell.tsx` — dynamic Hero boundary and post-EXPLORE runtime prewarm trigger.
-- `src/components/experience/Loader/Loader.tsx` — Hero-module + reveal-engine critical prewarm.
-- `src/components/MainSite/PostExploreNarrative/JourneyNarrative.tsx` — consume cached runtime modules only after main starts; use Framer-free placeholder until runtime component is ready.
-- `src/components/ui/shutter-text.tsx` — retain exact active animation, optionally share placeholder helpers without changing motion values.
-- `src/app/layout.tsx` — remove Geist Mono only after mechanical proof that it is unused.
-- `src/webgl/workSphere/math.ts` — remove hot matrix multiplication allocations while preserving alias behavior and operation order.
-- `src/webgl/workSphere/WorkSphereEngine.ts` — reuse matrix scratch storage and render only when visual state changed, while keeping RAF/controller cadence.
-- `src/webgl/workSphere/mediaPool.ts` — return whether a media texture changed this frame.
-- `next.config.ts` — only if fingerprinted public assets need explicit immutable headers after deployed-header measurement.
+- `src/components/experience/ExperienceShell.tsx`
+- `src/components/experience/Loader/Loader.tsx`
+- `src/components/MainSite/PostExploreNarrative/JourneyNarrative.tsx`
+- `src/app/layout.tsx`
+- `src/webgl/workSphere/math.ts`
+- `src/webgl/workSphere/WorkSphereEngine.ts`
+- `src/webgl/workSphere/mediaPool.ts`
+- `package.json`
+- `next.config.ts` only if deployed-cache measurement proves a change is needed and URLs are fingerprinted first.
 
-### Binary/path-only changes
+### Path/binary-only changes
 
-- `public/artwork/journey/source/**` → `docs/reference/artwork/journey/source/**` after runtime-reference proof.
-- `public/artwork/journey/ASSET_MANIFEST.json` → `docs/reference/artwork/journey/ASSET_MANIFEST.json` after runtime-reference proof.
-- `public/artwork/journey/display/Q1/*.png`, `public/artwork/journey/display/Q2/*.png` — lossless IDAT recompression only.
+- `public/artwork/journey/source/**` moves to `docs/reference/artwork/journey/source/**` after reference proof.
+- `public/artwork/journey/ASSET_MANIFEST.json` moves to `docs/reference/artwork/journey/ASSET_MANIFEST.json` after reference proof.
+- `public/artwork/journey/display/Q1/*.png` and `Q2/*.png` may receive lossless recompression only.
 
 ---
 
-### Task 1: Build the Performance/Fidelity Baseline Harness
+### Task 1: Establish the Production Performance and Fidelity Baseline
 
 **Files:**
 - Create: `scripts/capture-performance-qa.mjs`
 - Modify: `package.json`
-- Test: existing full suite plus a direct smoke invocation of the script
 
 **Interfaces:**
-- Consumes: a running production server and a Chrome page DevTools websocket.
-- Produces: JSON with phase-specific `performance.getEntriesByType('resource')`, navigation timing, long-task data, CDP metrics, and PNG screenshots.
+- Input: production server URL, Chrome page DevTools websocket, output directory, viewport.
+- Output: `metrics.json`, `hero-interactive.png`, and `main.png` for each viewport.
 
-- [ ] **Step 1: Confirm the pre-optimization branch is healthy before changing production code**
+- [ ] **Step 1: Create the isolated execution branch and record its immutable base SHA**
 
-Run:
+After using `superpowers:using-git-worktrees`, run inside the new worktree:
+
+```bash
+PERF_BASE=$(git rev-parse HEAD)
+printf '%s\n' "$PERF_BASE" > /tmp/weberaise-perf-base-sha
+```
+
+This SHA is the final whole-pass diff base.
+
+- [ ] **Step 2: Prove the branch is healthy before performance work**
 
 ```bash
 npm ci
@@ -80,11 +90,9 @@ npm run build
 git diff --check
 ```
 
-Expected: all commands exit `0`. If the branch is not green before optimization, record the existing failure and stop this task; do not mix unrelated fixes into the performance branch.
+Expected: every command exits `0`. Existing failures are not fixed in this branch; they must be separated before continuing.
 
-- [ ] **Step 2: Capture the built-in Next.js 16.3 bundle graph**
-
-Run:
+- [ ] **Step 3: Save the first-party Next.js bundle graph**
 
 ```bash
 rm -rf /tmp/weberaise-perf-before
@@ -93,13 +101,11 @@ npx next experimental-analyze --output
 cp -R .next/diagnostics/analyze /tmp/weberaise-perf-before/analyze
 ```
 
-Expected: `.next/diagnostics/analyze` exists and is copied. This uses the first-party Turbopack analyzer available in Next.js 16.1+; do not install `@next/bundle-analyzer`.
+Expected: `.next/diagnostics/analyze` exists. Do not add `@next/bundle-analyzer`; Next.js 16.3 already contains the Turbopack analyzer.
 
-- [ ] **Step 3: Add a production-safe CDP capture script**
+- [ ] **Step 4: Add the CDP capture script**
 
-Create `scripts/capture-performance-qa.mjs` using the repository's existing websocket/CDP pattern. The script must inject a long-task observer before navigation, collect resources at `heroInteractive` and `main`, and capture screenshots without changing page state except for clicking EXPLORE.
-
-Implement this structure:
+Create `scripts/capture-performance-qa.mjs` with this implementation:
 
 ```js
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -129,7 +135,7 @@ await new Promise((resolve, reject) => {
   socket.onerror = () => reject(new Error(`Unable to connect to ${options.ws}`));
 });
 
-let id = 0;
+let sequence = 0;
 const pending = new Map();
 socket.onmessage = (event) => {
   const message = JSON.parse(event.data);
@@ -142,9 +148,9 @@ socket.onmessage = (event) => {
 
 function call(method, params = {}) {
   return new Promise((resolve, reject) => {
-    const requestId = ++id;
-    pending.set(requestId, { resolve, reject });
-    socket.send(JSON.stringify({ id: requestId, method, params }));
+    const id = ++sequence;
+    pending.set(id, { resolve, reject });
+    socket.send(JSON.stringify({ id, method, params }));
   });
 }
 
@@ -161,9 +167,9 @@ const waitFor = async (expression, label, attempts = 160) => {
   }
   throw new Error(`Timed out waiting for ${label}`);
 };
-const screenshot = async (name) => {
+const capture = async (filename) => {
   const result = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
-  await writeFile(`${options.out}/${name}.png`, Buffer.from(result.data, 'base64'));
+  await writeFile(`${options.out}/${filename}`, Buffer.from(result.data, 'base64'));
 };
 const snapshot = async (name) => {
   const resources = await evaluate(`performance.getEntriesByType('resource').map((entry) => ({
@@ -178,8 +184,8 @@ const snapshot = async (name) => {
   const navigation = await evaluate(`performance.getEntriesByType('navigation')[0]?.toJSON() ?? null`);
   const longTasks = await evaluate(`globalThis.__wrLongTasks ?? []`);
   const metrics = await call('Performance.getMetrics');
-  await screenshot(name);
-  return { name, resources, navigation, longTasks, metrics: metrics.metrics };
+  await capture(`${name}.png`);
+  return { resources, navigation, longTasks, metrics: metrics.metrics };
 };
 
 await call('Page.enable');
@@ -190,6 +196,9 @@ await call('Emulation.setDeviceMetricsOverride', {
   height: options.height,
   deviceScaleFactor: 1,
   mobile: options.width <= 720,
+});
+await call('Emulation.setEmulatedMedia', {
+  features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }],
 });
 await call('Page.addScriptToEvaluateOnNewDocument', {
   source: `globalThis.__wrLongTasks = []; new PerformanceObserver((list) => {
@@ -204,39 +213,59 @@ await evaluate(`document.querySelector('.hero-explore')?.click()`);
 await waitFor(`document.querySelector('.experience-shell')?.dataset.experienceState === 'main'`, 'main');
 await wait(900);
 const main = await snapshot('main');
-await writeFile(`${options.out}/metrics.json`, `${JSON.stringify({ viewport: { width: options.width, height: options.height }, heroInteractive, main }, null, 2)}\n`);
+await writeFile(
+  `${options.out}/metrics.json`,
+  `${JSON.stringify({ viewport: { width: options.width, height: options.height }, heroInteractive, main }, null, 2)}\n`,
+);
 socket.close();
 ```
 
-- [ ] **Step 4: Add a package script without adding dependencies**
+- [ ] **Step 5: Add the package script**
 
-In `package.json`, add:
+Add to `package.json` scripts:
 
 ```json
 "perf:capture": "node scripts/capture-performance-qa.mjs"
 ```
 
-Do not alter dependency versions.
+No dependency change is allowed.
 
-- [ ] **Step 5: Run the baseline at desktop and mobile widths**
+- [ ] **Step 6: Run the baseline at desktop and mobile widths**
 
-Start production server and a clean Chrome remote-debugging profile, then run the capture twice:
+Start production server in one shell:
 
 ```bash
 PORT=3000 npm run start
+```
+
+Start a clean Chrome debugging profile in another shell:
+
+```bash
+rm -rf /tmp/weberaise-perf-chrome
 chromium --remote-debugging-port=9222 --user-data-dir=/tmp/weberaise-perf-chrome --disable-extensions about:blank
 ```
 
-Resolve the page websocket from `http://127.0.0.1:9222/json/list`, then:
+Resolve the page websocket automatically:
 
 ```bash
-npm run perf:capture -- --ws 'ws://127.0.0.1:9222/devtools/page/PAGE_ID' --url http://127.0.0.1:3000 --out /tmp/weberaise-perf-before/desktop --viewport 1440x900
-npm run perf:capture -- --ws 'ws://127.0.0.1:9222/devtools/page/PAGE_ID' --url http://127.0.0.1:3000 --out /tmp/weberaise-perf-before/mobile --viewport 390x844
+PAGE_WS=$(python3 - <<'PY'
+import json, urllib.request
+pages = json.load(urllib.request.urlopen('http://127.0.0.1:9222/json/list'))
+print(next(page['webSocketDebuggerUrl'] for page in pages if page.get('type') == 'page'))
+PY
+)
 ```
 
-Expected: each output directory contains `hero-interactive.png`, `main.png`, and `metrics.json`.
+Capture both viewports:
 
-- [ ] **Step 6: Commit the measurement harness only**
+```bash
+npm run perf:capture -- --ws "$PAGE_WS" --url http://127.0.0.1:3000 --out /tmp/weberaise-perf-before/desktop --viewport 1440x900
+npm run perf:capture -- --ws "$PAGE_WS" --url http://127.0.0.1:3000 --out /tmp/weberaise-perf-before/mobile --viewport 390x844
+```
+
+Expected in each directory: `hero-interactive.png`, `main.png`, `metrics.json`.
+
+- [ ] **Step 7: Commit the measurement harness only**
 
 ```bash
 git add package.json scripts/capture-performance-qa.mjs
@@ -245,7 +274,7 @@ git commit -m "test: add production performance capture harness"
 
 ---
 
-### Task 2: Split Hero Code from the Initial Homepage Graph
+### Task 2: Split Hero Code from the Initial Homepage Client Graph
 
 **Files:**
 - Create: `tests/performance-hero-loading.test.mjs`
@@ -253,8 +282,8 @@ git commit -m "test: add production performance capture harness"
 - Modify: `src/components/experience/Loader/Loader.tsx`
 
 **Interfaces:**
-- Produces: dynamic `Hero` component boundary; loader critical task guarantees Hero module + reveal engine are loaded before `CRITICAL_READY`.
-- Preserves: all existing Hero props and phase transitions.
+- `Hero` keeps its existing props and phase contract.
+- The loader's existing `hero-code` critical task becomes the owner of loading the Hero module and warming the reveal engine.
 
 - [ ] **Step 1: Write the failing source-contract test**
 
@@ -268,38 +297,28 @@ import test from 'node:test';
 const shellPath = new URL('../src/components/experience/ExperienceShell.tsx', import.meta.url);
 const loaderPath = new URL('../src/components/experience/Loader/Loader.tsx', import.meta.url);
 
-test('Hero is split from the initial ExperienceShell graph and prewarmed by the loader', async () => {
-  const [shell, loader] = await Promise.all([
-    readFile(shellPath, 'utf8'),
-    readFile(loaderPath, 'utf8'),
-  ]);
-
+test('Hero is split from ExperienceShell and prewarmed by Loader', async () => {
+  const [shell, loader] = await Promise.all([readFile(shellPath, 'utf8'), readFile(loaderPath, 'utf8')]);
   assert.match(shell, /import dynamic from ['"]next\/dynamic['"]/);
   assert.doesNotMatch(shell, /import\s+\{\s*Hero\s*\}\s+from\s+['"]@\/components\/experience\/Hero\/Hero['"]/);
-  assert.match(shell, /dynamic\(\(\) => import\(['"]@\/components\/experience\/Hero\/Hero['"]\)/);
+  assert.match(shell, /import\(['"]@\/components\/experience\/Hero\/Hero['"]\)/);
   assert.match(loader, /import\(['"]@\/components\/experience\/Hero\/Hero['"]\)/);
   assert.match(loader, /import\(['"]@\/webgl\/reveal\/createRevealEngine['"]\)/);
   assert.match(loader, /warmRevealEngine\(\)/);
 });
 ```
 
-- [ ] **Step 2: Run the focused test and confirm RED**
+- [ ] **Step 2: Confirm RED**
 
 ```bash
 node --test tests/performance-hero-loading.test.mjs
 ```
 
-Expected: FAIL because `ExperienceShell` still statically imports `Hero`.
+Expected: FAIL because `ExperienceShell` still has a static Hero import.
 
-- [ ] **Step 3: Replace the static Hero import with `next/dynamic`**
+- [ ] **Step 3: Add the dynamic Hero boundary**
 
-In `src/components/experience/ExperienceShell.tsx`, remove:
-
-```ts
-import { Hero } from '@/components/experience/Hero/Hero';
-```
-
-Add:
+In `ExperienceShell.tsx`, remove the static Hero import and add:
 
 ```ts
 import dynamic from 'next/dynamic';
@@ -309,9 +328,9 @@ const Hero = dynamic(
 );
 ```
 
-Keep the JSX and all Hero props unchanged.
+Do not alter Hero JSX or props.
 
-- [ ] **Step 4: Make the loader's `hero-code` task preload the actual Hero module before warming WebGL**
+- [ ] **Step 4: Make Loader preload the Hero module before critical readiness**
 
 In `Loader.tsx`, add outside the component:
 
@@ -325,15 +344,15 @@ async function warmHeroCode(): Promise<void> {
 }
 ```
 
-Replace the current hero-code task with:
+Replace only the existing `hero-code` task body:
 
 ```ts
 { id: 'hero-code', weight: 2, run: warmHeroCode },
 ```
 
-Do not change the task weight, progress controller, zero hold, or loader phase logic.
+Keep its weight and all loader timing unchanged.
 
-- [ ] **Step 5: Run focused and full correctness checks**
+- [ ] **Step 5: Verify correctness and build**
 
 ```bash
 node --test tests/performance-hero-loading.test.mjs
@@ -345,17 +364,14 @@ git diff --check
 
 Expected: all PASS.
 
-- [ ] **Step 6: Re-run the production capture and compare the hero handoff**
+- [ ] **Step 6: Verify the handoff visually and in the analyzer**
 
-Run desktop/mobile `perf:capture` into `/tmp/weberaise-perf-task2/...`.
+Repeat Task 1 captures into `/tmp/weberaise-perf-task2`. Acceptance requirements:
 
-Acceptance conditions:
-
-- no blank frame between loader completion and hero opening;
-- hero screenshot geometry/copy/logo matches baseline;
-- loader/hero state sequence unchanged;
-- initial analyze graph no longer traces `HeroRevealCanvas`/reveal engine through a static `ExperienceShell -> Hero` import chain;
-- `Hero` and reveal code are loaded before the loader dispatches critical-ready.
+- no blank frame between loader completion and Hero opening;
+- exact same Hero logo/typography/layout at both viewports;
+- same state order `loading -> loaderCompletion -> heroOpening -> heroInteractive`;
+- bundle analyzer no longer shows the reveal engine entering the initial graph through a static `ExperienceShell -> Hero` import chain.
 
 - [ ] **Step 7: Commit**
 
@@ -376,8 +392,8 @@ git commit -m "perf: defer hero code behind loader prewarm"
 - Modify: `src/components/MainSite/PostExploreNarrative/JourneyNarrative.tsx`
 
 **Interfaces:**
-- Produces: `loadPostExploreRuntime(): Promise<PostExploreRuntime>` and `preloadPostExploreRuntime(): void`.
-- Runtime object contains the existing exported functions/components without changing their signatures.
+- Produces `loadPostExploreRuntime(): Promise<PostExploreRuntime>` and `preloadPostExploreRuntime(): void`.
+- `JourneyNarrative` markup and visible behavior remain unchanged.
 
 - [ ] **Step 1: Write the failing runtime-boundary test**
 
@@ -392,13 +408,12 @@ const journeyPath = new URL('../src/components/MainSite/PostExploreNarrative/Jou
 const shellPath = new URL('../src/components/experience/ExperienceShell.tsx', import.meta.url);
 const runtimePath = new URL('../src/components/MainSite/PostExploreNarrative/postExploreRuntime.ts', import.meta.url);
 
-test('post-EXPLORE heavy runtime is dynamically loaded and prewarmed during hero interaction', async () => {
+test('post-EXPLORE heavy modules are behind one cached dynamic boundary', async () => {
   const [journey, shell, runtime] = await Promise.all([
     readFile(journeyPath, 'utf8'),
     readFile(shellPath, 'utf8'),
     readFile(runtimePath, 'utf8'),
   ]);
-
   for (const name of ['buildJourneyPath', 'createRibbonController', 'getJourneyRoute', 'revealJourneyStop']) {
     assert.doesNotMatch(journey, new RegExp(`import\\s+\\{[^}]*${name}[^}]*\\}\\s+from`));
   }
@@ -409,17 +424,16 @@ test('post-EXPLORE heavy runtime is dynamically loaded and prewarmed during hero
   assert.match(runtime, /import\(['"]\.\/questionReveal['"]\)/);
   assert.match(runtime, /import\(['"]@\/components\/ui\/shutter-text['"]\)/);
   assert.match(shell, /preloadPostExploreRuntime\(\)/);
-  assert.match(shell, /state === ['"]heroInteractive['"]/);
 });
 ```
 
-- [ ] **Step 2: Run the focused test and confirm RED**
+- [ ] **Step 2: Confirm RED**
 
 ```bash
 node --test tests/post-explore-runtime-loading.test.mjs
 ```
 
-Expected: FAIL because the runtime loader file does not exist and `JourneyNarrative` still statically imports the heavy modules.
+Expected: FAIL because the runtime loader does not exist and the imports are static.
 
 - [ ] **Step 3: Create the cached runtime loader**
 
@@ -460,9 +474,7 @@ export function preloadPostExploreRuntime(): void {
 }
 ```
 
-All `typeof import(...)` references are type-only and must not become runtime imports.
-
-- [ ] **Step 4: Create a Framer-free inactive placeholder with the same text geometry**
+- [ ] **Step 4: Create the inactive Framer-free placeholder**
 
 Create `src/components/ui/ShutterTextPlaceholder.tsx`:
 
@@ -473,19 +485,16 @@ function glyph(char: string) {
   return char === ' ' ? '\u00A0' : char;
 }
 
-export function ShutterTextPlaceholder({
-  lines,
-  className = '',
-}: {
-  lines: readonly string[];
-  className?: string;
-}) {
-  const rootClassName = `${styles.root} ${className}`.trim();
+export function ShutterTextPlaceholder({ lines }: { lines: readonly string[] }) {
   return (
-    <span className={rootClassName} aria-label={lines.join(' ')}>
+    <span className={styles.root} aria-label={lines.join(' ')}>
       <span className={`${styles.row} ${styles.placeholder}`} aria-hidden="true">
         {lines.map((line, lineIndex) => (
-          <span key={`${line}-${lineIndex}`} className={styles.line}>
+          <span
+            key={`${line}-${lineIndex}`}
+            className={styles.line}
+            data-reassurance-line={lineIndex === 0 ? 'one' : 'two'}
+          >
             {line.split('').map((char, characterIndex) => (
               <span key={`${char}-${characterIndex}`} className={styles.character}>
                 <span className={styles.mainCharacter}>{glyph(char)}</span>
@@ -499,11 +508,11 @@ export function ShutterTextPlaceholder({
 }
 ```
 
-This placeholder is hidden by the existing `.placeholder { visibility: hidden; }` rule and preserves the inactive layout without importing Framer Motion.
+The existing `.placeholder { visibility: hidden; }` rule remains unchanged.
 
-- [ ] **Step 5: Prewarm the post-EXPLORE runtime during hero interaction**
+- [ ] **Step 5: Prewarm the runtime during Hero interaction without awaiting it**
 
-In `ExperienceShell.tsx`, statically import only the tiny loader:
+In `ExperienceShell.tsx`, import only the tiny loader module:
 
 ```ts
 import { preloadPostExploreRuntime } from '@/components/MainSite/PostExploreNarrative/postExploreRuntime';
@@ -518,11 +527,11 @@ useEffect(() => {
 }, [state]);
 ```
 
-Do not change Hero timing or delay EXPLORE.
+This effect must never block Hero interaction or EXPLORE.
 
-- [ ] **Step 6: Replace JourneyNarrative value imports with runtime consumption**
+- [ ] **Step 6: Convert JourneyNarrative to consume the cached runtime only when main starts**
 
-Keep only type imports such as `BuiltJourneyPath`/`JourneyStopId`. Remove static value imports for the four runtime functions and `ShutterText`.
+Keep type-only imports for `BuiltJourneyPath` and `JourneyStopId`. Remove static value imports of `buildJourneyPath`, `createRibbonController`, `getJourneyRoute`, `revealJourneyStop`, and `ShutterText`.
 
 Add:
 
@@ -537,23 +546,35 @@ Add state:
 const [ShutterTextRuntime, setShutterTextRuntime] = useState<PostExploreRuntime['ShutterText'] | null>(null);
 ```
 
-Inside the existing first `useLayoutEffect`, make `startJourney` async and load once before attaching geometry observers:
+Inside the first layout effect, add:
+
+```ts
+let disposed = false;
+let runtime: PostExploreRuntime | null = null;
+```
+
+Keep `rebuild` defined before `scheduleRebuild`, but make it runtime-aware:
+
+```ts
+const rebuild = () => {
+  if (!runtime) return;
+  const config = runtime.getJourneyRoute(window.innerWidth);
+  const built = runtime.buildJourneyPath(root, config);
+  lastWidth = built.width;
+  lastHeight = built.height;
+  setGeometry({ ...built, sampleSpacing: config.sampleSpacing });
+};
+```
+
+Make `startJourney` asynchronous and race-safe:
 
 ```ts
 const startJourney = async () => {
   if (started || disposed || (shell && shell.dataset.experienceState !== 'main')) return;
   started = true;
-  const runtime = await loadPostExploreRuntime();
+  runtime = await loadPostExploreRuntime();
   if (disposed) return;
-  setShutterTextRuntime(() => runtime.ShutterText);
-
-  const rebuild = () => {
-    const config = runtime.getJourneyRoute(window.innerWidth);
-    const built = runtime.buildJourneyPath(root, config);
-    lastWidth = built.width;
-    lastHeight = built.height;
-    setGeometry({ ...built, sampleSpacing: config.sampleSpacing });
-  };
+  setShutterTextRuntime(() => runtime!.ShutterText);
 
   resizeObserver = new ResizeObserver((entries) => {
     const entry = entries[0];
@@ -566,17 +587,19 @@ const startJourney = async () => {
 };
 ```
 
-Set `disposed = true` in cleanup before disconnecting observers.
+Call it with `void startJourney()` from both the immediate-main path and the existing mutation-observer path.
 
-In the controller effect, resolve the cached runtime before creating the controller:
+In cleanup, set `disposed = true` before disconnecting observers/timers.
+
+In the controller layout effect, resolve the cached runtime before constructing the controller:
 
 ```ts
 let disposed = false;
 let cleanupController: () => void = () => undefined;
 const frame = window.requestAnimationFrame(() => {
-  void loadPostExploreRuntime().then((runtime) => {
+  void loadPostExploreRuntime().then((runtimeModule) => {
     if (disposed) return;
-    cleanupController = runtime.createRibbonController({
+    cleanupController = runtimeModule.createRibbonController({
       root,
       svg,
       measurementPath: backBasePath,
@@ -593,7 +616,7 @@ const frame = window.requestAnimationFrame(() => {
         if (id === 'reassurance') setReassuranceActive(true);
         else {
           const target = anchor.querySelector<HTMLElement>('[data-journey-question]');
-          if (target) runtime.revealJourneyStop(target, reducedMotion);
+          if (target) runtimeModule.revealJourneyStop(target, reducedMotion);
         }
         anchor.dataset.revealed = 'true';
       },
@@ -607,7 +630,7 @@ return () => {
 };
 ```
 
-Replace the reassurance render with:
+Replace the reassurance child only:
 
 ```tsx
 {ShutterTextRuntime ? (
@@ -617,7 +640,7 @@ Replace the reassurance render with:
 )}
 ```
 
-- [ ] **Step 7: Run correctness tests**
+- [ ] **Step 7: Verify tests and production build**
 
 ```bash
 node --test tests/post-explore-runtime-loading.test.mjs
@@ -625,48 +648,35 @@ npm test
 npm run typecheck
 npm run build
 git diff --check
-```
-
-Expected: all PASS.
-
-- [ ] **Step 8: Run bundle and throttled visual verification**
-
-Run:
-
-```bash
 npx next experimental-analyze --output
 ```
 
-Verify the `/` initial client import chain no longer includes Framer Motion, `buildJourneyPath`, `ribbonController`, `ribbonPacing`, or `ribbonPrimitives` solely because `JourneyNarrative` was imported.
+Acceptance requirement: Framer Motion and the large ribbon geometry/controller modules are absent from the earliest homepage client path unless another genuinely initial feature imports them.
 
-Then run the homepage capture under normal network and Chrome DevTools Fast 3G throttling. Acceptance conditions:
+- [ ] **Step 8: Verify immediate EXPLORE under throttling**
 
-- Hero interaction becomes available without waiting for post-EXPLORE runtime.
-- Clicking EXPLORE immediately after Hero becomes interactive does not expose blank/missing ribbon/question content.
-- Q1/Q2/Q3/reassurance geometry and animations match baseline screenshots/behavior.
-- Shutter animation timings/colours remain exactly those defined in `shutter-text.tsx`.
+Run the production site with Chrome DevTools Fast 3G throttling. As soon as `heroInteractive` appears, click EXPLORE immediately.
 
-If Fast 3G exposes a late main runtime, move `preloadPostExploreRuntime()` earlier to `heroOpening`; do not delay EXPLORE and do not ship a loading placeholder visible to the user.
+Pass condition: no missing ribbon, delayed question geometry, missing Shutter animation, or delayed EXPLORE completion.
 
-- [ ] **Step 9: Commit**
+If this fails, do **not** delay EXPLORE. Move the non-blocking `preloadPostExploreRuntime()` trigger earlier to `heroOpening` and repeat. If the visual/timing invariant still cannot be guaranteed, revert Task 3 and retain the baseline loading strategy.
+
+- [ ] **Step 9: Commit only after the throttle gate passes**
 
 ```bash
 git add src/components/experience/ExperienceShell.tsx src/components/MainSite/PostExploreNarrative/JourneyNarrative.tsx src/components/MainSite/PostExploreNarrative/postExploreRuntime.ts src/components/ui/ShutterTextPlaceholder.tsx tests/post-explore-runtime-loading.test.mjs
-git commit -m "perf: defer post-explore runtime until hero phase"
+git commit -m "perf: defer post-explore runtime from initial load"
 ```
 
 ---
 
-### Task 4: Remove the Unused Technical Font Only if Proven Dead
+### Task 4: Remove Geist Mono Only if Production Source Proves It Is Unused
 
 **Files:**
 - Create: `tests/font-runtime-contract.test.mjs`
 - Modify: `src/app/layout.tsx`
 
-**Interfaces:**
-- Produces: identical visible fonts with one fewer globally registered font family if `--font-technical` is unused.
-
-- [ ] **Step 1: Write the source-wide contract test**
+- [ ] **Step 1: Write the source-wide contract**
 
 Create `tests/font-runtime-contract.test.mjs`:
 
@@ -687,33 +697,30 @@ async function walk(dir) {
   return files;
 }
 
-test('unused technical font is not registered in the production app', async () => {
-  const root = path.resolve('src');
-  const files = await walk(root);
+test('technical font is not used or registered', async () => {
+  const files = await walk(path.resolve('src'));
   const usages = [];
   for (const file of files) {
     const source = await readFile(file, 'utf8');
-    if (file.endsWith('src/app/layout.tsx')) continue;
+    if (file.endsWith(path.join('src', 'app', 'layout.tsx'))) continue;
     if (source.includes('--font-technical') || source.includes('Geist_Mono')) usages.push(file);
   }
   assert.deepEqual(usages, []);
-
   const layout = await readFile(path.resolve('src/app/layout.tsx'), 'utf8');
-  assert.doesNotMatch(layout, /Geist_Mono/);
-  assert.doesNotMatch(layout, /geistMono/);
-  assert.doesNotMatch(layout, /--font-technical/);
+  assert.doesNotMatch(layout, /Geist_Mono|geistMono|--font-technical/);
 });
 ```
 
-- [ ] **Step 2: Run and confirm RED**
+- [ ] **Step 2: Confirm RED and the absence of real usages**
 
 ```bash
 node --test tests/font-runtime-contract.test.mjs
+rg --line-number --glob '!src/app/layout.tsx' -- '--font-technical|Geist_Mono|geistMono' src
 ```
 
-Expected: FAIL because `layout.tsx` still registers Geist Mono. If the test reports any production source usage outside layout, abort this task and keep Geist Mono.
+Expected: test fails only because `layout.tsx` still registers Geist Mono; `rg` prints no production usage. If `rg` finds a real usage, abort Task 4 and keep the font.
 
-- [ ] **Step 3: Remove only Geist Mono registration**
+- [ ] **Step 3: Remove only Geist Mono from the root layout**
 
 Change:
 
@@ -727,19 +734,13 @@ to:
 import { Geist, Inter_Tight } from 'next/font/google';
 ```
 
-Delete:
-
-```ts
-const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-technical', display: 'swap' });
-```
-
-Change the html class to:
+Delete the `geistMono` declaration and change the html class to:
 
 ```tsx
 <html lang="en" className={`${geist.variable} ${interTight.variable}`}>
 ```
 
-Do not alter Geist or Inter Tight options.
+Do not change Geist or Inter Tight options.
 
 - [ ] **Step 4: Verify and commit**
 
@@ -755,17 +756,14 @@ git commit -m "perf: remove unused technical font"
 
 ---
 
-### Task 5: Remove Master Artwork from the Public Runtime Tree
+### Task 5: Remove Master Artwork from the Public Deployment Tree
 
 **Files:**
 - Create: `tests/public-artwork-contract.test.mjs`
 - Move: `public/artwork/journey/source/**` → `docs/reference/artwork/journey/source/**`
 - Move: `public/artwork/journey/ASSET_MANIFEST.json` → `docs/reference/artwork/journey/ASSET_MANIFEST.json`
 
-**Interfaces:**
-- Runtime URLs under `/artwork/journey/display/**` remain unchanged.
-
-- [ ] **Step 1: Write the runtime-reference test**
+- [ ] **Step 1: Write the runtime-reference proof test**
 
 Create `tests/public-artwork-contract.test.mjs`:
 
@@ -781,12 +779,12 @@ async function walk(dir) {
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) files.push(...await walk(full));
-    else if (/\.(?:ts|tsx|js|mjs|css|json|md)$/.test(entry.name)) files.push(full);
+    else if (/\.(?:ts|tsx|js|mjs|css|json)$/.test(entry.name)) files.push(full);
   }
   return files;
 }
 
-test('production source references journey display artwork only', async () => {
+test('runtime source uses journey display assets only', async () => {
   const files = await walk(path.resolve('src'));
   const source = (await Promise.all(files.map((file) => readFile(file, 'utf8')))).join('\n');
   assert.doesNotMatch(source, /\/artwork\/journey\/source\//);
@@ -796,15 +794,16 @@ test('production source references journey display artwork only', async () => {
 });
 ```
 
-- [ ] **Step 2: Run the test before moving assets**
+- [ ] **Step 2: Prove the current runtime already satisfies that contract**
 
 ```bash
 node --test tests/public-artwork-contract.test.mjs
+rg --line-number '/artwork/journey/source/|ASSET_MANIFEST\.json' src
 ```
 
-Expected: PASS. This is a proof test, not a RED test; the behavior already exists and the task changes deployment packaging rather than application logic.
+Expected: test PASS and `rg` returns no production source match.
 
-- [ ] **Step 3: Move source/master assets out of `public` without modifying bytes**
+- [ ] **Step 3: Move master/reference files without changing their bytes**
 
 ```bash
 mkdir -p docs/reference/artwork/journey
@@ -812,9 +811,9 @@ git mv public/artwork/journey/source docs/reference/artwork/journey/source
 git mv public/artwork/journey/ASSET_MANIFEST.json docs/reference/artwork/journey/ASSET_MANIFEST.json
 ```
 
-Do not touch `public/artwork/journey/display`.
+Do not touch `public/artwork/journey/display` in this task.
 
-- [ ] **Step 4: Verify production behavior and build**
+- [ ] **Step 4: Verify and commit**
 
 ```bash
 node --test tests/public-artwork-contract.test.mjs
@@ -822,19 +821,7 @@ npm test
 npm run typecheck
 npm run build
 git diff --check
-```
-
-Also run:
-
-```bash
-find public/artwork/journey -type f -maxdepth 4 -print
-```
-
-Expected: only runtime display assets remain under the journey public tree.
-
-- [ ] **Step 5: Commit**
-
-```bash
+find public/artwork/journey -type f -print
 git add tests/public-artwork-contract.test.mjs docs/reference/artwork/journey public/artwork/journey
 git commit -m "perf: remove source artwork from public deployment"
 ```
@@ -844,40 +831,30 @@ git commit -m "perf: remove source artwork from public deployment"
 ### Task 6: Losslessly Recompress Runtime Journey PNGs
 
 **Files:**
-- Modify binary bytes only: `public/artwork/journey/display/Q1/*.png`
-- Modify binary bytes only: `public/artwork/journey/display/Q2/*.png`
+- Modify bytes only: `public/artwork/journey/display/Q1/*.png`
+- Modify bytes only: `public/artwork/journey/display/Q2/*.png`
 
-**Interfaces:**
-- Same filenames, dimensions, alpha, colour chunks, and decoded pixels.
-
-- [ ] **Step 1: Copy exact pre-optimization PNGs for verification**
+- [ ] **Step 1: Preserve exact originals and byte totals**
 
 ```bash
 rm -rf /tmp/weberaise-png-before
 mkdir -p /tmp/weberaise-png-before
 cp -a public/artwork/journey/display /tmp/weberaise-png-before/display
-```
-
-- [ ] **Step 2: Record original byte totals**
-
-```bash
-find public/artwork/journey/display -type f -name '*.png' -print0 | xargs -0 stat -c '%s %n' | tee /tmp/weberaise-png-before/sizes.txt
+find public/artwork/journey/display -type f -name '*.png' -print0 | xargs -0 stat -c '%s %n' > /tmp/weberaise-png-before/sizes.txt
 awk '{sum += $1} END {print sum}' /tmp/weberaise-png-before/sizes.txt
 ```
 
-- [ ] **Step 3: Run lossless PNG recompression only**
+Record the printed byte total in the final report.
 
-Use OxiPNG with no stripping/conversion:
+- [ ] **Step 2: Recompress with OxiPNG without stripping or transforming image data**
 
 ```bash
 find public/artwork/journey/display -type f -name '*.png' -print0 | xargs -0 oxipng -o 4
 ```
 
-Do not pass `--strip`, palette reduction, bit-depth reduction, or format-conversion flags.
+Do not pass `--strip`, palette conversion, bit-depth reduction, or format conversion.
 
-- [ ] **Step 4: Prove decoded-pixel identity for every file**
-
-For every PNG, run ImageMagick absolute-error comparison:
+- [ ] **Step 3: Prove exact decoded-pixel equality**
 
 ```bash
 while IFS= read -r -d '' after; do
@@ -885,15 +862,24 @@ while IFS= read -r -d '' after; do
   before="/tmp/weberaise-png-before/display/$rel"
   error=$(compare -metric AE "$before" "$after" null: 2>&1 || true)
   if [ "$error" != "0" ]; then
-    echo "PIXEL MISMATCH: $rel ($error)" >&2
+    printf 'PIXEL MISMATCH: %s (%s)\n' "$rel" "$error" >&2
     exit 1
   fi
 done < <(find public/artwork/journey/display -type f -name '*.png' -print0)
 ```
 
-Expected: every comparison returns absolute error `0`.
+Expected: exit `0`; every file has absolute pixel error `0`.
 
-- [ ] **Step 5: Confirm dimensions/channels and build remain unchanged**
+- [ ] **Step 4: Record after bytes and require a real reduction**
+
+```bash
+find public/artwork/journey/display -type f -name '*.png' -print0 | xargs -0 stat -c '%s %n' > /tmp/weberaise-png-after-sizes.txt
+awk '{sum += $1} END {print sum}' /tmp/weberaise-png-after-sizes.txt
+```
+
+If total bytes are not lower, restore the originals and make no PNG commit. Do not use a lossy setting to manufacture a reduction.
+
+- [ ] **Step 5: Verify application and visual checkpoints**
 
 ```bash
 npm test
@@ -902,36 +888,37 @@ npm run build
 git diff --check
 ```
 
-Run the desktop/mobile performance capture and manually compare Q1/Q2 artwork at the existing journey checkpoints.
+Run the existing journey QA capture plus Task 1 desktop/mobile capture. Q1/Q2 must be visually identical.
 
-- [ ] **Step 6: Commit binary-only optimization**
+- [ ] **Step 6: Commit only the recompressed binaries**
 
 ```bash
 git add public/artwork/journey/display/Q1 public/artwork/journey/display/Q2
 git commit -m "perf: losslessly compress journey artwork"
 ```
 
-If total bytes do not decrease meaningfully, restore the PNGs and skip this commit; no quality setting may be weakened to force a win.
-
 ---
 
-### Task 7: Remove WorkSphere Hot-Loop Allocations and Redundant Draws
+### Task 7: Remove WorkSphere Hot-Loop Allocations and Identical Redraws
 
 **Files:**
+- Create: `src/webgl/workSphere/frameInvalidation.ts`
 - Create: `tests/work-frame-invalidation.test.mjs`
 - Modify: `src/webgl/workSphere/math.ts`
 - Modify: `src/webgl/workSphere/WorkSphereEngine.ts`
 - Modify: `src/webgl/workSphere/mediaPool.ts`
-- Test: existing WorkSphere geometry/control/reference tests
+- Modify: the existing WorkSphere math/geometry test file chosen for exact matrix regression.
 
 **Interfaces:**
-- `multiplyMat4(out, a, b)` retains the same signature and alias-safe behavior.
-- `WorkPreviewMediaPool.uploadReadyFrames()` changes from `void` to `boolean`, returning `true` only if a texture upload occurred.
-- WorkSphere RAF cadence remains unchanged.
+- `multiplyMat4(out, a, b)` retains its current signature and alias-safe semantics.
+- `WorkPreviewMediaPool.uploadReadyFrames()` returns `boolean` instead of `void`.
+- RAF scheduling/controller update cadence remains exactly as before.
 
-- [ ] **Step 1: Add an exact matrix-multiply regression to existing WorkSphere math tests**
+- [ ] **Step 1: Add a reference matrix-multiply regression before changing math**
 
-In the most appropriate existing WorkSphere math/geometry test, define a local reference implementation matching the current allocation-based multiply and compare the optimized function for normal and aliasing calls:
+In the existing WorkSphere math/geometry test, add a local reference implementation matching the current nested-loop formula and assert equality for identity, arbitrary matrices, `out === a`, and `out === b`.
+
+Reference:
 
 ```js
 function referenceMultiply(a, b) {
@@ -949,13 +936,13 @@ function referenceMultiply(a, b) {
 }
 ```
 
-Test at least identity, translation/scale matrices, arbitrary matrices, `out === a`, and `out === b`.
+Run the selected test before implementation and confirm it passes against current behavior.
 
-- [ ] **Step 2: Rewrite `multiplyMat4` without allocating a temporary Float32Array**
+- [ ] **Step 2: Rewrite `multiplyMat4` allocation-free while preserving operation order**
 
-Read all 32 input scalars into locals before writing any output value so aliasing remains safe. Preserve the exact addition/multiplication order from the reference implementation.
+Read all input matrix values into scalar locals before writing `out`, then compute each output element using the same multiplication/addition order as the reference. This keeps aliasing safe and removes the per-call `new Float32Array(16)`.
 
-The implementation must have this form:
+The required shape is:
 
 ```ts
 export function multiplyMat4(out: Mat4, a: ArrayLike<number>, b: ArrayLike<number>): Mat4 {
@@ -988,15 +975,9 @@ export function multiplyMat4(out: Mat4, a: ArrayLike<number>, b: ArrayLike<numbe
 }
 ```
 
-- [ ] **Step 3: Make media uploads report visual invalidation**
+- [ ] **Step 3: Make media uploads report whether the canvas can visually change**
 
-Change:
-
-```ts
-uploadReadyFrames() {
-```
-
-to:
+Change `uploadReadyFrames()` to:
 
 ```ts
 uploadReadyFrames(): boolean {
@@ -1004,30 +985,9 @@ uploadReadyFrames(): boolean {
   let changed = false;
 ```
 
-After every successful `texImage2D`/`texSubImage2D` for placeholder or video, set:
+Set `changed = true` after each successful placeholder/video `texImage2D` or `texSubImage2D`. Return `changed` at the end. Do not change placeholder interval, video dirty tracking, playback, priorities, texture filtering, or live slot count.
 
-```ts
-changed = true;
-```
-
-Return `changed` at the end. Do not alter placeholder interval, video-frame dirty logic, playback, priorities, or texture parameters.
-
-- [ ] **Step 4: Add a pure draw invalidation helper test**
-
-Create `tests/work-frame-invalidation.test.mjs` against a small exported helper in `WorkSphereEngine.ts` or a focused adjacent module:
-
-```js
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import { shouldDrawWorkFrame } from '../src/webgl/workSphere/frameInvalidation.ts';
-
-test('WorkSphere draws only when visual state changed', () => {
-  assert.equal(shouldDrawWorkFrame({ transformChanged: false, mediaChanged: false, force: false }), false);
-  assert.equal(shouldDrawWorkFrame({ transformChanged: true, mediaChanged: false, force: false }), true);
-  assert.equal(shouldDrawWorkFrame({ transformChanged: false, mediaChanged: true, force: false }), true);
-  assert.equal(shouldDrawWorkFrame({ transformChanged: false, mediaChanged: false, force: true }), true);
-});
-```
+- [ ] **Step 4: Add the pure draw-invalidation contract**
 
 Create `src/webgl/workSphere/frameInvalidation.ts`:
 
@@ -1045,14 +1005,38 @@ export function shouldDrawWorkFrame({
 }
 ```
 
-- [ ] **Step 5: Reuse matrix scratch storage inside WorkSphereEngine**
+Create `tests/work-frame-invalidation.test.mjs`:
 
-Add engine-owned scratch matrices once:
+```js
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { shouldDrawWorkFrame } from '../src/webgl/workSphere/frameInvalidation.ts';
+
+test('WorkSphere redraw invalidation preserves all visual-change causes', () => {
+  assert.equal(shouldDrawWorkFrame({ transformChanged: false, mediaChanged: false, force: false }), false);
+  assert.equal(shouldDrawWorkFrame({ transformChanged: true, mediaChanged: false, force: false }), true);
+  assert.equal(shouldDrawWorkFrame({ transformChanged: false, mediaChanged: true, force: false }), true);
+  assert.equal(shouldDrawWorkFrame({ transformChanged: false, mediaChanged: false, force: true }), true);
+});
+```
+
+Run:
+
+```bash
+node --import=tsx --test tests/work-frame-invalidation.test.mjs
+```
+
+Expected: PASS once the helper exists.
+
+- [ ] **Step 5: Reuse engine-owned matrix scratch buffers**
+
+Add once on `WorkSphereEngine`:
 
 ```ts
 private readonly translationScratch = mat4Identity();
 private readonly scaleScratch = mat4Identity();
 private readonly facingScratch = mat4Identity();
+private forceRender = true;
 ```
 
 Replace local allocation helpers with in-place setters:
@@ -1080,44 +1064,35 @@ function setScale(out: Mat4, scale: number) {
 }
 ```
 
-Inside `updateMatrices()`, replace `matrix.set(mat4Identity())`, `translationMatrix(...)`, `scaleMatrix(...)`, and `targetToMat4(mat4Identity(), ...)` with these reusable buffers. Preserve multiplication order exactly.
+Inside `updateMatrices()`, replace `matrix.set(mat4Identity())`, `translationMatrix(...)`, `scaleMatrix(...)`, and `targetToMat4(mat4Identity(), ...)` with the reusable buffers. Preserve multiplication order exactly.
 
-- [ ] **Step 6: Track exact visual change before drawing**
+- [ ] **Step 6: Skip only mathematically identical redraws while retaining every RAF/controller update**
 
-Keep controller `update()` and `scheduleFrame()` on every current RAF. Before mutation, snapshot the transform-driving values needed to know whether the output changed:
-
-```ts
-const beforeOrientation = cloneQuat(this.controller.orientation);
-const beforeCameraZ = this.cameraZ;
-```
-
-After controller/camera updates:
-
-```ts
-const orientationChanged =
-  beforeOrientation[0] !== this.controller.orientation[0]
-  || beforeOrientation[1] !== this.controller.orientation[1]
-  || beforeOrientation[2] !== this.controller.orientation[2]
-  || beforeOrientation[3] !== this.controller.orientation[3];
-const cameraChanged = beforeCameraZ !== this.cameraZ;
-const transformChanged = orientationChanged || cameraChanged;
-```
-
-Do not keep the per-frame `cloneQuat` allocation in the final version. Replace it with four scalar locals after correctness is established:
+At the beginning of `frame`, snapshot four orientation scalars and camera Z:
 
 ```ts
 const q0 = this.controller.orientation[0];
 const q1 = this.controller.orientation[1];
 const q2 = this.controller.orientation[2];
 const q3 = this.controller.orientation[3];
+const cameraBefore = this.cameraZ;
 ```
 
-Call `updateMatrices()` only when transform-driving state changed or when setters such as entrance/project-open/restore have marked `forceRender=true`.
-
-Then:
+Keep all controller/snap/camera calculations in their current order. After camera stepping:
 
 ```ts
+const orientationChanged =
+  q0 !== this.controller.orientation[0]
+  || q1 !== this.controller.orientation[1]
+  || q2 !== this.controller.orientation[2]
+  || q3 !== this.controller.orientation[3];
+const cameraChanged = cameraBefore !== this.cameraZ;
+
+if (cameraChanged) this.updateView();
+if (orientationChanged) this.updateMatrices();
 const mediaChanged = this.mediaPool.uploadReadyFrames();
+const transformChanged = orientationChanged || cameraChanged;
+
 if (shouldDrawWorkFrame({ transformChanged, mediaChanged, force: this.forceRender })) {
   this.render();
   this.forceRender = false;
@@ -1125,112 +1100,107 @@ if (shouldDrawWorkFrame({ transformChanged, mediaChanged, force: this.forceRende
 this.scheduleFrame();
 ```
 
-Every method that changes visible state outside normal controller movement must set `forceRender = true`, including `setEntranceProgress`, `snapToSlot`, `beginResolveToSlot`, `restoreTransitionSnapshot`, `setSelectedSlotHidden`, `setProjectOpenProgress`, and `resize`.
+The RAF loop is still scheduled every frame exactly as before.
 
-The RAF loop itself must not be stopped by this task.
+Set `forceRender = true` in every method that changes visible state outside normal orientation/camera evolution: `start`, `resize`, `setEntranceProgress`, `snapToSlot`, `beginResolveToSlot`, `restoreTransitionSnapshot`, `setSelectedSlotHidden`, `setProjectOpenProgress`, and the visible branch of `onVisibilityChange`.
 
-- [ ] **Step 7: Verify motion/math parity**
+Do not alter inertia thresholds, snap equations, camera constants, or `deltaMs` handling.
 
-Run:
+- [ ] **Step 7: Run the full WorkSphere regression gate**
 
 ```bash
-node --test tests/work-frame-invalidation.test.mjs
+node --import=tsx --test tests/work-frame-invalidation.test.mjs
 npm test
 npm run typecheck
 npm run build
 git diff --check
 ```
 
-Specifically ensure existing `work-sphere-control`, `work-sphere-geometry`, `work-sphere-reference-contract`, `work-project-activation`, and transition tests pass.
+All existing WorkSphere control, geometry, activation, transition, and reference-contract tests must pass.
 
-Then perform deterministic browser checks:
+- [ ] **Step 8: Browser parity test**
 
-- drag sphere through the same pointer path before/after;
-- let inertia settle;
-- keyboard snap between the same slots;
-- open a project and return;
-- leave the Work page visible and settled for 10 seconds;
-- verify live preview video/placeholder animation cadence remains unchanged.
+On `/work`, repeat before/after with the same viewport:
 
-Use browser instrumentation to count `gl.drawElementsInstanced` calls during the settled 10-second interval. The optimized version should draw only when media/visual state changes, while pointer/inertia traces must match baseline.
+1. drag through the same pointer path;
+2. release and let inertia settle;
+3. keyboard-snap between the same slots;
+4. open the same project;
+5. return to the sphere;
+6. leave the settled sphere visible for 10 seconds.
 
-- [ ] **Step 8: Commit**
+Instrument `gl.drawElementsInstanced` in a local QA build to count draws. Pass requirements:
+
+- movement/selection/project transitions are visually identical;
+- live preview/placeholder cadence is unchanged;
+- settled interval has fewer identical redraws when no media/transform state changed;
+- no frame-rate reduction is introduced.
+
+- [ ] **Step 9: Commit**
 
 ```bash
 git add src/webgl/workSphere/math.ts src/webgl/workSphere/WorkSphereEngine.ts src/webgl/workSphere/mediaPool.ts src/webgl/workSphere/frameInvalidation.ts tests/work-frame-invalidation.test.mjs tests/work-sphere-geometry.test.mjs
 git commit -m "perf: remove redundant work-sphere frame work"
 ```
 
+Use the actual existing WorkSphere test filename modified for the matrix regression in the `git add` command if it differs from `tests/work-sphere-geometry.test.mjs`.
+
 ---
 
-### Task 8: Measure Deployed Caching Before Changing Headers
+### Task 8: Measure Deployed Caching Before Adding Any Header
 
 **Files:**
-- Modify: `next.config.ts` only if this task's measurement proves a safe win and asset URLs are fingerprinted.
-- Modify runtime public asset filenames/references only if immutable caching is needed.
+- Modify `next.config.ts` only if measurement proves a safe cache miss and runtime public filenames are fingerprinted first.
 
 **Interfaces:**
-- No unversioned URL receives `immutable` caching.
+- No stable unversioned public URL may receive `immutable` caching.
 
-- [ ] **Step 1: Measure current production/preview headers**
-
-For representative assets, run against the actual Cloudflare deployment:
+- [ ] **Step 1: Require an explicit deployed preview origin and measure headers**
 
 ```bash
-curl -I 'https://DEPLOYED_HOST/brand/weberaise-horizontal-on-dark.svg'
-curl -I 'https://DEPLOYED_HOST/artwork/journey/display/Q1/01_island_platform.png'
-curl -I 'https://DEPLOYED_HOST/_next/static/chunks/REPRESENTATIVE_CHUNK.js'
+: "${WEBERAISE_DEPLOYED_ORIGIN:?Set WEBERAISE_DEPLOYED_ORIGIN to the exact preview origin before running cache tests}"
+curl -I "$WEBERAISE_DEPLOYED_ORIGIN/brand/weberaise-horizontal-on-dark.svg"
+curl -I "$WEBERAISE_DEPLOYED_ORIGIN/artwork/journey/display/Q1/01_island_platform.png"
+```
+
+From the deployed homepage HTML, resolve one current Next static chunk automatically:
+
+```bash
+CHUNK_PATH=$(curl -fsSL "$WEBERAISE_DEPLOYED_ORIGIN/" | grep -oE '/_next/static/[^" ]+\.js' | head -n 1)
+test -n "$CHUNK_PATH"
+curl -I "$WEBERAISE_DEPLOYED_ORIGIN$CHUNK_PATH"
 ```
 
 Record `cache-control`, `age`, `etag`, `cf-cache-status`, and content length.
 
-Do not change configuration if Cloudflare/Next already provides safe equivalent caching for the public assets.
+- [ ] **Step 2: Choose one of two explicit outcomes**
 
-- [ ] **Step 2: If public runtime assets are not safely cacheable, fingerprint them before adding immutable headers**
+**Outcome A — caching is already safe/effective:** make no code change. Store the header evidence in the final report.
 
-Use the current Git blob/content hash prefix in filenames, for example:
+**Outcome B — public runtime assets lack useful cacheability:** fingerprint every file that would be matched by a new immutable header before adding that header. Use content-hash prefixes in filenames and update all runtime references with `rg` verification. Do not apply `immutable` to a directory containing any stable unversioned filename.
 
-```text
-weberaise-horizontal-on-dark.95a2b66f.svg
-01_island_platform.6aff7f62.png
-```
+- [ ] **Step 3: If Outcome B applies, add headers only after fingerprinting**
 
-Update every internal reference mechanically. Run:
-
-```bash
-rg 'weberaise-horizontal-on-dark\.svg|artwork/journey/display' src tests public docs
-```
-
-Expected after rename: no stale runtime reference remains.
-
-Do not fingerprint or rename if the deployment layer already provides sufficient cache behavior; avoid churn without a measured benefit.
-
-- [ ] **Step 3: Add immutable headers only for fingerprinted runtime trees**
-
-If fingerprinting was required, update `next.config.ts` with:
+After every matched runtime asset is fingerprinted, `next.config.ts` may add:
 
 ```ts
-const nextConfig: NextConfig = {
-  poweredByHeader: false,
-  reactStrictMode: true,
-  async headers() {
-    return [
-      {
-        source: '/brand/:path*',
-        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
-      },
-      {
-        source: '/artwork/journey/display/:path*',
-        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
-      },
-    ];
-  },
-};
+async headers() {
+  return [
+    {
+      source: '/brand/:path*',
+      headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+    },
+    {
+      source: '/artwork/journey/display/:path*',
+      headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+    },
+  ];
+},
 ```
 
-Only do this when every file under those matched runtime paths is content-fingerprinted. Otherwise leave `next.config.ts` unchanged.
+If any matched filename is not fingerprinted, do not add these rules.
 
-- [ ] **Step 4: Build, deploy preview, and verify repeat-load behavior**
+- [ ] **Step 4: Verify preview deployment after any cache change**
 
 ```bash
 npm test
@@ -1239,29 +1209,26 @@ npm run build
 git diff --check
 ```
 
-After preview deployment, repeat the header checks and reload twice in a clean browser profile. Verify no stale asset, 404, or changed visual appears.
+Deploy the branch preview, rerun Step 1, then reload twice in a clean browser profile. Any stale asset, 404, or changed visual fails the task.
 
-- [ ] **Step 5: Commit only if configuration/assets actually changed**
+- [ ] **Step 5: Commit only when Outcome B produced a verified code change**
 
 ```bash
 git add next.config.ts public src tests
 git commit -m "perf: fingerprint and cache immutable runtime assets"
 ```
 
-If measurement showed current caching was already correct, record the evidence in the final performance report and make no commit for this task.
+For Outcome A, there is intentionally no commit.
 
 ---
 
-### Task 9: Final Whole-Site Verification and Performance Report
+### Task 9: Final Whole-Site Verification and Measured Report
 
 **Files:**
 - Create: `docs/PERFORMANCE_OPTIMIZATION_REPORT_2026-09-01.md`
-- No production code changes in this task.
+- No production code changes.
 
-**Interfaces:**
-- Produces: before/after evidence and explicit confirmation of preserved quality contracts.
-
-- [ ] **Step 1: Run the complete correctness gate from a clean install/build**
+- [ ] **Step 1: Clean full correctness gate**
 
 ```bash
 rm -rf node_modules .next
@@ -1274,7 +1241,7 @@ git diff --check
 
 Expected: all PASS.
 
-- [ ] **Step 2: Generate the final bundle analyzer output**
+- [ ] **Step 2: Capture final analyzer and homepage evidence with the exact baseline procedure**
 
 ```bash
 rm -rf /tmp/weberaise-perf-after
@@ -1283,28 +1250,44 @@ npx next experimental-analyze --output
 cp -R .next/diagnostics/analyze /tmp/weberaise-perf-after/analyze
 ```
 
-Compare import chains and route client graphs against `/tmp/weberaise-perf-before/analyze`.
+Run the same production server, Chrome flags, viewports, motion setting, and cache state used in Task 1, writing captures to `/tmp/weberaise-perf-after/desktop` and `/tmp/weberaise-perf-after/mobile`.
 
-- [ ] **Step 3: Re-run desktop/mobile production captures**
+- [ ] **Step 3: Calculate comparable homepage JS/long-task totals from captured JSON**
 
-Run the same `perf:capture` commands as Task 1 into `/tmp/weberaise-perf-after/desktop` and `/tmp/weberaise-perf-after/mobile`.
+Run for before and after desktop captures:
 
-Do not change viewport, DPR, browser flags, cache state, or network profile between before/after comparisons.
+```bash
+node - <<'NODE'
+const fs = require('node:fs');
+for (const label of ['before', 'after']) {
+  const file = `/tmp/weberaise-perf-${label}/desktop/metrics.json`;
+  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  for (const phase of ['heroInteractive', 'main']) {
+    const snap = data[phase];
+    const js = snap.resources.filter((entry) => entry.name.includes('.js'));
+    const transfer = js.reduce((sum, entry) => sum + (entry.transferSize || 0), 0);
+    const decoded = js.reduce((sum, entry) => sum + (entry.decodedBodySize || 0), 0);
+    const longTaskMs = snap.longTasks.reduce((sum, entry) => sum + entry.duration, 0);
+    console.log(JSON.stringify({ label, phase, jsTransferBytes: transfer, jsDecodedBytes: decoded, longTaskMs }));
+  }
+}
+NODE
+```
 
-- [ ] **Step 4: Perform visual/interaction regression checks on every route**
+Use these exact outputs in the report; do not estimate.
 
-Verify manually in production build:
+- [ ] **Step 4: Perform route-by-route visual/interaction regression**
+
+Verify production build at 1440×900 and 390×844, with normal motion and `prefers-reduced-motion: reduce`:
 
 ```text
-/          loader -> zero -> completion -> hero opening -> hero interaction -> EXPLORE -> full narrative
-/services  opening grid -> capabilities silk -> works bridge -> contact ending
+/          loader -> zero -> completion -> Hero opening -> Hero interaction -> EXPLORE -> full narrative
+/services  opening grid -> capabilities Silk -> Works bridge -> contact ending
 /work      opening -> sphere drag/inertia -> activation -> project view -> return
 /about     intro -> founder cards -> hover/reveal behavior
 ```
 
-At minimum test 1440×900 and 390×844, normal motion and prefers-reduced-motion.
-
-Explicitly confirm that none of these files changed unless required by a task in this plan:
+Explicitly confirm these protected visual-core files are unchanged by the performance pass:
 
 ```text
 src/webgl/reveal/quality.ts
@@ -1317,68 +1300,32 @@ src/components/ui/SilkWavesBackground/silkShaders.ts
 src/components/ui/DriftWall/driftWallMotion.ts
 ```
 
-- [ ] **Step 5: Write the final report with measured deltas only**
+- [ ] **Step 5: Write the report using measured evidence only**
 
-Create `docs/PERFORMANCE_OPTIMIZATION_REPORT_2026-09-01.md` containing:
+`docs/PERFORMANCE_OPTIMIZATION_REPORT_2026-09-01.md` must contain these sections, each populated from the completed commands and captured files:
 
-```markdown
-# WEBERAISE Performance Optimization Report — 2026-09-01
+1. **Fidelity Result** — full test count/result, typecheck result, build result, desktop/mobile/reduced-motion verification result, and confirmation that protected Hero/timeline/shader files were not modified.
+2. **Initial Homepage** — before/after JS transfer bytes, decoded JS bytes, and long-task milliseconds at `heroInteractive`, using Step 3 output.
+3. **Post-EXPLORE Loading** — bundle-analyzer import-chain evidence showing whether Framer/ribbon modules left the initial graph and whether immediate-throttle EXPLORE passed.
+4. **Assets** — pre/post public journey bytes, pre/post display PNG bytes, and exact pixel mismatch count (must be zero).
+5. **WorkSphere** — before/after 10-second settled draw count plus motion/project-transition parity result.
+6. **Caching** — exact observed deployed headers and whether Task 8 used Outcome A or B.
+7. **Rejected Optimizations** — list any candidate reverted because it failed a fidelity gate.
 
-## Fidelity Result
-- Full test suite: PASS/FAIL with count
-- Typecheck: PASS/FAIL
-- Production build: PASS/FAIL
-- Desktop visual verification: PASS/FAIL
-- Mobile visual verification: PASS/FAIL
-- Reduced-motion verification: PASS/FAIL
-- Hero fluid/timeline files changed: NO
+No guessed percentage or synthetic score is allowed.
 
-## Initial Homepage
-| Metric | Before | After | Delta |
-| --- | ---: | ---: | ---: |
-| JS transfer before heroInteractive | ... | ... | ... |
-| JS decoded bytes before heroInteractive | ... | ... | ... |
-| Long-task total before heroInteractive | ... | ... | ... |
-
-## Post-EXPLORE Loading
-| Metric | Before | After | Delta |
-| --- | ---: | ---: | ---: |
-| Framer/ribbon modules in initial graph | ... | ... | ... |
-| Main runtime ready before EXPLORE | ... | ... | ... |
-
-## Assets
-| Metric | Before | After | Delta |
-| --- | ---: | ---: | ---: |
-| public journey asset bytes | ... | ... | ... |
-| display PNG bytes | ... | ... | ... |
-| pixel mismatches | 0 | 0 | 0 |
-
-## WorkSphere
-| Metric | Before | After | Delta |
-| --- | ---: | ---: | ---: |
-| settled 10s WebGL draws | ... | ... | ... |
-| matrix temporary allocations/frame | ... | ... | ... |
-| visible/motion regression | none | none | none |
-
-## Caching
-- Existing deployed headers: ...
-- Change required: yes/no
-- Repeat-load result: ...
-```
-
-Replace every ellipsis with measured values before committing; do not write estimates.
-
-- [ ] **Step 6: Review the complete diff for scope drift**
+- [ ] **Step 6: Review the complete scope diff against the recorded base SHA**
 
 ```bash
+BASE=$(cat /tmp/weberaise-perf-base-sha)
 git status --short
-git diff --stat BASE_OF_PERF_BRANCH..HEAD
-git diff --name-only BASE_OF_PERF_BRANCH..HEAD
+git diff --stat "$BASE"..HEAD
+git diff --name-only "$BASE"..HEAD
 ```
 
-Reject any unrelated visual/design refactor.
+Reject unrelated design/refactor changes.
 
-- [ ] **Step 7: Commit the report**
+- [ ] **Step 7: Commit the measured report**
 
 ```bash
 git add docs/PERFORMANCE_OPTIMIZATION_REPORT_2026-09-01.md
@@ -1387,20 +1334,32 @@ git commit -m "docs: record zero-quality performance results"
 
 ---
 
-## Execution Order and Stop Rules
+## Execution Order and Mandatory Checkpoints
 
-Execute tasks strictly in order: `1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9`.
+Execute strictly in this order:
 
-After Tasks 2, 3, 6, and 7, stop for a fresh visual/performance gate before continuing. Do not stack another optimization on top of an unverified one.
+```text
+1 Baseline harness
+2 Hero split
+3 Post-EXPLORE runtime split
+4 Unused font removal
+5 Public source-art relocation
+6 Lossless PNG recompression
+7 WorkSphere redundant-work removal
+8 Deployed cache measurement/configuration
+9 Final verification/report
+```
 
-A task is reverted immediately if any of these occur:
+Stop for a fresh visual/performance review after Tasks 2, 3, 6, and 7 before continuing.
 
-- a loader/hero/main state takes longer or exposes a blank frame;
-- any animation changes path, duration, ease, cadence, or appearance;
-- any runtime PNG has non-zero decoded-pixel error;
-- WorkSphere pointer/inertia/project transitions differ from baseline;
+Immediately revert a task if any of the following occurs:
+
+- loader/Hero/main handoff exposes a blank or later frame;
+- motion path, duration, ease, cadence, or appearance changes;
+- a runtime PNG returns non-zero absolute pixel error;
+- WorkSphere pointer/inertia/snap/project transitions differ from baseline;
 - a font flash or typography metric changes;
-- the bundle/load change is not measurable;
-- the optimization requires lowering a quality parameter.
+- the supposed optimization produces no measurable benefit;
+- shipping it would require a lower quality parameter.
 
-The preferred end state is fewer bytes and less redundant computation with the exact same user-facing experience — not a higher benchmark score obtained by weakening the site.
+The required end state is fewer early bytes and less redundant computation with the exact same user-facing WEBERAISE experience.
