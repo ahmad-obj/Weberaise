@@ -1,8 +1,8 @@
-# Weberaise Signature Intro Architecture
+# WEBERAISE Signature Intro Architecture
 
 ## Experience boundary
 
-The homepage remains one explicit experience state machine:
+The homepage remains one explicit state machine:
 
 ```text
 boot
@@ -16,7 +16,9 @@ boot
 
 Scrolling remains locked until `main`.
 
-The Nothin-fidelity branch changes only the **interactive reveal material model and its input/GPU lifecycle**. Loader choreography, hero typography, twin-line opening, navigation, EXPLORE, post-hero content and downstream routes remain architecturally separate.
+This branch changes the hero material system and the EXPLORE handoff while preserving the rest of the experience boundary. Typography, navigation, downstream ribbon/main content, routes, and normal page sections remain DOM-owned.
+
+---
 
 ## Responsibility split
 
@@ -26,21 +28,24 @@ Owns:
 - semantic content and accessibility;
 - hero/page layout;
 - experience state;
-- intro lifecycle;
+- loader/countdown decoration;
 - pointer/touch event wiring;
-- normal website content.
+- EXPLORE button markup;
+- normal site content.
 
-Hero typography remains DOM-rendered. The website is not converted into a WebGL scene.
+Hero typography and the WEBERAISE lockup remain crisp DOM assets. The site is not converted into a WebGL scene.
 
 ### GSAP
 
 Owns finite authored choreography:
 - loader completion;
 - line contraction/rotation;
-- twin-line opening;
-- EXPLORE bottom-fill progress.
+- twin-line hero opening;
+- EXPLORE acknowledgement;
+- `fluidExit` progress (`0 → 1`);
+- reduced-motion / engine-failure DOM fallback timing.
 
-It does not run the fluid solver.
+GSAP does not simulate fluid state.
 
 ### WebGL2 reveal engine
 
@@ -49,82 +54,24 @@ Owns:
 - persistent dye field;
 - divergence field;
 - pressure solve;
-- Gaussian input deposition;
-- advection;
-- time-correct dissipation;
-- final hard reveal mask;
-- WEBERAISE difference compositor;
-- bottom-fill render mode.
+- interactive Gaussian deposition;
+- advection and elapsed-time-correct dissipation;
+- solver-driven EXPLORE exit source;
+- reveal/exit mask extraction;
+- registered WEBERAISE difference compositor.
 
-The previous CPU radial-primitive/metaball model is retired.
-
----
-
-## Why the reveal architecture changed
-
-The supplied Nothin production bundle confirms that its reveal is generated from persistent 2D fluid state, not a union of rounded CPU primitives.
-
-Previous WEBERAISE:
-
-```text
-pointer history
-→ many radial primitives
-→ additive metaball field
-→ threshold
-→ each primitive shrinks with age
-```
-
-Current WEBERAISE:
-
-```text
-latest pointer state
-→ Gaussian velocity + dye splat
-→ persistent transport
-→ pressure projection
-→ dye dissipation
-→ narrow threshold
-```
-
-The old representation structurally produced round heads, bulbous joins and circle-like healing. The new representation allows deposited material to stretch, shear, bend, taper and split after the pointer has moved away.
-
-The interactive boundary therefore receives its irregularity from fluid transport itself. No procedural sine/noise contour deformation is used for the reveal edge.
+The previous CPU radial-primitive/metaball model and the later analytic sine-wave EXPLORE crest are both retired.
 
 ---
 
-## Hero composition
+## Interactive hero reveal
 
-`HeroTypography` remains shared by the front and hidden DOM layers, preserving exact `WELCOME / TO` registration.
+The supplied Nothin production bundle confirmed that the reference reveal uses persistent pressure-projected 2D fluid rather than shrinking metaball primitives.
 
-Front state:
-- white background;
-- black typography;
-- empty lower brand slot.
-
-Hidden state:
-- black background;
-- identical white typography;
-- approved WEBERAISE lockup.
-
-The WebGL canvas continues to use `mix-blend-mode: difference`. A viewport-aligned brand texture reconstructs the approved lockup only inside the reveal mask.
-
-Interactive mask extraction is deliberately simple:
+Current WEBERAISE interactive flow:
 
 ```text
-dye.r × 3.9
-→ smoothstep(0.50, 0.51)
-→ near-binary reveal alpha
-```
-
-Typography itself is not rasterized into the fluid simulation.
-
----
-
-## Confirmed fluid pipeline
-
-Full/lite data flow:
-
-```text
-mouse / pen / touch / autonomous sample
+mouse / pen / touch / autonomous input
         ↓
 latest sample retained until next RAF
         ↓
@@ -144,254 +91,290 @@ persistent dye field
         ↓
 gain + narrow threshold
         ↓
-WEBERAISE difference compositor
+registered WEBERAISE difference compositor
 ```
 
-The order intentionally follows the inspected Nothin runtime.
+The visible boundary gets its deformation from transport and pressure-projected velocity. There is no interactive sine/noise contour warp, CPU afterglide, or synthetic satellite-droplet system.
 
-### Why input is frame-coalesced
+### Input coalescing
 
-Nothin does not execute a fluid splat for every DOM event. Mouse/touch events update the latest pointer state; the animation loop injects at most once per frame.
+`HeroRevealCanvas` may emit multiple conditioned samples between browser frames, but `RevealEngine.emit()` retains only `samples.at(-1)`. Displacement is measured from the last sample actually applied by the engine.
 
-WEBERAISE now follows the same rule:
-
-- `HeroRevealCanvas` may still use `PointerTracker` as an event-conditioning layer;
-- `RevealEngine.emit()` keeps only `samples.at(-1)`;
-- multiple pointer events/interpolated samples before the next RAF collapse into one pending sample;
-- displacement is measured from the last **actually applied** sample;
-- one velocity and one dye splat are therefore the maximum interactive deposition cost per render frame.
-
-This avoids both GPU pass explosion and dye over-deposition on high-frequency pointer hardware.
-
----
-
-## Full-quality fidelity baseline
-
-Initial values come from the inspected Nothin production bundle:
+Therefore interactive deposition is bounded to:
 
 ```text
-velocity/pressure simulation   256 × 256
-dye field                      512 × 512
-pressure iterations            20
-velocity retention @ 60 Hz     0.962
-dye retention @ 60 Hz          0.988
-curl strength                  0
-Gaussian radius parameter      0.00006
-splat force                    5900
-reveal gain                    3.9
-threshold                      0.50 → 0.51
-display DPR cap                2
+≤ 1 velocity splat / RAF
+≤ 1 dye splat / RAF
 ```
 
-Curl/vorticity shaders are intentionally omitted. The inspected reference has the machinery but its production `curlStrength` is zero, so those passes do not provide the target material behavior.
+This preserves the Nothin-style input cadence and prevents high-frequency pointer hardware from multiplying GPU passes or dye strength.
 
-These are fidelity baseline values, not immutable brand constants. Future tuning should be tied to a named mismatch seen in side-by-side QA.
+### Current WEBERAISE scale profile
+
+The original inspected reference baseline was:
+
+```text
+sim                           256 × 256
+dye                          512 × 512
+pressure iterations          20
+velocity retention @ 60 Hz   0.962
+dye retention @ 60 Hz        0.988
+radius parameter             0.00006
+splat force                  5900
+reveal gain                  3.9
+threshold                    0.50 → 0.51
+```
+
+The approved WEBERAISE presentation now intentionally enlarges the interactive footprint while preserving the material model:
+
+```text
+full/lite radius parameter   0.00024
+full/lite splat force        11800
+```
+
+Because the Gaussian uses squared distance, `0.00006 → 0.00024` is approximately a 2× linear footprint. Momentum was then scaled 2× (`5900 → 11800`). Pressure iterations, retention, threshold, gain, solver resolution, and input cadence remain unchanged.
 
 ---
 
-## Refresh-rate independence
+## EXPLORE CTA
 
-The reference uses frame-based dissipation. WEBERAISE preserves the 60 Hz appearance but makes retention elapsed-time aware:
+EXPLORE remains a small DOM button, but its affordance is now explicit rather than relying on tiny text alone.
+
+Approved contract:
+
+```text
+minimum width    126px
+minimum height   44px
+border           1px currentColor
+corner radius    4px
+source color     #fff
+blend mode       difference
+wrapper z-index  7
+```
+
+Hover/focus is deliberately restrained:
+- `2px` upward lift;
+- faint interior wash;
+- underline expands to full width;
+- no glow, pill shape, blue gradient, bounce, or large scale change.
+
+The active state compresses only to `.985`.
+
+The wrapper sits above the reveal canvas/vignette so the CTA remains discoverable even when the hero is partially revealed. Difference blending automatically produces black over white and white over black.
+
+---
+
+## Solver-driven EXPLORE exit
+
+`heroExiting` no longer uses `bottomFill` or an analytic sine crest.
+
+Normal-motion flow:
+
+```text
+EXPLORE click
+    ↓
+button acknowledgement / input stops
+    ↓
+engine.clear()
+    ↓
+mode = fluidExit
+    ↓
+fullscreen bottom source → velocity target
+fullscreen bottom source → dye addition
+    ↓
+existing velocity advection
+    ↓
+existing dye advection
+    ↓
+divergence
+    ↓
+existing pressure solve
+    ↓
+pressure-gradient subtraction
+    ↓
+thresholded dye rendered as black
+    ↓
+final 0.94 → 1.0 completion seal
+    ↓
+0.06s fully-black hold
+    ↓
+main / ribbon experience
+```
+
+### Exit source pass
+
+`EXIT_SOURCE_FRAGMENT` is one deterministic fullscreen shader reused for two writes each solver frame:
+
+1. velocity source pass;
+2. dye source pass.
+
+It uses three broad Gaussian x-profiles to create a non-uniform but coherent front. There is no time oscillation, sine, FBM, simplex, or hash noise.
+
+Exit-only configuration lives in `src/webgl/reveal/exitFluid.ts`:
+
+```text
+sourceBandTop    0.14
+dyeStrength      0.24
+velocityBase     4.2
+velocityPeak     7.0
+lateralStrength  0.35
+sealStart        0.94
+```
+
+### Why source velocity is bounded
+
+The first source prototype added another `4.2–7.0` vertical velocity every frame. In a real standalone solver reproduction that accumulated under the `.962` retention and made the viewport effectively fill in roughly the first third of the intended transition.
+
+The production source therefore treats the bottom band as a **bounded inflow boundary**:
+
+```glsl
+velocityTarget = vec3(lateralProfile, upward, 0.0)
+velocityDriven = mix(base, velocityTarget, sourceBand)
+```
+
+Dye remains additive, but source-band velocity converges to the configured target instead of growing without bound.
+
+Standalone solver sanity at 60 Hz showed approximately:
+
+```text
+frame 30 / ~0.5s    ~42% black coverage
+frame 60 / ~1.0s    ~70% black coverage
+frame 84 / ~1.4s    ~92% black coverage, front near top
+```
+
+This leaves the configured final seal to close only the small residual area instead of hiding an under-driven simulation.
+
+### Exit compositor
+
+The interactive threshold is still derived from dye:
+
+```text
+dye.r × revealGain
+→ smoothstep(edgeSoftness, edgeSoftness + edgeWidth)
+```
+
+During `fluidExit`, that thresholded field is rendered as black with normal canvas blending.
+
+A uniform final seal begins only at:
+
+```text
+EXIT_FLUID_CONFIG.sealStart = 0.94
+```
+
+and reaches full alpha at progress `1.0`. This guarantees a seamless black handoff before React changes to `main` without reintroducing a visible procedural crest.
+
+---
+
+## Exit fallbacks
+
+The solver exit is used only when:
+
+```text
+engine exists
+AND quality.enableVelocity === true
+AND prefers-reduced-motion is false
+```
+
+Otherwise the existing DOM exit layer is used as a plain black rectangle:
+
+- reduced motion: about `0.24s`;
+- engine/WebGL failure: about `0.9s`.
+
+The fallback has no rounded top and no fake wave geometry.
+
+---
+
+## GPU resources and performance
+
+Full/lite modes own:
+
+```text
+velocity    double RGBA16F / LINEAR
+pressure    double RGBA16F / NEAREST
+dye         double RGBA16F / LINEAR
+divergence  single RGBA16F / NEAREST
+```
+
+No render targets were added for `fluidExit`.
+
+Programs now include:
+1. Gaussian splat;
+2. exit source;
+3. advection;
+4. divergence;
+5. pressure Jacobi;
+6. gradient subtraction;
+7. final compositor.
+
+`fluidExit` adds exactly two fullscreen source writes per solver frame—one velocity, one dye—then reuses the existing solver pipeline.
+
+Interactive reveal cost remains unchanged.
+
+Other protections remain:
+- display DPR cap independent of solver resolution;
+- no React render loop for pointer motion;
+- no per-frame CPU primitive history;
+- no zero-effect curl/vorticity passes;
+- hidden-tab elapsed time discarded;
+- owned GPU resources/programs disposed on teardown.
+
+---
+
+## Refresh-rate and lifecycle behavior
+
+Reference-frame retention is converted to elapsed-time-correct retention:
 
 ```text
 retention = baseRetention ^ (deltaSeconds × 60)
 ```
 
-The reference-frame scale is bounded to prevent a stalled frame from creating an extreme backtrace.
+The reference-frame scale is bounded so a stalled frame cannot create an extreme backtrace.
 
-When `document.hidden` is true, the frame-time anchor is cleared. Background-tab time is not simulated on return.
+When `document.hidden` is true, the frame-time anchor is cleared instead of simulating the background interval on resume.
 
----
+Mouse, pen, and touch share the same interactive fluid path. Stream displacement history resets across pointer contact boundaries without clearing persistent fluid state.
 
-## Input lifecycle
+The autonomous teaser yields immediately to live user input and does not share stale displacement history with it.
 
-Mouse, pen and touch pointer movement share the same simulation path.
-
-Stream history is reset on:
-- new `pointerdown` contact;
-- `pointerup`;
-- `pointercancel`;
-- `pointerleave`.
-
-Resetting the input stream does **not** clear persistent dye/velocity. It only prevents a later contact from being interpreted as one giant movement vector.
-
-### Autonomous teaser vs live input
-
-The short autonomous brand stroke still exists, but scripted and user input are never allowed to fight over the same displacement history.
-
-- teaser waits until the real hero engine is ready;
-- user input immediately cancels all remaining autonomous timers;
-- engine/tracker input history is reset before live control begins;
-- already deposited fluid remains visible and evolves normally.
-
-This prevents false momentum jumps when a user interacts during the teaser.
-
-### Engine readiness
-
-GPU initialization is asynchronous relative to hero phase changes. `HeroRevealCanvas` therefore promotes successful initialization into one `engineReady` React state transition.
-
-Pointer listeners and the autonomous teaser wait for `engineReady`. This prevents the interactive phase from racing past a still-null mutable `engineRef`.
-
-Pointer movement itself remains outside React state.
-
----
-
-## Residual motion and healing
-
-There is no CPU afterglide or synthetic satellite-droplet mechanism.
-
-Residual motion is genuine field momentum. After input stops, existing velocity may transport dye briefly and then damps through velocity retention.
-
-Healing is dye dissipation. Old revealed regions can narrow, deform or split before falling below the hard threshold instead of shrinking as individual circles.
-
----
-
-## GPU resources
-
-Full/lite mode owns:
-
-```text
-velocity    double RGBA16F, LINEAR
-pressure    double RGBA16F, NEAREST
-dye         double RGBA16F, LINEAR
-divergence  single RGBA16F, NEAREST
-```
-
-The engine validates:
-- actual WebGL2 context creation on the hero canvas;
-- `EXT_color_buffer_float`;
-- `RGBA16F` framebuffer completeness.
-
-No separate disposable probe context is created before the real hero context. If construction fails, `createRevealEngine()` returns `null` and the CSS fallback is used.
-
-Programs:
-- splat;
-- advection;
-- divergence;
-- pressure Jacobi;
-- gradient subtraction;
-- final compositor.
-
----
-
-## Quality tiers
-
-### Full
-
-```text
-sim 256
-dye 512
-pressure iterations 20
-DPR cap 2
-velocity enabled
-```
-
-### Lite
-
-```text
-sim 128
-dye 256
-pressure iterations 10
-DPR cap 1.25
-velocity enabled
-```
-
-The same fluid semantics and reveal threshold are retained.
-
-### Reduced motion
-
-```text
-sim 96
-dye 192
-pressure iterations 0
-DPR cap 1
-velocity injection disabled
-persistent dye enabled
-```
-
-### Fallback
-
-If the required WebGL/half-float path fails, the existing CSS reveal remains usable. CSS fallback pointer state is cleared on pointer up/cancel/leave so touch contacts cannot leave it stuck open.
+`engineReady` remains the one React state transition that prevents interactive listeners from racing a still-null engine ref.
 
 ---
 
 ## Loader GPU preflight
 
-The loader's `hero-code` critical task calls `warmRevealEngine()`.
+`warmRevealEngine()` remains a disposable-context compatibility/shader preflight. It validates that the browser can create the fluid graph and compatible half-float targets, execute a prime frame, and dispose cleanly.
 
-This is a **disposable-context compatibility/shader preflight**, not persistent warming of the eventual hero canvas.
-
-It verifies on a temporary canvas that the browser can:
-- create the fluid engine;
-- compile/link the pass graph;
-- allocate compatible half-float targets;
-- execute `prime()`;
-- dispose cleanly.
-
-WebGL compiled state/resources are context-specific, so the later hero canvas still creates its own actual context/programs/targets. The preflight catches unsupported paths early; it does not guarantee zero setup cost when the hero mounts.
-
----
-
-## EXPLORE compatibility
-
-The public reveal-engine contract used by the hero remains intact.
-
-EXPLORE does:
-
-```text
-engine.clear()
-→ mode = bottomFill
-→ fluid evolution skipped
-→ existing authored black crest progresses upward
-→ main state
-```
-
-The sine terms in the bottom-fill crest are intentionally unrelated to the interactive liquid edge. They remain part of the accepted authored exit transition.
-
----
-
-## Performance strategy
-
-- pressure/velocity physics stays at 128–256²;
-- dye stays at 256–512²;
-- display DPR is capped independently;
-- maximum interactive deposition is one velocity + one dye splat per RAF;
-- pointer movement causes no React render loop;
-- no DOM layout read occurs inside the solver RAF;
-- no CPU primitive history is rebuilt per frame;
-- zero-strength curl/vorticity passes are omitted;
-- hidden-tab elapsed time is discarded;
-- fluid evolution is skipped during bottom fill;
-- partial engine initialization is disposed before fallback;
-- full hero teardown disposes all owned GPU targets/programs.
+It is not persistent warming of the eventual hero context; WebGL resources are context-specific.
 
 ---
 
 ## Verification boundary
 
-Completed independently in this environment:
+Fresh independent evidence for the current exit implementation:
 
-- TypeScript compilation of the fluid core/engine;
-- real Chromium WebGL2 compile/link of all six shaders;
-- `EXT_color_buffer_float` availability;
-- complete `RGBA16F` framebuffer;
-- one pressure-solver frame with `gl.getError() === 0`;
-- synthetic S-curve render showing connected directional deformation rather than a circle chain.
+- focused EXPLORE/fluid-exit source contracts: `2/2` pass in the isolated harness;
+- isolated TypeScript compile of current engine + timeline integration: pass;
+- real Chromium WebGL2 context: available;
+- `EXT_color_buffer_float`: available;
+- bounded `EXIT_SOURCE_FRAGMENT`: compile/link pass;
+- current `COMPOSITE_FRAGMENT`: compile/link pass;
+- standalone pressure-solver exit render verified paced bottom-to-top coverage and broad asymmetric shoulders;
+- repository code search: no production `bottomFill` references remain.
 
-Still required before merge on a complete network-enabled checkout:
+Full project commands are still required on a complete checkout before merge:
 
 ```bash
-npm ci
 npm test
 npm run typecheck
 npm run build
 git diff --check
+npm run dev
 ```
 
-Then perform the complete WEBERAISE-vs-Nothin in-site comparison on desktop, mobile/touch, reduced motion, hidden-tab resume and fallback conditions.
+Full in-site QA must cover desktop, tablet/mobile, reduced motion, forced engine fallback, active-dye EXPLORE, and the seamless black handoff into the ribbon/main state.
 
 ---
 
 ## Downstream boundary
 
-This branch does not redesign Services, Work, About, navigation, ribbon sections or other normal homepage content. The implementation remains isolated to the signature hero reveal, reveal-related tests and its documentation.
+This work does not redesign Services, Work, About, the post-EXPLORE ribbon system, normal navigation architecture, or unrelated homepage sections. No merge is performed without explicit user instruction.
