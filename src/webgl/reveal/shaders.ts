@@ -16,31 +16,31 @@ uniform sampler2D uBrand;
 uniform float uRevealGain;
 uniform float uEdgeSoftness;
 uniform float uEdgeWidth;
-uniform float uTime;
-uniform float uFillProgress;
-uniform float uFillEnabled;
+uniform float uExitProgress;
+uniform float uExitEnabled;
+uniform float uExitSealStart;
 
 void main() {
   float dye = texture(uDye, vUv).r;
   float raw = dye * uRevealGain;
   float reveal = smoothstep(uEdgeSoftness, uEdgeSoftness + uEdgeWidth, raw);
 
+  if (uExitEnabled > 0.5) {
+    float seal = smoothstep(
+      uExitSealStart,
+      1.0,
+      clamp(uExitProgress, 0.0, 1.0)
+    );
+    float alpha = max(reveal, seal);
+    outColor = vec4(0.0, 0.0, 0.0, alpha);
+    return;
+  }
+
   // Preserve the existing WEBERAISE difference-composite contract. The fluid
   // controls only where the registered hidden state is visible; typography and
   // the brand lockup remain crisp DOM-aligned assets.
   vec4 brand = texture(uBrand, vUv);
   vec3 differenceSource = mix(vec3(1.0), vec3(1.0) - brand.rgb, brand.a);
-
-  // EXPLORE exit is a separate authored transition. Its restrained crest is not
-  // part of the interactive liquid material and remains behaviorally unchanged.
-  float edgeDamping = sin(3.14159265 * clamp(uFillProgress, 0.0, 1.0));
-  float crest = uFillProgress
-    + sin(vUv.x * 8.5 + uTime * 0.45) * 0.014 * edgeDamping
-    + sin(vUv.x * 17.0 - uTime * 0.32) * 0.006 * edgeDamping;
-  float fill = (1.0 - smoothstep(crest - 0.012, crest + 0.012, vUv.y)) * uFillEnabled;
-
-  float revealAlpha = reveal * (1.0 - uFillEnabled);
-  float alpha = max(revealAlpha, fill);
-  vec3 premultipliedRgb = differenceSource * revealAlpha;
-  outColor = vec4(premultipliedRgb, alpha);
+  vec3 premultipliedRgb = differenceSource * reveal;
+  outColor = vec4(premultipliedRgb, reveal);
 }`;
