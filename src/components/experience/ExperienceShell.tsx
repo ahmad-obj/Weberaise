@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useReducer } from 'react';
+import { preloadPostExploreRuntime } from '@/components/MainSite/PostExploreNarrative/postExploreRuntime';
 import { Loader } from '@/components/experience/Loader/Loader';
 import { SiteNavigation } from '@/components/navigation/SiteNavigation';
 import {
@@ -30,6 +31,11 @@ export function ExperienceShell({ children }: { children: React.ReactNode }) {
     document.documentElement.dataset.experienceState = state;
     document.documentElement.classList.toggle('experience-scroll-locked', locked);
     return () => document.documentElement.classList.remove('experience-scroll-locked');
+  }, [state]);
+
+  useEffect(() => {
+    if (state !== 'heroOpening') return;
+    preloadPostExploreRuntime();
   }, [state]);
 
   const onCriticalReady = useCallback(() => dispatch({ type: 'CRITICAL_READY' }), []);
