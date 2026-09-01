@@ -1,6 +1,5 @@
 import gsap from 'gsap';
 import type { RevealEngine } from '@/webgl/reveal/RevealEngine';
-import { bottomFillState } from '@/webgl/reveal/emitters/bottomFillEmitter';
 import type { TimelineController } from './loaderTimeline';
 
 export function runExploreTimeline(
@@ -11,44 +10,63 @@ export function runExploreTimeline(
   const button = root.querySelector<HTMLElement>('[data-hero-explore]');
   const fallbackFill = root.querySelector<HTMLElement>('[data-hero-exit-fill]');
   const progress = { value: 0 };
-  const duration = options.reducedMotion ? 0.55 : 1.72;
+  const fluidDuration = 1.6;
+  const fallbackDuration = options.reducedMotion ? 0.24 : 0.9;
+  const finalBlackHold = options.reducedMotion ? 0 : 0.06;
+  const canFluidExit = Boolean(
+    engine && engine.quality.enableVelocity && !options.reducedMotion
+  );
 
-  if (engine) {
+  if (canFluidExit && engine) {
     engine.clear();
-    engine.setBottomFillProgress(0);
-    engine.setMode('bottomFill');
-  } else if (fallbackFill) {
-    gsap.set(fallbackFill, { display: 'block', scaleY: 0, transformOrigin: '50% 100%' });
+    engine.setExitProgress(0);
+    engine.setMode('fluidExit');
+  } else {
+    if (engine) engine.setMode('disabled');
+    if (fallbackFill) {
+      gsap.set(fallbackFill, {
+        display: 'block',
+        scaleY: 0,
+        transformOrigin: '50% 100%',
+      });
+    }
   }
 
   const timeline = gsap.timeline({
     defaults: { ease: 'power3.inOut' },
     onComplete: () => {
-      if (engine) engine.setBottomFillProgress(1);
+      if (canFluidExit && engine) engine.setExitProgress(1);
       options.onComplete();
     },
   });
 
   if (button) {
-    timeline.to(button, { autoAlpha: 0, y: -7, duration: options.reducedMotion ? 0.08 : 0.22, ease: 'power2.out' }, 0);
+    timeline.to(button, {
+      autoAlpha: 0,
+      y: -4,
+      duration: options.reducedMotion ? 0.06 : 0.2,
+      ease: 'power2.out',
+    }, 0);
   }
 
-  if (engine) {
+  if (canFluidExit && engine) {
     timeline.to(progress, {
       value: 1,
-      duration,
+      duration: fluidDuration,
       ease: 'power2.inOut',
-      onUpdate: () => engine.setBottomFillProgress(bottomFillState(progress.value).progress),
-    }, options.reducedMotion ? 0 : 0.04);
+      onUpdate: () => engine.setExitProgress(progress.value),
+    }, 0.04);
   } else if (fallbackFill) {
     timeline.to(fallbackFill, {
       scaleY: 1,
-      duration,
+      duration: fallbackDuration,
       ease: 'power3.inOut',
     }, options.reducedMotion ? 0 : 0.04);
   } else {
     timeline.to(progress, { value: 1, duration: 0.01 });
   }
+
+  timeline.to({}, { duration: finalBlackHold });
 
   return timeline;
 }
