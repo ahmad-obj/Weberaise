@@ -1,12 +1,12 @@
 'use client';
 
-import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createProgressController } from '@/experience/loading/progressController';
 import { createCriticalAssetRegistry, preloadImage } from '@/experience/loading/criticalAssetRegistry';
 import { countdownDelay, countdownTransitionMs, FINAL_ZERO_HOLD_MS } from '@/experience/loading/countdownTiming';
 import { LoaderCountdown } from './LoaderCountdown';
 import { LoaderCompletion } from './LoaderCompletion';
+import { LoaderCountdownDecoration } from './LoaderCountdownDecoration';
 
 type LoaderProps = {
   phase: 'loading' | 'loaderCompletion';
@@ -95,22 +95,7 @@ export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: Lo
       <p className="sr-only" role="status">Preparing the Weberaise experience.</p>
 
       {phase === 'loading' && (
-        <div
-          className="loader-countdown-decoration"
-          data-hidden={display === 0 ? 'true' : 'false'}
-          aria-hidden="true"
-        >
-          <Image
-            src="/brand/weberaise-horizontal-on-dark.svg"
-            alt=""
-            width={1800}
-            height={430}
-            priority
-            draggable={false}
-            className="loader-countdown-decoration__logo"
-          />
-          <span className="loader-countdown-decoration__label">LOADING</span>
-        </div>
+        <LoaderCountdownDecoration hidden={display === 0} />
       )}
 
       {showPersistentZero && (
