@@ -4,22 +4,27 @@
   pointer-events: none;
   opacity: 1;
   filter: blur(0);
-  animation: loader-decoration-in 420ms cubic-bezier(.22, .61, .36, 1) both;
   transition:
-    opacity 320ms cubic-bezier(.22, .61, .36, 1),
-    filter 320ms cubic-bezier(.22, .61, .36, 1);
+    opacity 560ms cubic-bezier(.22, .61, .36, 1),
+    filter 560ms cubic-bezier(.22, .61, .36, 1);
   will-change: opacity, filter;
 }
 
 .root[data-hidden='true'] {
   opacity: 0;
-  filter: blur(3px);
+  filter: blur(2px);
+}
+
+.content {
+  position: absolute;
+  inset: 0;
+  animation: loader-decoration-in 420ms cubic-bezier(.22, .61, .36, 1) both;
 }
 
 .logo {
   position: absolute;
   left: 50%;
-  top: clamp(42px, 7vh, 76px);
+  top: clamp(28px, 5.2vh, 58px);
   width: min(46vw, 420px);
   height: auto;
   transform: translateX(-50%);
@@ -54,7 +59,7 @@
 
 @media (max-width: 720px) {
   .logo {
-    top: clamp(34px, 6.5vh, 58px);
+    top: clamp(24px, 4.8vh, 44px);
     width: min(72vw, 320px);
   }
 
@@ -69,7 +74,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .root {
-    animation-duration: 1ms;
     transition-duration: 1ms;
+  }
+
+  .content {
+    animation-duration: 1ms;
   }
 }
