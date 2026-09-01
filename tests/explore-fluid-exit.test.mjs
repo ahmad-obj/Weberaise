@@ -32,6 +32,7 @@ test('EXPLORE exit is solver-driven fluid rather than analytic bottomFill', () =
   assert.match(engine, /applyExitSource\(this\.velocity/);
   assert.match(engine, /applyExitSource\(this\.dye/);
   assert.match(fluidShaders, /EXIT_SOURCE_FRAGMENT/);
+  assert.match(fluidShaders, /velocityDriven\s*=\s*mix\(base,\s*velocityTarget,\s*sourceBand\)/);
   assert.match(composite, /uExitProgress/);
   assert.match(composite, /uExitSealStart/);
   assert.match(composite, /smoothstep\(\s*uExitSealStart,\s*1\.0,\s*clamp\(uExitProgress/s);
@@ -43,5 +44,6 @@ test('EXPLORE exit is solver-driven fluid rather than analytic bottomFill', () =
   assert.match(timeline, /engine\.setExitProgress\(progress\.value\)/);
   assert.match(timeline, /fluidDuration = 1\.6/);
   assert.match(timeline, /finalBlackHold = options\.reducedMotion \? 0 : 0\.06/);
+  assert.doesNotMatch(timeline, /engine\.clear\(\)/);
   assert.doesNotMatch(timeline, /bottomFillState|setBottomFillProgress|setMode\('bottomFill'\)/);
 });
