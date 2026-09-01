@@ -12,7 +12,7 @@ function block(source, selector) {
   return match[1];
 }
 
-test('EXPLORE has a strong but restrained resting control surface', async () => {
+test('EXPLORE has a clear rounded resting control surface', async () => {
   const [css, button] = await Promise.all([
     readFile(cssPath, 'utf8'),
     readFile(buttonPath, 'utf8'),
@@ -21,20 +21,21 @@ test('EXPLORE has a strong but restrained resting control surface', async () => 
   const base = block(css, '.hero-explore');
   assert.match(base, /min-width:\s*152px/);
   assert.match(base, /min-height:\s*48px/);
-  assert.match(base, /border-radius:\s*14px/);
-  assert.match(base, /background:\s*rgba\(7,\s*9,\s*13,\s*\.84\)/);
-  assert.match(base, /border:\s*1px solid rgba\(255,\s*255,\s*255,\s*\.36\)/);
+  assert.match(base, /border-radius:\s*16px/);
+  assert.match(base, /background:\s*rgba\(5,\s*7,\s*10,\s*\.90\)/);
+  assert.match(base, /border:\s*1px solid rgba\(255,\s*255,\s*255,\s*\.48\)/);
   assert.match(base, /backdrop-filter:\s*blur\(12px\) saturate\(\.9\)/);
-  assert.match(base, /0 12px 30px rgba\(0,\s*0,\s*0,\s*\.20\)/);
+  assert.match(base, /0 14px 34px rgba\(0,\s*0,\s*0,\s*\.24\)/);
+  assert.match(base, /isolation:\s*isolate/);
   assert.doesNotMatch(base, /mix-blend-mode/);
 
   const sheen = block(css, '.hero-explore::before');
-  assert.match(sheen, /rgba\(255,255,255,\.09\)/);
+  assert.match(sheen, /rgba\(255,255,255,\.12\)/);
 
   const hover = block(css, '.hero-explore:hover,\n.hero-explore:focus-visible');
-  assert.match(hover, /translateY\(-2px\)/);
-  assert.match(hover, /background:\s*rgba\(9,\s*11,\s*16,\s*\.92\)/);
-  assert.match(hover, /border-color:\s*rgba\(255,255,255,\.52\)/);
+  assert.match(hover, /translateY\(-2px\) scale\(1\.012\)/);
+  assert.match(hover, /background:\s*rgba\(7,\s*9,\s*13,\s*\.96\)/);
+  assert.match(hover, /border-color:\s*rgba\(255,255,255,\.68\)/);
 
   assert.match(css, /\.hero-explore:active\s*\{[^}]*scale\(\.985\)/s);
   assert.match(button, /hero-explore__icon/);
