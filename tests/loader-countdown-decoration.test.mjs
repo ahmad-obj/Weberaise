@@ -22,8 +22,11 @@ test('countdown-only decoration shows the WEBERAISE logo and LOADING label, then
   assert.match(decoration, /data-hidden=\{hidden \? 'true' : 'false'\}/);
 
   assert.match(css, /\.root\s*\{[^}]*position:\s*absolute[^}]*inset:\s*0[^}]*pointer-events:\s*none/s);
-  assert.match(css, /\.logo\s*\{[^}]*left:\s*50%[^}]*top:\s*clamp\([^}]*transform:\s*translateX\(-50%\)/s);
+  assert.doesNotMatch(css, /\.root\s*\{[^}]*animation:\s*loader-decoration-in/s);
+  assert.match(css, /\.content\s*\{[^}]*animation:\s*loader-decoration-in\s+420ms/s);
+  assert.match(css, /\.root\s*\{[^}]*transition:\s*opacity\s+560ms[^;]*,\s*filter\s+560ms/s);
+  assert.match(css, /\.root\[data-hidden='true'\]\s*\{[^}]*opacity:\s*0[^}]*filter:\s*blur\(2px\)/s);
+  assert.match(css, /\.logo\s*\{[^}]*left:\s*50%[^}]*top:\s*clamp\(28px,\s*5\.2vh,\s*58px\)[^}]*transform:\s*translateX\(-50%\)/s);
   assert.match(css, /\.label\s*\{[^}]*left:\s*50%[^}]*top:\s*calc\(50%[^}]*font:\s*7\d\d[^}]*var\(--font-hero\)/s);
-  assert.match(css, /\.root\[data-hidden='true'\]\s*\{[^}]*opacity:\s*0/s);
   assert.match(css, /@keyframes loader-decoration-in/);
 });
