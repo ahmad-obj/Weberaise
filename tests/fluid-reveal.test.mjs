@@ -28,10 +28,7 @@ test('full profile preserves the approved doubled footprint with proportional mo
   assert.equal(full.pressureIterations, 20);
   assert.equal(full.velocityRetention60, 0.962);
   assert.equal(full.dyeRetention60, 0.988);
-  // The splat shader is exp(-distance^2 / radius), so doubling the visible
-  // linear footprint requires 4x the radius parameter: 0.00006 -> 0.00024.
   assert.equal(full.splatRadius, 0.00024);
-  // The visible footprint is 2x wider, so directional momentum scales 2x.
   assert.equal(full.splatForce, 11800);
   assert.equal(full.revealGain, 3.9);
   assert.equal(full.edgeSoftness, 0.5);
@@ -42,7 +39,6 @@ test('full profile preserves the approved doubled footprint with proportional mo
 test('reference-frame retention matches 60 Hz and is refresh-rate independent', () => {
   assert.ok(Math.abs(referenceFrameScale(1 / 60) - 1) < 1e-9);
   assert.ok(Math.abs(referenceFrameScale(1 / 120) - 0.5) < 1e-9);
-
   const at60 = retentionFromReferenceFrame(0.988, 1 / 60);
   const twoAt120 = retentionFromReferenceFrame(0.988, 1 / 120) ** 2;
   assert.ok(Math.abs(at60 - 0.988) < 1e-9);
@@ -50,23 +46,8 @@ test('reference-frame retention matches 60 Hz and is refresh-rate independent', 
 });
 
 test('lite and reduced profiles keep the same doubled footprint contract', () => {
-  const lite = chooseRevealQuality({
-    width: 390,
-    height: 844,
-    dpr: 3,
-    reducedMotion: false,
-    webgl2: true,
-    deviceMemory: 2,
-  });
-  const reduced = chooseRevealQuality({
-    width: 1440,
-    height: 900,
-    dpr: 2,
-    reducedMotion: true,
-    webgl2: true,
-    deviceMemory: 8,
-  });
-
+  const lite = chooseRevealQuality({ width: 390, height: 844, dpr: 3, reducedMotion: false, webgl2: true, deviceMemory: 2 });
+  const reduced = chooseRevealQuality({ width: 1440, height: 900, dpr: 2, reducedMotion: true, webgl2: true, deviceMemory: 8 });
   assert.equal(lite.mode, 'lite');
   assert.equal(lite.simResolution, 128);
   assert.equal(lite.dyeResolution, 256);
@@ -75,7 +56,6 @@ test('lite and reduced profiles keep the same doubled footprint contract', () =>
   assert.equal(lite.splatForce, 11800);
   assert.equal(lite.edgeSoftness, 0.5);
   assert.equal(lite.edgeWidth, 0.01);
-
   assert.equal(reduced.mode, 'reduced');
   assert.equal(reduced.enableVelocity, false);
   assert.equal(reduced.pressureIterations, 0);
@@ -103,6 +83,24 @@ test('fluid shader suite contains splat, advection and pressure projection passe
   assert.match(source, /GRADIENT_SUBTRACT_FRAGMENT/);
   assert.match(source, /exp\(-dot\(/);
   assert.doesNotMatch(source, /fbm|simplex|hash\s*\(|vorticity|uCurlStrength/i);
+});
+
+test('fluid exit source is deterministic fullscreen injection without periodic wave math', async () => {
+  const shaders = read('src/webgl/reveal/fluid/shaders.ts');
+  const exit = await import('../src/webgl/reveal/exitFluid.ts');
+  assert.match(shaders, /EXIT_SOURCE_FRAGMENT/);
+  assert.match(shaders, /uVelocityPass/);
+  assert.match(shaders, /uSourceBandTop/);
+  assert.match(shaders, /gaussian/);
+  assert.doesNotMatch(shaders, /sin\s*\(|fbm|simplex|hash\s*\(/i);
+  assert.equal(exit.EXIT_FLUID_CONFIG.sourceBandTop, 0.14);
+  assert.equal(exit.EXIT_FLUID_CONFIG.dyeStrength, 0.24);
+  assert.equal(exit.EXIT_FLUID_CONFIG.velocityBase, 4.2);
+  assert.equal(exit.EXIT_FLUID_CONFIG.velocityPeak, 7.0);
+  assert.equal(exit.EXIT_FLUID_CONFIG.lateralStrength, 0.35);
+  assert.equal(exit.EXIT_FLUID_CONFIG.sealStart, 0.94);
+  assert.equal(exit.clampExitProgress(-1), 0);
+  assert.equal(exit.clampExitProgress(2), 1);
 });
 
 test('reveal engine owns persistent pressure-projected fluid state', () => {
