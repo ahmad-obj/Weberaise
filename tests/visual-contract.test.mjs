@@ -57,6 +57,15 @@ test('full quality profile preserves the approved WEBERAISE fluid profile', () =
   assert.match(quality, /revealGain:\s*3\.9/);
 });
 
+test('EXPLORE exit uses solver dye rather than an analytic sine crest', () => {
+  const shader = read('src/webgl/reveal/shaders.ts');
+  const engine = read('src/webgl/reveal/RevealEngine.ts');
+  assert.match(shader, /uExitProgress/);
+  assert.match(shader, /uExitSealStart/);
+  assert.doesNotMatch(shader, /sin\s*\(/);
+  assert.doesNotMatch(engine, /bottomFill/);
+});
+
 test('post-explore root owns the seamless black handoff from EXPLORE', () => {
   const css = read('src/components/MainSite/PostExploreNarrative/PostExploreNarrative.module.css');
   const shell = read('src/components/experience/ExperienceShell.tsx');
