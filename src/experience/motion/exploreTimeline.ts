@@ -18,7 +18,8 @@ export function runExploreTimeline(
   );
 
   if (canFluidExit && engine) {
-    engine.clear();
+    // Keep the user's existing dye and residual velocity alive so EXPLORE feels
+    // like the same material taking over the viewport rather than a fresh wipe.
     engine.setExitProgress(0);
     engine.setMode('fluidExit');
   } else {
