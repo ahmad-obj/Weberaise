@@ -42,14 +42,20 @@ test('loader completion copy and line width match the approved polish', () => {
   assert.match(css, /loader-completion__line[\s\S]*width:\s*min\(92vw,\s*1100px\)/);
 });
 
-test('hero keeps the approved raised composition and framed difference-blended EXPLORE CTA', () => {
+test('hero keeps the raised composition and polished adaptive EXPLORE CTA', () => {
   const css = read('src/app/globals.css');
+  const component = read('src/components/experience/Hero/HeroExploreButton.tsx');
+  const block = css.match(/\.hero-explore\s*\{([^}]*)\}/s)?.[1] ?? '';
+
   assert.match(css, /\.hero-composition[\s\S]*translateY\(clamp\(-44px,\s*-4\.2vh,\s*-28px\)\)/);
-  assert.match(css, /\.hero-explore[\s\S]*min-width:\s*126px/);
-  assert.match(css, /\.hero-explore[\s\S]*min-height:\s*44px/);
-  assert.match(css, /\.hero-explore[\s\S]*border:\s*1px solid currentColor/);
-  assert.match(css, /\.hero-explore[\s\S]*color:\s*#fff/);
-  assert.match(css, /\.hero-explore[\s\S]*mix-blend-mode:\s*difference/);
+  assert.match(block, /min-width:\s*152px/);
+  assert.match(block, /min-height:\s*48px/);
+  assert.match(block, /border-radius:\s*14px/);
+  assert.match(block, /background:\s*rgba\(8,\s*10,\s*14,\s*\.78\)/);
+  assert.match(block, /color:\s*#fff/);
+  assert.match(block, /backdrop-filter:\s*blur\(12px\) saturate\(\.85\)/);
+  assert.doesNotMatch(block, /mix-blend-mode/);
+  assert.match(component, /hero-explore__icon/);
   assert.match(css, /\[data-hero-explore\][\s\S]*z-index:\s*7/);
   assert.match(css, /\.hero-reveal-canvas[\s\S]*mix-blend-mode:\s*difference/);
 });
