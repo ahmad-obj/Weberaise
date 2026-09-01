@@ -121,8 +121,9 @@ export class WorkPreviewMediaPool {
     }
   }
 
-  uploadReadyFrames() {
-    if (this.destroyed) return;
+  uploadReadyFrames(): boolean {
+    if (this.destroyed) return false;
+    let changed = false;
     const gl = this.gl;
     const nowMs = performance.now();
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
@@ -168,6 +169,7 @@ export class WorkPreviewMediaPool {
             );
           }
           live.hasFrame = true;
+          changed = true;
         } catch {
           live.hasFrame = false;
         }
@@ -193,10 +195,13 @@ export class WorkPreviewMediaPool {
         }
         live.hasFrame = true;
         live.dirty = false;
+        changed = true;
       } catch {
         live.hasFrame = false;
       }
     }
+
+    return changed;
   }
 
   bind(uniforms: WorkMediaUniforms) {
