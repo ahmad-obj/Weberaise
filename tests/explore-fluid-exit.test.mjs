@@ -6,16 +6,29 @@ import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
-test('EXPLORE is a framed difference-blended CTA above the reveal compositor', () => {
+test('EXPLORE is an always-visible rounded adaptive CTA above the reveal compositor', () => {
   const css = read('src/app/globals.css');
-  assert.match(css, /\.hero-explore\s*\{[^}]*min-width:\s*126px/s);
-  assert.match(css, /\.hero-explore\s*\{[^}]*min-height:\s*44px/s);
-  assert.match(css, /\.hero-explore\s*\{[^}]*border:\s*1px solid currentColor/s);
-  assert.match(css, /\.hero-explore\s*\{[^}]*border-radius:\s*4px/s);
-  assert.match(css, /\.hero-explore\s*\{[^}]*color:\s*#fff[^}]*mix-blend-mode:\s*difference/s);
+  const component = read('src/components/experience/Hero/HeroExploreButton.tsx');
+  const block = css.match(/\.hero-explore\s*\{([^}]*)\}/s)?.[1] ?? '';
+
+  assert.match(block, /min-width:\s*152px/);
+  assert.match(block, /min-height:\s*48px/);
+  assert.match(block, /border-radius:\s*14px/);
+  assert.match(block, /background:\s*rgba\(8,\s*10,\s*14,\s*\.78\)/);
+  assert.match(block, /border:\s*1px solid rgba\(255,\s*255,\s*255,\s*\.26\)/);
+  assert.match(block, /backdrop-filter:\s*blur\(12px\) saturate\(\.85\)/);
+  assert.match(block, /box-shadow:[^;]*rgba\(0,\s*0,\s*0,\s*\.20\)/s);
+  assert.doesNotMatch(block, /mix-blend-mode/);
   assert.match(css, /\.hero-explore:hover[^}]*translateY\(-2px\)/s);
+  assert.match(css, /\.hero-explore:hover\s+\.hero-explore__icon[^}]*translateY\(2px\)/s);
   assert.match(css, /\.hero-explore:active[^}]*scale\(\.985\)/s);
   assert.match(css, /\[data-hero-explore\][^}]*z-index:\s*7/s);
+
+  assert.match(component, /hero-explore__label/);
+  assert.match(component, /hero-explore__icon/);
+  assert.match(component, /<svg/);
+  assert.match(component, /aria-hidden="true"/);
+  assert.doesNotMatch(component, /hero-explore__rule/);
 });
 
 test('EXPLORE exit is solver-driven fluid rather than analytic bottomFill', () => {
