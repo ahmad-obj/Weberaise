@@ -92,6 +92,7 @@ test('fluid exit source is deterministic fullscreen injection without periodic w
   assert.match(shaders, /uVelocityPass/);
   assert.match(shaders, /uSourceBandTop/);
   assert.match(shaders, /gaussian/);
+  assert.match(shaders, /velocityDriven\s*=\s*mix\(base,\s*velocityTarget,\s*sourceBand\)/);
   assert.doesNotMatch(shaders, /sin\s*\(|fbm|simplex|hash\s*\(/i);
   assert.equal(exit.EXIT_FLUID_CONFIG.sourceBandTop, 0.14);
   assert.equal(exit.EXIT_FLUID_CONFIG.dyeStrength, 0.24);
