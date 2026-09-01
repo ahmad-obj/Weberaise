@@ -28,7 +28,7 @@ async function warmHeroCode(): Promise<void> {
     import('@/components/experience/Hero/Hero'),
     import('@/webgl/reveal/createRevealEngine'),
   ]);
-  await revealModule.warmRevealEngine();
+  await revealModule.warmRevealEngine().catch(() => undefined);
 }
 
 export function Loader({ phase, onCriticalReady, onComplete, reducedMotion }: LoaderProps) {
