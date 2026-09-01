@@ -122,20 +122,32 @@ float gaussian(float x, float center, float width) {
 
 void main() {
   vec3 base = texture(uTarget, vUv).xyz;
-  float sourceBand = 1.0 - smoothstep(uSourceBandTop - 0.04, uSourceBandTop, vUv.y);
-  float drive = smoothstep(0.0, 0.72, clamp(uExitProgress, 0.0, 1.0));
+  float progress = clamp(uExitProgress, 0.0, 1.0);
+  float drive = smoothstep(0.0, 0.72, progress);
+  float shapePhase = smoothstep(0.12, 0.88, progress);
 
-  float left = gaussian(vUv.x, 0.22, 0.24);
-  float middle = gaussian(vUv.x, 0.58, 0.30);
-  float right = gaussian(vUv.x, 0.84, 0.18);
+  float a = gaussian(vUv.x, 0.15, 0.20);
+  float b = gaussian(vUv.x, 0.38, 0.22);
+  float c = gaussian(vUv.x, 0.64, 0.24);
+  float d = gaussian(vUv.x, 0.88, 0.18);
 
-  float verticalProfile = 0.92 + 0.16 * left - 0.08 * middle + 0.12 * right;
-  float lateralProfile = (left - right) * uLateralStrength;
+  float sourceHeight = uSourceBandTop * (0.88 + 0.12 * a - 0.08 * c + 0.10 * d);
+  float sourceBand = 1.0 - smoothstep(sourceHeight - 0.04, sourceHeight, vUv.y);
+
+  float verticalA = 0.90 + 0.18 * a - 0.10 * b + 0.08 * c + 0.14 * d;
+  float verticalB = 0.94 + 0.06 * a + 0.16 * b - 0.12 * c + 0.10 * d;
+  float verticalProfile = mix(verticalA, verticalB, shapePhase);
+
+  float lateralA = (a - 0.70 * c - 0.30 * d) * uLateralStrength;
+  float lateralB = (-0.40 * a + 0.80 * b - 0.70 * d) * uLateralStrength;
+  float lateralProfile = mix(lateralA, lateralB, shapePhase);
   float upward = mix(uVelocityBase, uVelocityPeak, drive) * verticalProfile;
 
   vec3 dyeDriven = base + vec3(sourceBand * uDyeStrength);
   vec3 velocityTarget = vec3(lateralProfile, upward, 0.0);
-  vec3 velocityDriven = mix(base, velocityTarget, sourceBand);
+  float velocityDrive = mix(0.18, 0.26, drive);
+  vec3 velocityDriven = mix(base, velocityTarget, velocityDrive);
+
   vec3 result = mix(dyeDriven, velocityDriven, step(0.5, uVelocityPass));
   outColor = vec4(result, 1.0);
 }`;
