@@ -12,7 +12,7 @@ import {
 const root = resolve(import.meta.dirname, '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
-test('full profile starts from confirmed Nothin production values', () => {
+test('full profile preserves the Nothin fluid baseline with the approved doubled footprint', () => {
   const full = chooseRevealQuality({
     width: 1440,
     height: 900,
@@ -28,7 +28,9 @@ test('full profile starts from confirmed Nothin production values', () => {
   assert.equal(full.pressureIterations, 20);
   assert.equal(full.velocityRetention60, 0.962);
   assert.equal(full.dyeRetention60, 0.988);
-  assert.equal(full.splatRadius, 0.00006);
+  // The splat shader is exp(-distance^2 / radius), so doubling the visible
+  // linear footprint requires 4x the radius parameter: 0.00006 -> 0.00024.
+  assert.equal(full.splatRadius, 0.00024);
   assert.equal(full.splatForce, 5900);
   assert.equal(full.revealGain, 3.9);
   assert.equal(full.edgeSoftness, 0.5);
@@ -46,7 +48,7 @@ test('reference-frame retention matches 60 Hz and is refresh-rate independent', 
   assert.ok(Math.abs(at60 - twoAt120) < 1e-9);
 });
 
-test('lite and reduced profiles preserve mask semantics at lower cost', () => {
+test('lite and reduced profiles keep the same doubled linear footprint', () => {
   const lite = chooseRevealQuality({
     width: 390,
     height: 844,
@@ -68,12 +70,16 @@ test('lite and reduced profiles preserve mask semantics at lower cost', () => {
   assert.equal(lite.simResolution, 128);
   assert.equal(lite.dyeResolution, 256);
   assert.equal(lite.pressureIterations, 10);
+  assert.equal(lite.splatRadius, 0.00024);
+  assert.equal(lite.splatForce, 5900);
   assert.equal(lite.edgeSoftness, 0.5);
   assert.equal(lite.edgeWidth, 0.01);
 
   assert.equal(reduced.mode, 'reduced');
   assert.equal(reduced.enableVelocity, false);
   assert.equal(reduced.pressureIterations, 0);
+  assert.equal(reduced.splatRadius, 0.00032);
+  assert.equal(reduced.splatForce, 0);
   assert.equal(reduced.edgeSoftness, 0.5);
   assert.equal(reduced.edgeWidth, 0.01);
 });
