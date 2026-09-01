@@ -12,16 +12,18 @@ export function LoaderCountdownDecoration({ hidden }: LoaderCountdownDecorationP
       data-hidden={hidden ? 'true' : 'false'}
       aria-hidden="true"
     >
-      <Image
-        src="/brand/weberaise-horizontal-on-dark.svg"
-        alt=""
-        width={1800}
-        height={430}
-        priority
-        draggable={false}
-        className={styles.logo}
-      />
-      <span className={styles.label}>LOADING</span>
+      <div className={styles.content}>
+        <Image
+          src="/brand/weberaise-horizontal-on-dark.svg"
+          alt=""
+          width={1800}
+          height={430}
+          priority
+          draggable={false}
+          className={styles.logo}
+        />
+        <span className={styles.label}>LOADING</span>
+      </div>
     </div>
   );
 }
