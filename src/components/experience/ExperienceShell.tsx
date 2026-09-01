@@ -1,13 +1,17 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { Loader } from '@/components/experience/Loader/Loader';
-import { Hero } from '@/components/experience/Hero/Hero';
 import { SiteNavigation } from '@/components/navigation/SiteNavigation';
 import {
   experienceReducer,
   INITIAL_EXPERIENCE_STATE,
 } from '@/experience/state/experienceReducer';
+
+const Hero = dynamic(
+  () => import('@/components/experience/Hero/Hero').then((module) => module.Hero),
+);
 
 function prefersReducedMotion() {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
