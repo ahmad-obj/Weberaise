@@ -1,15 +1,13 @@
 'use client';
 
-import ShutterText from '@/components/ui/shutter-text';
+import { ShutterTextPlaceholder } from '@/components/ui/ShutterTextPlaceholder';
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { BuiltJourneyPath } from './buildJourneyPath';
-import { buildJourneyPath } from './buildJourneyPath';
 import { JourneyArtwork } from './JourneyArtwork';
 import { JourneyStop } from './JourneyStop';
-import { revealJourneyStop } from './questionReveal';
+import { loadPostExploreRuntime, type PostExploreRuntime } from './postExploreRuntime';
 import { RibbonBackLayer, RibbonFrontLayer } from './RibbonTrail';
-import { createRibbonController } from './ribbonController';
-import { getJourneyRoute, type JourneyStopId } from './journeyRoute';
+import type { JourneyStopId } from './journeyRoute';
 import styles from './PostExploreNarrative.module.css';
 
 type JourneyGeometry = BuiltJourneyPath & { sampleSpacing: number };
@@ -36,6 +34,7 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
   const [geometry, setGeometry] = useState<JourneyGeometry | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [reassuranceActive, setReassuranceActive] = useState(false);
+  const [ShutterTextRuntime, setShutterTextRuntime] = useState<PostExploreRuntime['ShutterText'] | null>(null);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -43,6 +42,8 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
     const shell = root.closest<HTMLElement>('[data-experience-state]');
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     let started = false;
+    let disposed = false;
+    let runtime: PostExploreRuntime | null = null;
     let experienceObserver: MutationObserver | null = null;
     let resizeObserver: ResizeObserver | null = null;
     let rebuildTimer = 0;
@@ -52,8 +53,9 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
     setReducedMotion(motionQuery.matches);
 
     const rebuild = () => {
-      const config = getJourneyRoute(window.innerWidth);
-      const built = buildJourneyPath(root, config);
+      if (!runtime) return;
+      const config = runtime.getJourneyRoute(window.innerWidth);
+      const built = runtime.buildJourneyPath(root, config);
       lastWidth = built.width;
       lastHeight = built.height;
       setGeometry({ ...built, sampleSpacing: config.sampleSpacing });
@@ -65,9 +67,12 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
         rebuildFrame = window.requestAnimationFrame(() => { rebuildFrame = 0; rebuild(); });
       }, 120);
     };
-    const startJourney = () => {
-      if (started || (shell && shell.dataset.experienceState !== 'main')) return;
+    const startJourney = async () => {
+      if (started || disposed || (shell && shell.dataset.experienceState !== 'main')) return;
       started = true;
+      runtime = await loadPostExploreRuntime();
+      if (disposed) return;
+      setShutterTextRuntime(() => runtime!.ShutterText);
       resizeObserver = new ResizeObserver((entries) => {
         const entry = entries[0];
         if (!entry) return;
@@ -80,16 +85,17 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
     if (shell && shell.dataset.experienceState !== 'main') {
       experienceObserver = new MutationObserver(() => {
         if (shell.dataset.experienceState === 'main') {
-          startJourney();
+          void startJourney();
           experienceObserver?.disconnect();
           experienceObserver = null;
         }
       });
       experienceObserver.observe(shell, { attributes: true, attributeFilter: ['data-experience-state'] });
-    } else startJourney();
+    } else void startJourney();
     const handleMotionPreference = (event: MediaQueryListEvent) => setReducedMotion(event.matches);
     motionQuery.addEventListener('change', handleMotionPreference);
     return () => {
+      disposed = true;
       experienceObserver?.disconnect();
       resizeObserver?.disconnect();
       motionQuery.removeEventListener('change', handleMotionPreference);
@@ -108,32 +114,40 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
     const frontHighlightPath = frontHighlightPathRef.current;
     const taperRevealPath = taperRevealPathRef.current;
     if (!root || !svg || !backBasePath || !backHighlightPath || !frontBasePath || !frontHighlightPath || !taperRevealPath || !geometry?.d) return undefined;
+    let disposed = false;
     let cleanupController: () => void = () => undefined;
     const frame = window.requestAnimationFrame(() => {
-      cleanupController = createRibbonController({
-        root,
-        svg,
-        measurementPath: backBasePath,
-        drawPaths: [backBasePath, backHighlightPath, frontBasePath, frontHighlightPath],
-        openingLocalY: geometry.openingLocalY,
-        sampleSpacing: geometry.sampleSpacing,
-        stops: geometry.stops,
-        markerProgress: geometry.markerProgress,
-        taper: { revealPath: taperRevealPath, startLocalY: geometry.taper.startLocalY },
-        reducedMotion,
-        onReveal: (id: JourneyStopId) => {
-          const anchor = root.querySelector<HTMLElement>(`[data-journey-stop="${id}"]`);
-          if (!anchor || anchor.dataset.revealed === 'true') return;
-          if (id === 'reassurance') setReassuranceActive(true);
-          else {
-            const target = anchor.querySelector<HTMLElement>('[data-journey-question]');
-            if (target) revealJourneyStop(target, reducedMotion);
-          }
-          anchor.dataset.revealed = 'true';
-        },
+      void loadPostExploreRuntime().then((runtimeModule) => {
+        if (disposed) return;
+        cleanupController = runtimeModule.createRibbonController({
+          root,
+          svg,
+          measurementPath: backBasePath,
+          drawPaths: [backBasePath, backHighlightPath, frontBasePath, frontHighlightPath],
+          openingLocalY: geometry.openingLocalY,
+          sampleSpacing: geometry.sampleSpacing,
+          stops: geometry.stops,
+          markerProgress: geometry.markerProgress,
+          taper: { revealPath: taperRevealPath, startLocalY: geometry.taper.startLocalY },
+          reducedMotion,
+          onReveal: (id: JourneyStopId) => {
+            const anchor = root.querySelector<HTMLElement>(`[data-journey-stop="${id}"]`);
+            if (!anchor || anchor.dataset.revealed === 'true') return;
+            if (id === 'reassurance') setReassuranceActive(true);
+            else {
+              const target = anchor.querySelector<HTMLElement>('[data-journey-question]');
+              if (target) runtimeModule.revealJourneyStop(target, reducedMotion);
+            }
+            anchor.dataset.revealed = 'true';
+          },
+        });
       });
     });
-    return () => { window.cancelAnimationFrame(frame); cleanupController(); };
+    return () => {
+      disposed = true;
+      window.cancelAnimationFrame(frame);
+      cleanupController();
+    };
   }, [geometry, reducedMotion]);
 
   const width = geometry?.width ?? 1;
@@ -150,7 +164,7 @@ export function JourneyNarrative({ questions, reassurance }: { questions: readon
         <JourneyStop id="q1" align="left"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextLeft} ${styles.journeyBeatQ1}`}><h2 className={styles.journeyQuestion} data-journey-question>{questions[0]}</h2><JourneyArtwork id="q1" label="Layered website concept with a storefront on its platform" /></div></JourneyStop>
         <JourneyStop id="q2" align="right"><div className={`${styles.journeyBeat} ${styles.journeyBeatTextRight} ${styles.journeyBeatQ2}`}><JourneyArtwork id="q2" label="Layered website redesign composition" /><h2 className={styles.journeyQuestion} data-journey-question data-ribbon-question="q2">{questions[1]}</h2></div></JourneyStop>
         <JourneyStop id="q3" align="center"><div className={styles.journeyBeatQ3}><h2 className={`${styles.journeyQuestion} ${styles.journeyQuestionQ3}`} data-journey-question><LookQuestion /></h2></div></JourneyStop>
-        <JourneyStop id="reassurance" align="center"><h2 className={styles.reassuranceHeading} data-reassurance-text aria-label={reassurance}><ShutterText lines={['DONT WORRY.', 'WE GOT YOU']} active={reassuranceActive} /></h2></JourneyStop>
+        <JourneyStop id="reassurance" align="center"><h2 className={styles.reassuranceHeading} data-reassurance-text aria-label={reassurance}>{ShutterTextRuntime ? <ShutterTextRuntime lines={['DONT WORRY.', 'WE GOT YOU']} active={reassuranceActive} /> : <ShutterTextPlaceholder lines={['DONT WORRY.', 'WE GOT YOU']} />}</h2></JourneyStop>
       </div>
       <RibbonFrontLayer d={pathD} width={width} height={height} frontBasePathRef={frontBasePathRef} frontHighlightPathRef={frontHighlightPathRef} frontClipRects={frontClipRects} />
     </section>
