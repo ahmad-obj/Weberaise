@@ -187,7 +187,7 @@ button, input { font: inherit; }
   mix-blend-mode: difference;
   will-change: transform;
 }
-.hero-reveal-canvas[data-reveal-mode='bottomFill'] { mix-blend-mode: normal; }
+.hero-reveal-canvas[data-reveal-mode='fluidExit'] { mix-blend-mode: normal; }
 .hero-reveal-canvas[data-reveal-mode='disabled'] { opacity: 0; }
 .hero-cursor {
   position: absolute;
@@ -280,10 +280,9 @@ button, input { font: inherit; }
 .hero-exit-fill {
   display: none;
   position: absolute;
-  inset: -6% 0 0;
+  inset: 0;
   z-index: 8;
   background: var(--wr-black);
-  border-radius: 48% 52% 0 0 / 4.5% 4.5% 0 0;
   pointer-events: none;
   will-change: transform;
 }
