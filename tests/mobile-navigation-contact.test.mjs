@@ -9,6 +9,10 @@ const bubblePath = new URL('../src/components/navigation/TalkContactBubble.tsx',
 const sharedContactsPath = new URL('../src/content/contactDetails.ts', import.meta.url);
 const contactEndingPath = new URL('../src/components/ServicesPage/ContactEnding.tsx', import.meta.url);
 
+async function readOptional(url) {
+  return readFile(url, 'utf8').catch(() => '');
+}
+
 function mediaBlock(source, query) {
   const start = source.indexOf(`@media ${query}`);
   assert.notEqual(start, -1, `Missing media query: ${query}`);
@@ -35,8 +39,8 @@ test('LET’S TALK opens an accessible anchored contact bubble backed by shared 
   const [siteNav, talk, bubble, contacts, contactEnding, css] = await Promise.all([
     readFile(siteNavPath, 'utf8'),
     readFile(talkPath, 'utf8'),
-    readFile(bubblePath, 'utf8'),
-    readFile(sharedContactsPath, 'utf8'),
+    readOptional(bubblePath),
+    readOptional(sharedContactsPath),
     readFile(contactEndingPath, 'utf8'),
     readFile(navCssPath, 'utf8'),
   ]);
