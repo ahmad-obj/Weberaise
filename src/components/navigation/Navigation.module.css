@@ -21,6 +21,10 @@
   z-index: 150;
 }
 
+.navRoot:has(.talkShell[data-talk-open='true']) {
+  z-index: 160;
+}
+
 .logoZone,
 .centerZone,
 .talkZone {
@@ -30,7 +34,10 @@
 
 .logoZone { justify-self: start; }
 .centerZone { justify-self: center; }
-.talkZone { justify-self: end; }
+.talkZone {
+  position: relative;
+  justify-self: end;
+}
 
 .centerCluster {
   position: relative;
@@ -56,6 +63,7 @@
   background: var(--nav-pill-bg);
   color: var(--nav-pill-fg);
   text-decoration: none;
+  cursor: pointer;
   pointer-events: auto;
 }
 
@@ -166,52 +174,333 @@
   transition-timing-function: cubic-bezier(.2, .8, .2, 1);
 }
 
+.talkShell {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: auto;
+}
+
+.contactBubble {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 8;
+  width: min(
+    352px,
+    calc(100vw - max(24px, env(safe-area-inset-left)) - max(24px, env(safe-area-inset-right)))
+  );
+  max-height: calc(100svh - 82px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  padding: 18px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 22px;
+  background: rgb(7 10 15 / 94%);
+  color: #f5f7fa;
+  -webkit-backdrop-filter: blur(18px) saturate(1.05);
+  backdrop-filter: blur(18px) saturate(1.05);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 8%) inset,
+    0 24px 70px rgb(0 0 0 / 34%);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate3d(7px, -8px, 0) scale(.94);
+  transform-origin: top right;
+  pointer-events: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 22%) transparent;
+  transition:
+    opacity 280ms cubic-bezier(.22, 1, .36, 1),
+    transform 300ms cubic-bezier(.22, 1, .36, 1),
+    visibility 0s linear 300ms;
+  will-change: transform, opacity;
+}
+
+.contactBubble[data-open='true'] {
+  opacity: 1;
+  visibility: visible;
+  transform: translate3d(0, 0, 0) scale(1);
+  pointer-events: auto;
+  transition:
+    opacity 360ms cubic-bezier(.16, 1, .3, 1),
+    transform 430ms cubic-bezier(.16, 1, .3, 1),
+    visibility 0s linear 0s;
+}
+
+.contactBubbleHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 2px 2px 16px;
+}
+
+.contactBubbleEyebrow {
+  display: block;
+  color: rgb(167 176 192 / 82%);
+  font: 700 9px/1 var(--font-body), Arial, sans-serif;
+  letter-spacing: .16em;
+}
+
+.contactBubbleTitle {
+  margin: 9px 0 0;
+  color: #f5f7fa;
+  font: 630 23px/.95 var(--font-hero), Arial, sans-serif;
+  letter-spacing: -.035em;
+}
+
+.contactBubbleClose {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 13%);
+  border-radius: 11px;
+  background: rgb(255 255 255 / 6%);
+  color: rgb(245 247 250 / 82%);
+  cursor: pointer;
+  transition:
+    background-color 220ms cubic-bezier(.2, .8, .2, 1),
+    border-color 220ms cubic-bezier(.2, .8, .2, 1),
+    color 220ms cubic-bezier(.2, .8, .2, 1),
+    transform 220ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.contactBubbleClose svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.contactBubbleDirectory {
+  border-top: 1px solid rgb(255 255 255 / 11%);
+}
+
+.contactBubbleItem {
+  --contact-item-index: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 66px;
+  padding: 13px 3px;
+  border-bottom: 1px solid rgb(255 255 255 / 9%);
+  color: inherit;
+  text-decoration: none;
+  opacity: 0;
+  transform: translateY(7px);
+  transition:
+    opacity 180ms ease,
+    transform 260ms cubic-bezier(.22, 1, .36, 1),
+    background-color 220ms ease;
+}
+
+.contactBubble[data-open='true'] .contactBubbleItem {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: calc(105ms + var(--contact-item-index) * 42ms);
+}
+
+.contactBubbleItemCopy {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.contactBubbleLabel {
+  color: rgb(167 176 192 / 72%);
+  font: 690 9px/1 var(--font-body), Arial, sans-serif;
+  letter-spacing: .14em;
+}
+
+.contactBubbleValue {
+  overflow-wrap: anywhere;
+  color: rgb(245 247 250 / 95%);
+  font: 560 17px/1 var(--font-hero), Arial, sans-serif;
+  letter-spacing: -.025em;
+}
+
+.contactBubbleArrow {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  color: rgb(245 247 250 / 72%);
+  font: 500 14px/1 Arial, sans-serif;
+  transition:
+    color 220ms ease,
+    background-color 220ms ease,
+    transform 260ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.contactBubbleClose:focus-visible,
+.contactBubbleItem:focus-visible {
+  outline: 1px solid rgb(96 165 250 / 92%);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .contactBubbleClose:hover {
+    border-color: rgb(255 255 255 / 22%);
+    background: rgb(255 255 255 / 10%);
+    color: #fff;
+    transform: scale(1.03);
+  }
+
+  .contactBubbleItem:hover .contactBubbleValue {
+    color: #fff;
+  }
+
+  .contactBubbleItem:hover .contactBubbleArrow {
+    color: #fff;
+    background: rgb(255 255 255 / 8%);
+    transform: translate(2px, -2px);
+  }
+}
+
 @media (max-width: 720px) {
   .navRoot {
-    --nav-pill-height: 36px;
+    --nav-pill-height: 40px;
     --nav-pill-radius: 14px;
-    --nav-pill-pad-x: 13px;
-    top: 14px;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
-    row-gap: 8px;
-    padding-inline: 14px;
+    --nav-pill-pad-x: 8px;
+    top: max(12px, calc(env(safe-area-inset-top) + 6px));
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    column-gap: 5px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
   }
 
   .logoZone {
     grid-column: 1;
-    grid-row: 1;
     justify-self: start;
   }
 
-  .talkZone {
+  .centerZone {
     grid-column: 2;
-    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+    justify-self: stretch;
+  }
+
+  .talkZone {
+    grid-column: 3;
     justify-self: end;
   }
 
-  .centerZone {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    justify-self: center;
+  .centerCluster {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    gap: 4px;
   }
 
-  .centerCluster { gap: 7px; }
+  .navItemSlot { min-width: 0; }
 
   .pill {
-    font-size: 10px;
-    letter-spacing: 0.045em;
+    font-size: 9px;
+    letter-spacing: .035em;
+    white-space: nowrap;
   }
 
-  .logoPill { width: 46px; }
-  .centerPill { min-width: 72px; }
-  .talkPill { min-width: 104px; }
+  .logoPill {
+    width: 40px;
+    padding-inline: 0;
+  }
+
+  .logoMark {
+    width: 22px;
+    height: 16px;
+  }
+
+  .centerPill {
+    min-width: 0;
+    padding-inline: 7px;
+  }
+
+  .talkPill {
+    min-width: 84px;
+    padding-inline: 9px;
+  }
+
+  .contactBubble {
+    top: calc(100% + 8px);
+    width: min(
+      340px,
+      calc(100vw - max(16px, env(safe-area-inset-left)) - max(16px, env(safe-area-inset-right)))
+    );
+    max-height: calc(100svh - 70px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .contactBubbleTitle { font-size: 21px; }
+  .contactBubbleItem { min-height: 62px; }
+  .contactBubbleValue { font-size: 16px; }
+}
+
+@media (max-width: 360px) {
+  .navRoot {
+    --nav-pill-height: 38px;
+    column-gap: 3px;
+    padding-left: max(6px, env(safe-area-inset-left));
+    padding-right: max(6px, env(safe-area-inset-right));
+  }
+
+  .centerCluster { gap: 3px; }
+
+  .pill {
+    font-size: 8.5px;
+    letter-spacing: .025em;
+  }
+
+  .logoPill { width: 36px; }
+  .logoMark { width: 20px; }
+  .centerPill { padding-inline: 6px; }
+  .talkPill {
+    min-width: 78px;
+    padding-inline: 7px;
+  }
+}
+
+@media (max-width: 340px) {
+  .navRoot {
+    column-gap: 2px;
+  }
+
+  .centerCluster { gap: 2px; }
+
+  .pill {
+    font-size: 8px;
+    letter-spacing: .018em;
+  }
+
+  .logoPill { width: 34px; }
+  .centerPill { padding-inline: 5px; }
+  .talkPill {
+    min-width: 72px;
+    padding-inline: 6px;
+  }
 }
 
 @media (pointer: coarse) {
   .pill:active {
     transform: scale(0.97);
     transition: transform 90ms ease;
+  }
+
+  .contactBubbleClose,
+  .contactBubbleItem,
+  .contactBubbleArrow {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
@@ -220,5 +509,13 @@
   .pillFloodSurface,
   .pillFloodReveal {
     transition-duration: 120ms;
+  }
+
+  .contactBubble,
+  .contactBubbleClose,
+  .contactBubbleItem,
+  .contactBubbleArrow {
+    transition-duration: 1ms;
+    transition-delay: 0ms;
   }
 }
