@@ -8,6 +8,7 @@ import { createCenterHoverMotion } from './centerHoverMotion';
 import { type NavigationMode } from './navigationModel';
 import { useNavigationThemes } from './useNavigationTheme';
 import styles from './Navigation.module.css';
+import mobileStyles from './NavigationMobile.module.css';
 
 type NavigationLayer = 'experience' | 'route';
 
@@ -68,7 +69,7 @@ export function SiteNavigation({
   return (
     <nav
       ref={rootRef}
-      className={styles.navRoot}
+      className={`${styles.navRoot} ${mobileStyles.mobileAware}`}
       data-site-navigation
       data-navigation-mode={mode}
       data-navigation-layer={layer}
