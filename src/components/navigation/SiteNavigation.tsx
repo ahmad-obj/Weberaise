@@ -110,7 +110,7 @@ export function SiteNavigation({
         data-nav-zone="talk"
         data-nav-theme={mode === 'main' ? themes.talk : undefined}
       >
-        <GooeyTalkButton onNavigate={interactive ? onNavigate : undefined} />
+        <GooeyTalkButton />
       </div>
     </nav>
   );
