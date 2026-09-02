@@ -18,6 +18,7 @@ type HeroRevealCanvasProps = {
 type NavigatorWithMemory = Navigator & { deviceMemory?: number };
 
 const BRAND_SRC = '/brand/weberaise-horizontal-on-dark.svg';
+const MOBILE_STATIC_HERO_QUERY = '(max-width: 720px)';
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -94,6 +95,7 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
   const autonomousTimers = useRef<number[]>([]);
   const fallbackCleanup = useRef<(() => void) | null>(null);
   const [engineReady, setEngineReady] = useState(false);
+  const [staticMobileHero, setStaticMobileHero] = useState(false);
 
   const cancelAutonomousStroke = useCallback(() => {
     if (autonomousCancelled.current) return;
@@ -103,9 +105,24 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
   }, []);
 
   useEffect(() => {
+    const query = window.matchMedia(MOBILE_STATIC_HERO_QUERY);
+    const sync = () => setStaticMobileHero(query.matches);
+    sync();
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
+  }, []);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     const root = rootRef.current;
     if (!canvas || !root) return;
+
+    if (staticMobileHero || window.matchMedia(MOBILE_STATIC_HERO_QUERY).matches) {
+      engineRef.current?.dispose();
+      engineRef.current = null;
+      setEngineReady(false);
+      return;
+    }
 
     // React Strict Mode and legitimate dependency changes may replay effects.
     // Re-arm one-shot lifecycle flags before beginning a new engine instance.
@@ -173,7 +190,7 @@ export function HeroRevealCanvas({ phase, reducedMotion, rootRef, engineRef }: H
       engineRef.current?.dispose();
       engineRef.current = null;
     };
-  }, [cancelAutonomousStroke, engineRef, reducedMotion, rootRef]);
+  }, [cancelAutonomousStroke, engineRef, reducedMotion, rootRef, staticMobileHero]);
 
   useEffect(() => {
     const root = rootRef.current;
