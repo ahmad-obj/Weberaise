@@ -44,7 +44,7 @@ export function TalkContactBubble({ id, open, onClose }: TalkContactBubbleProps)
             target={item.external ? '_blank' : undefined}
             rel={item.external ? 'noreferrer' : undefined}
             onClick={onClose}
-            style={{ '--contact-item-index': index } as CSSProperties}
+            style={{ '--contact-item-delay': `${105 + index * 42}ms` } as CSSProperties}
             key={`${item.kind}-${item.label}`}
           >
             <span className={styles.contactBubbleItemCopy}>
