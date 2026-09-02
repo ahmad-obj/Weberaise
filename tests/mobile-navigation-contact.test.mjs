@@ -57,11 +57,14 @@ test('LET’S TALK opens an accessible anchored contact bubble backed by shared 
 
   assert.match(bubble, /CONTACT_DETAILS/);
   assert.match(bubble, /role="dialog"/);
-  assert.match(bubble, /PHONE \/ WHATSAPP/);
-  assert.match(bubble, /Instagram/);
-  assert.match(bubble, /LinkedIn/);
+  assert.match(bubble, /item\.label/);
+  assert.match(bubble, /item\.value/);
+  assert.doesNotMatch(bubble, /\+92 325 9622759|instagram\.com\/weberaise|linkedin\.com\/company\/140193912/);
 
   assert.match(contacts, /CONTACT_DETAILS/);
+  assert.match(contacts, /PHONE \/ WHATSAPP/);
+  assert.match(contacts, /Instagram/);
+  assert.match(contacts, /LinkedIn/);
   assert.match(contactEnding, /@\/content\/contactDetails/);
 
   assert.match(css, /\.talkShell\s*\{/);
