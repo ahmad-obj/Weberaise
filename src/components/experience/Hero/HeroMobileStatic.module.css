@@ -1,0 +1,27 @@
+.mobileStaticHero {
+  /* Desktop behavior stays owned by the existing hero styles. */
+}
+
+@media (max-width: 720px) {
+  .mobileStaticHero {
+    background: var(--wr-black);
+    color: var(--wr-white);
+  }
+
+  .mobileStaticHero :global(.hero-layer--front) {
+    display: none;
+  }
+
+  .mobileStaticHero :global(.hero-layer--reveal) {
+    clip-path: none;
+  }
+
+  .mobileStaticHero :global(.hero-reveal-canvas),
+  .mobileStaticHero :global(.hero-cursor) {
+    display: none;
+  }
+
+  .mobileStaticHero[data-hero-interactive='true'] {
+    cursor: auto;
+  }
+}
