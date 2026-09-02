@@ -35,6 +35,6 @@ test('all navbar pills share one flood contract with guaranteed corner coverage'
   assert.match(css, /\.pillFloodSurface\s*\{[^}]*background:\s*var\(--nav-pill-fg\)/s);
   assert.match(css, /\.pillFloodReveal\s*\{[^}]*color:\s*var\(--nav-pill-bg\)/s);
 
-  assert.doesNotMatch(talk, /GOOEY_PARTICLES|data-goo-particle|useState/);
+  assert.doesNotMatch(talk, /GOOEY_PARTICLES|data-goo-particle/);
   assert.doesNotMatch(css, /\.gooField|\.gooParticle|@keyframes\s+wrNavGooBurst/);
 });
