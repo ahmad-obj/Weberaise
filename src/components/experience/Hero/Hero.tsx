@@ -10,6 +10,7 @@ import { HeroRevealLayer } from './HeroRevealLayer';
 import { HeroRevealCanvas } from './HeroRevealCanvas';
 import { HeroCursor } from './HeroCursor';
 import { HeroExploreButton } from './HeroExploreButton';
+import mobileStyles from './HeroMobileStatic.module.css';
 
 type HeroProps = {
   phase: 'heroOpening' | 'heroInteractive' | 'heroExiting';
@@ -87,7 +88,7 @@ export function Hero({
   return (
     <section
       ref={rootRef}
-      className="hero-experience"
+      className={`hero-experience ${mobileStyles.mobileStaticHero}`}
       data-hero-interactive={phase === 'heroInteractive' ? 'true' : 'false'}
       aria-label="Welcome to Weberaise"
     >
