@@ -293,7 +293,7 @@
 }
 
 .contactBubbleItem {
-  --contact-item-index: 0;
+  --contact-item-delay: 0ms;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -314,7 +314,7 @@
 .contactBubble[data-open='true'] .contactBubbleItem {
   opacity: 1;
   transform: translateY(0);
-  transition-delay: calc(105ms + var(--contact-item-index) * 42ms);
+  transition-delay: var(--contact-item-delay, 0ms);
 }
 
 .contactBubbleItemCopy {
