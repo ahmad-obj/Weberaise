@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const navCssPath = new URL('../src/components/navigation/Navigation.module.css', import.meta.url);
+const mobileNavCssPath = new URL('../src/components/navigation/NavigationMobile.module.css', import.meta.url);
 const siteNavPath = new URL('../src/components/navigation/SiteNavigation.tsx', import.meta.url);
 const talkPath = new URL('../src/components/navigation/GooeyTalkButton.tsx', import.meta.url);
 const bubblePath = new URL('../src/components/navigation/TalkContactBubble.tsx', import.meta.url);
@@ -21,7 +22,11 @@ function mediaBlock(source, query) {
 }
 
 test('phone navigation remains a single row with equal-width text actions', async () => {
-  const css = await readFile(navCssPath, 'utf8');
+  const [css, mobileCss, siteNav] = await Promise.all([
+    readFile(navCssPath, 'utf8'),
+    readOptional(mobileNavCssPath),
+    readFile(siteNavPath, 'utf8'),
+  ]);
   const mobile = mediaBlock(css, '(max-width: 720px)');
 
   assert.match(mobile, /grid-template-columns:\s*auto\s+minmax\(0,\s*1fr\)\s+auto/);
@@ -30,8 +35,14 @@ test('phone navigation remains a single row with equal-width text actions', asyn
   assert.match(mobile, /env\(safe-area-inset-left/);
   assert.match(mobile, /env\(safe-area-inset-right/);
   assert.match(mobile, /white-space:\s*nowrap/);
-  assert.match(mobile, /--nav-mobile-action-width:\s*clamp\(/);
-  assert.match(mobile, /\.centerPill,\s*\n\s*\.talkPill\s*\{[^}]*width:\s*var\(--nav-mobile-action-width\)/s);
+
+  assert.match(siteNav, /NavigationMobile\.module\.css/);
+  assert.match(siteNav, /mobileStyles\.mobileAware/);
+  assert.match(mobileCss, /--nav-mobile-action-width:\s*clamp\(/);
+  assert.match(mobileCss, /data-nav-item/);
+  assert.match(mobileCss, /data-talk-pill/);
+  assert.match(mobileCss, /width:\s*var\(--nav-mobile-action-width\)/);
+  assert.match(mobileCss, /min-width:\s*var\(--nav-mobile-action-width\)/);
 
   assert.match(css, /@media\s*\(max-width:\s*360px\)/);
   assert.match(css, /@media\s*\(max-width:\s*340px\)/);
