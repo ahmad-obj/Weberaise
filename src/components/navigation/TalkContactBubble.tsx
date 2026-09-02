@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { CONTACT_DETAILS } from '@/content/contactDetails';
 import styles from './Navigation.module.css';
 
@@ -43,7 +44,7 @@ export function TalkContactBubble({ id, open, onClose }: TalkContactBubbleProps)
             target={item.external ? '_blank' : undefined}
             rel={item.external ? 'noreferrer' : undefined}
             onClick={onClose}
-            style={{ '--contact-item-index': index } as React.CSSProperties}
+            style={{ '--contact-item-index': index } as CSSProperties}
             key={`${item.kind}-${item.label}`}
           >
             <span className={styles.contactBubbleItemCopy}>
