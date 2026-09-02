@@ -1,4 +1,4 @@
-import { CONTACT_DETAILS } from './contactDetails';
+import { CONTACT_DETAILS } from '@/content/contactDetails';
 import styles from './ContactEnding.module.css';
 
 const PRIMARY_DETAILS = CONTACT_DETAILS.filter((item) =>
