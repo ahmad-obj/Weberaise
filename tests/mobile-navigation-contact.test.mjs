@@ -20,7 +20,7 @@ function mediaBlock(source, query) {
   return source.slice(start, next === -1 ? source.length : next);
 }
 
-test('phone navigation remains a single row and compacts without hiding actions', async () => {
+test('phone navigation remains a single row with equal-width text actions', async () => {
   const css = await readFile(navCssPath, 'utf8');
   const mobile = mediaBlock(css, '(max-width: 720px)');
 
@@ -30,6 +30,8 @@ test('phone navigation remains a single row and compacts without hiding actions'
   assert.match(mobile, /env\(safe-area-inset-left/);
   assert.match(mobile, /env\(safe-area-inset-right/);
   assert.match(mobile, /white-space:\s*nowrap/);
+  assert.match(mobile, /--nav-mobile-action-width:\s*clamp\(/);
+  assert.match(mobile, /\.centerPill,\s*\n\s*\.talkPill\s*\{[^}]*width:\s*var\(--nav-mobile-action-width\)/s);
 
   assert.match(css, /@media\s*\(max-width:\s*360px\)/);
   assert.match(css, /@media\s*\(max-width:\s*340px\)/);
