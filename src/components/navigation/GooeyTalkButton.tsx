@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { TalkContactBubble } from './TalkContactBubble';
 import styles from './Navigation.module.css';
 
@@ -9,6 +9,11 @@ export function GooeyTalkButton() {
   const shellRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const bubbleId = useId();
+
+  const closeBubble = useCallback(() => {
+    setOpen(false);
+    window.requestAnimationFrame(() => buttonRef.current?.focus());
+  }, []);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -21,8 +26,7 @@ export function GooeyTalkButton() {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      setOpen(false);
-      window.requestAnimationFrame(() => buttonRef.current?.focus());
+      closeBubble();
     };
 
     document.addEventListener('pointerdown', handlePointerDown);
@@ -31,9 +35,7 @@ export function GooeyTalkButton() {
       document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open]);
-
-  const closeBubble = () => setOpen(false);
+  }, [closeBubble, open]);
 
   return (
     <div
