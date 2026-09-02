@@ -14,12 +14,15 @@ test('final center navigation targets the dedicated routes', () => {
   assert.doesNotMatch(model, /href:\s*'#(?:work|about)'/);
 });
 
-test('lets talk has a canonical Services contact destination with a local Services alias', () => {
+test('lets talk opens the shared contact directory instead of navigating away', () => {
   const talk = read('src/components/navigation/GooeyTalkButton.tsx');
-  assert.match(talk, /href="\/services#contact"/);
-  assert.match(talk, /window\.location\.pathname === '\/services'/);
-  assert.match(talk, /onNavigate\('#contact'\)/);
-  assert.match(talk, /onNavigate\('\/services#contact'\)/);
+  const bubble = read('src/components/navigation/TalkContactBubble.tsx');
+
+  assert.match(talk, /type="button"/);
+  assert.match(talk, /aria-expanded=\{open\}/);
+  assert.match(talk, /TalkContactBubble/);
+  assert.doesNotMatch(talk, /href="\/services#contact"/);
+  assert.match(bubble, /@\/content\/contactDetails/);
 });
 
 test('secondary routes reuse the current SiteNavigation with route layering', () => {
@@ -56,7 +59,7 @@ test('Services contact is a real deep-link target and hash handoff waits for int
 });
 
 test('production contact data contains no invented placeholder email', () => {
-  const details = read('src/components/ServicesPage/contactDetails.ts');
+  const details = read('src/content/contactDetails.ts');
   assert.doesNotMatch(details, /example@gmail\.com/i);
   assert.doesNotMatch(details, /mailto:example@gmail\.com/i);
   assert.match(details, /\+92 325 9622759/);
