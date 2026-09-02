@@ -1,0 +1,22 @@
+.mobileAware {
+  /* Desktop behavior stays owned by Navigation.module.css. */
+}
+
+@media (max-width: 720px) {
+  .mobileAware {
+    --nav-mobile-action-width: clamp(58px, 18vw, 76px);
+  }
+
+  .mobileAware[data-navigation-mode='hero'] {
+    --nav-pill-bg: #fff;
+    --nav-pill-fg: #000;
+  }
+
+  .mobileAware :global([data-nav-item]) :global([data-pill-flood]),
+  .mobileAware :global([data-talk-pill]) {
+    width: var(--nav-mobile-action-width);
+    min-width: var(--nav-mobile-action-width);
+    max-width: var(--nav-mobile-action-width);
+    padding-inline: 4px;
+  }
+}
