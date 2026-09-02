@@ -85,7 +85,7 @@ test('services stays detach-ready and the center cluster does not clip item slot
   assert.doesNotMatch(css, /\.navItemSlot\s*\{[^}]*filter:/s);
 });
 
-test('lets talk uses the same adaptive pill flood without the legacy goo burst', () => {
+test('lets talk keeps the adaptive pill flood while toggling the contact bubble', () => {
   const button = read(`${navDir}/GooeyTalkButton.tsx`);
   const css = read(`${navDir}/Navigation.module.css`);
 
@@ -94,7 +94,10 @@ test('lets talk uses the same adaptive pill flood without the legacy goo burst',
   assert.match(button, /data-pill-flood-surface/);
   assert.match(button, /data-pill-flood-base/);
   assert.match(button, /data-pill-flood-reveal/);
-  assert.doesNotMatch(button, /GOOEY_PARTICLES|data-goo-particle|useState/);
+  assert.match(button, /useState/);
+  assert.match(button, /aria-expanded=\{open\}/);
+  assert.match(button, /TalkContactBubble/);
+  assert.doesNotMatch(button, /GOOEY_PARTICLES|data-goo-particle/);
   assert.doesNotMatch(css, /\.gooField|\.gooParticle|@keyframes\s+wrNavGooBurst/);
 });
 
@@ -128,14 +131,15 @@ test('hero and main navigation share geometry and main mode does not replay entr
   assert.doesNotMatch(component, /mode === 'main'[\s\S]{0,240}gsap\.fromTo/);
 });
 
-test('navigation preserves all destinations on mobile and supports reduced motion', () => {
+test('navigation preserves all destinations on one mobile row and supports reduced motion', () => {
   const css = read(`${navDir}/Navigation.module.css`);
 
   assert.match(css, /@media\s*\(max-width:\s*720px\)/);
   assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
   assert.match(css, /@media\s*\(pointer:\s*coarse\)/);
   assert.match(css, /:focus-visible/);
-  assert.match(css, /grid-column:\s*1\s*\/\s*-1/);
+  assert.match(css, /grid-template-columns:\s*auto\s+minmax\(0,\s*1fr\)\s+auto/);
+  assert.doesNotMatch(css, /grid-template-rows:\s*auto\s+auto/);
   assert.doesNotMatch(css, /\.centerZone\s*\{[^}]*transform:/s);
 });
 
@@ -157,7 +161,7 @@ test('services exposes a stable future detach seam without implementing detachme
   assert.doesNotMatch(css, /\.navItemSlot\s*\{[^}]*contain:\s*paint/s);
 });
 
-test('hero nav links use the existing explore handoff before scrolling to hidden main targets', () => {
+test('hero center nav links keep the explore handoff while lets talk stays local', () => {
   const hero = read('src/components/experience/Hero/Hero.tsx');
   const siteNav = read(`${navDir}/SiteNavigation.tsx`);
   const center = read(`${navDir}/CenterNavCluster.tsx`);
@@ -173,8 +177,9 @@ test('hero nav links use the existing explore handoff before scrolling to hidden
   assert.match(siteNav, /inert=\{!interactive \? true : undefined\}/);
   assert.match(center, /event\.preventDefault\(\)/);
   assert.match(center, /onNavigate\(item\.href\)/);
-  assert.match(talk, /event\.preventDefault\(\)/);
-  assert.match(talk, /onNavigate\('#contact'\)/);
+  assert.match(talk, /type="button"/);
+  assert.match(talk, /setOpen/);
+  assert.doesNotMatch(talk, /onNavigate\('#contact'\)/);
 });
 
 test('main mode samples background theme independently under logo center and talk zones', () => {
