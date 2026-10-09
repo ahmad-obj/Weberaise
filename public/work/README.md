@@ -31,7 +31,7 @@ Showcase recipe:
 
 ```sh
 ffmpeg -ss START -i INPUT -vf 'crop=1280:628:0:92' \
-  -c:v libx264 -preset slow -crf 21 -c:a aac -b:a 96k \
+  -c:v libx264 -preset slow -crf 21 -an \
   -pix_fmt yuv420p -movflags +faststart showcase.mp4
 ```
 
@@ -57,7 +57,7 @@ aspect ratio is declared in `src/content/workProjects.ts`.
 
 ## Compatibility and Services previews
 
-- `showcase.webm` is a VP9/Opus alternative to the H.264/AAC showcase. The player
+- `showcase.webm` is a silent VP9 alternative to the silent H.264 showcase. The player
   declares MIME types and switches containers after a failed source or decoder.
   It mounts only one source at a time, so fallback bytes are not downloaded on
   successful MP4 playback. Both formats retain the same crop and first frame.
@@ -69,3 +69,6 @@ aspect ratio is declared in `src/content/workProjects.ts`.
 - Every column has a stable shuffled sequence of all projects. Hover updates the
   active tile directly, preserving its decoder/canvas while pausing that column
   and lifting the tile. There is no wall-wide React render on pointer hover.
+
+All published portfolio videos have no audio tracks. The showcase player is also
+muted by default; globe and Services preview decoders remain muted.

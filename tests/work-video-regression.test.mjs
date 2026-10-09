@@ -85,3 +85,9 @@ test('showcase declares its media type and switches to an independent codec afte
   assert.match(source, /setUseFallback\(true\)/);
   assert.match(source, /key=\{.*videoUrl/);
 });
+
+test('the project showcase player is muted by default', async () => {
+  const { readFileSync } = await import('node:fs');
+  const source = readFileSync(new URL('../src/components/WorkPage/WorkProjectView.tsx', import.meta.url), 'utf8');
+  assert.match(source, /<video\b[^>]*\bmuted\b/);
+});

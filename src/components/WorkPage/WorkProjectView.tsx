@@ -70,6 +70,7 @@ export function WorkProjectView({ project, focusOnMount = false, onBack }: WorkP
             className={styles.projectViewVideo}
             aria-label={`${project.name} video showcase`}
             controls
+            muted
             preload="metadata"
             playsInline
             hidden={videoFailed}
