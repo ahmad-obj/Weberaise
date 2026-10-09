@@ -12,15 +12,18 @@ import {
 } from 'react';
 import {
   getBaseVelocity,
+  buildDriftColumns,
   getVelocityEase,
   getVelocityTarget,
   type DriftDirection,
 } from './driftWallMotion';
 import styles from './DriftWall.module.css';
+import { useDriftWallVideo } from './useDriftWallVideo';
 
 export type DriftWallItem = {
   id: string;
   image: string;
+  video?: string;
 };
 
 export type DriftWallProps = {
@@ -85,23 +88,20 @@ export function DriftWall({
   const offsetsRef = useRef<number[]>([]);
   const velocitiesRef = useRef<number[]>([]);
   const hoveredColRef = useRef(-1);
-  const activeIdRef = useRef<string | null>(null);
+  const activeTileRef = useRef<HTMLElement | null>(null);
   const pointerRef = useRef({ x: 0, y: 0 });
   const pointerDampedRef = useRef({ x: 0, y: 0 });
   const lastTsRef = useRef<number | null>(null);
 
-  const [activeId, setActiveId] = useState<string | null>(null);
   const [reduced, setReduced] = useState(false);
-  const [isNearViewport, setIsNearViewport] = useState(true);
+  const [isNearViewport, setIsNearViewport] = useState(false);
   const [geometry, setGeometry] = useState<Geometry>(INITIAL_GEOMETRY);
+  const registerCanvas = useDriftWallVideo(items, containerRef, isNearViewport && !reduced);
 
   const safeColumns = Math.max(1, Math.round(columns));
 
   const columnItems = useMemo<DriftWallItem[][]>(() => {
-    if (items.length === 0) return [];
-    const result = Array.from({ length: safeColumns }, () => [] as DriftWallItem[]);
-    items.forEach((item, index) => result[index % safeColumns].push(item));
-    return result.map((column) => (column.length ? column : [items[0]]));
+    return buildDriftColumns(items, safeColumns);
   }, [items, safeColumns]);
 
   const columnMeta = useMemo<ColumnMeta[]>(() => {
@@ -228,10 +228,8 @@ export function DriftWall({
   }, [applyPlaneTransform, baseVelocities, columnItems.length, columnMeta, isNearViewport, parallax, reduced]);
 
   const clearActiveTile = useCallback(() => {
-    if (activeIdRef.current !== null) {
-      activeIdRef.current = null;
-      setActiveId(null);
-    }
+    if (activeTileRef.current) activeTileRef.current.dataset.active = 'false';
+    activeTileRef.current = null;
     hoveredColRef.current = -1;
   }, []);
 
@@ -247,7 +245,7 @@ export function DriftWall({
       };
     }
 
-    const hit = document.elementFromPoint(event.clientX, event.clientY);
+    const hit = event.target;
     const tile = hit instanceof Element
       ? hit.closest<HTMLElement>('[data-drift-tile]')
       : null;
@@ -265,9 +263,10 @@ export function DriftWall({
     }
 
     hoveredColRef.current = column;
-    if (activeIdRef.current === id) return;
-    activeIdRef.current = id;
-    setActiveId(id);
+    if (activeTileRef.current === tile) return;
+    if (activeTileRef.current) activeTileRef.current.dataset.active = 'false';
+    tile.dataset.active = 'true';
+    activeTileRef.current = tile;
   }, [clearActiveTile, parallax, reduced]);
 
   const handlePointerLeave = useCallback(() => {
@@ -318,7 +317,8 @@ export function DriftWall({
                         data-drift-tile
                         data-tile-id={tileId}
                         data-col={columnIndex}
-                        data-active={activeId === tileId ? 'true' : 'false'}
+                        data-project-id={item.id}
+                        data-active="false"
                       >
                         <span className={styles.tileInner}>
                           <img
@@ -328,6 +328,14 @@ export function DriftWall({
                             decoding="async"
                             loading="lazy"
                           />
+                          {item.video && (
+                            <canvas
+                              width={192}
+                              height={144}
+                              ref={node => registerCanvas(tileId, item.id, node)}
+                              aria-hidden="true"
+                            />
+                          )}
                           <span className={styles.overlay} aria-hidden="true" />
                         </span>
                       </div>

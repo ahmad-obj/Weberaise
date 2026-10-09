@@ -19,11 +19,18 @@ export function validateWorkProject(project: WorkProject): string[] {
   if (!project.services.length || project.services.some(service => !service.trim())) {
     errors.push('services');
   }
-  if (!FOUR_DIGIT_YEAR.test(project.year)) errors.push('year');
+  if (project.year !== undefined && !FOUR_DIGIT_YEAR.test(project.year)) errors.push('year');
   if (!HTTP_URL.test(project.liveUrl)) errors.push('liveUrl');
 
   for (const field of ['poster', 'browsePreview', 'showcasePoster', 'showcaseVideo'] as const) {
     if (!project.media[field]?.trim()) errors.push(field);
+  }
+
+  if (
+    project.media.aspectRatio !== undefined
+    && (!Number.isFinite(project.media.aspectRatio) || project.media.aspectRatio <= 0)
+  ) {
+    errors.push('aspectRatio');
   }
 
   return errors;

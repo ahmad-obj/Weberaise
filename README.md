@@ -47,6 +47,6 @@ Feature ownership is deliberate: Homepage/shared experience code comes from the 
 
 ## Production data boundary
 
-The Work project records are still explicit development placeholders. They exist to exercise the accepted Work interaction system and must be replaced with verified real project content/media before the public portfolio is treated as production-ready.
+The Work page now contains three projects supplied for the portfolio: Sound Angels, PlayStation CD Collection, and Porsche 911 GT3 R. Their short browse previews, stills, full walkthroughs, and display ratios are recorded in `src/content/workProjects.ts` and `public/work/README.md`.
 
 The previous fake contact email has been removed. Only verified contact channels currently present in the repository are rendered.

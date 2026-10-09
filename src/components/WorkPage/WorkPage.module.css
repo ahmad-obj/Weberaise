@@ -193,6 +193,7 @@
 }
 
 .projectViewMedia {
+  position: relative;
   width: 100%;
   max-width: calc(100vw - var(--project-side) - var(--project-side));
   margin-inline: auto;
@@ -201,6 +202,36 @@
   border: 1px solid color-mix(in srgb, var(--wr-white), transparent 90%);
   border-radius: 6px;
   background: var(--wr-background);
+}
+
+.projectVideoError {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-content: center;
+  gap: 16px;
+  padding: 24px;
+  background: var(--wr-black);
+  text-align: center;
+}
+
+.projectVideoError p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.projectVideoError button,
+.projectVideoError a {
+  padding: 10px 16px;
+  border: 1px solid var(--wr-border);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 
 .projectViewMedia img,

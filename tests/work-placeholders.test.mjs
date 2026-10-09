@@ -4,20 +4,20 @@ import test from 'node:test';
 
 const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('development Work data exposes six explicit placeholder projects', () => {
+test('Work data exposes the three supplied portfolio projects', () => {
   const source = read('src/content/workProjects.ts');
-  assert.match(source, /placeholder\?: boolean/);
-  assert.match(source, /name: 'PLACEHOLDER 01'/);
-  assert.match(source, /name: 'PLACEHOLDER 06'/);
-  const names = source.match(/name: 'PLACEHOLDER \d\d'/g) ?? [];
-  assert.equal(names.length, 6);
-  const flags = source.match(/placeholder: true/g) ?? [];
-  assert.equal(flags.length, 6);
+  for (const name of ['Sound Angels', 'PlayStation CD Collection', 'Porsche 911 GT3 R']) {
+    assert.ok(source.includes(`name: '${name}'`));
+  }
+  assert.equal((source.match(/slug: '/g) ?? []).length, 3);
+  assert.doesNotMatch(source, /placeholder: true/);
 });
 
-test('placeholder data uses the explicit procedural preview sentinel', () => {
+test('each supplied project uses a sphere preview and full showcase asset', () => {
   const source = read('src/content/workProjects.ts');
-  assert.match(source, /placeholder:\/\/procedural-preview/);
+  assert.equal((source.match(/browsePreview: '[^']+\.mp4'/g) ?? []).length, 3);
+  assert.equal((source.match(/showcasePoster: '[^']+showcase-poster\.webp'/g) ?? []).length, 3);
+  assert.equal((source.match(/showcaseVideo: '[^']+\.mp4'/g) ?? []).length, 3);
 });
 
 test('sphere placeholders animate through procedural live textures instead of fake video requests', () => {

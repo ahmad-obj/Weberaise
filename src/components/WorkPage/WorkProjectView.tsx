@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import type { WorkProject } from '@/content/workProjects';
 import { getWorkProjectDestination, type WorkTransitionRect } from './WorkProjectTransition';
 import styles from './WorkPage.module.css';
@@ -14,13 +20,24 @@ type WorkProjectViewProps = {
 export function WorkProjectView({ project, focusOnMount = false, onBack }: WorkProjectViewProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const [layout, setLayout] = useState<WorkTransitionRect | null>(null);
+  const [useFallback, setUseFallback] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const videoUrl = (useFallback && project.media.showcaseFallback) || project.media.showcaseVideo;
+  const handleVideoError = () => {
+    if (!useFallback && project.media.showcaseFallback) setUseFallback(true);
+    else setVideoFailed(true);
+  };
+  const aspectRatio = project.media.aspectRatio ?? 1.6;
 
   useLayoutEffect(() => {
-    const update = () => setLayout(getWorkProjectDestination(window.innerWidth, window.innerHeight));
+    const update = () => setLayout(
+      getWorkProjectDestination(window.innerWidth, window.innerHeight, aspectRatio),
+    );
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, []);
+  }, [aspectRatio]);
 
   useEffect(() => {
     if (focusOnMount) headingRef.current?.focus({ preventScroll: true });
@@ -29,6 +46,14 @@ export function WorkProjectView({ project, focusOnMount = false, onBack }: WorkP
   const measuredStyle = layout
     ? { width: `${layout.width}px`, maxWidth: 'calc(100vw - 36px)' }
     : undefined;
+  const mediaStyle: CSSProperties | undefined = layout
+    ? {
+        width: `${layout.width}px`,
+        maxWidth: 'calc(100vw - 36px)',
+        height: `${layout.height}px`,
+        aspectRatio,
+      }
+    : { aspectRatio };
 
   return (
     <section
@@ -36,21 +61,34 @@ export function WorkProjectView({ project, focusOnMount = false, onBack }: WorkP
       data-work-project-view
       style={layout ? { paddingTop: `${layout.top}px` } : undefined}
     >
-      <div
-        className={styles.projectViewMedia}
-        style={layout ? { ...measuredStyle, height: `${layout.height}px` } : measuredStyle}
-      >
+      <div className={styles.projectViewMedia} style={mediaStyle}>
         {project.placeholder ? (
           <img src={project.media.showcasePoster || project.media.poster} alt="" />
         ) : (
           <video
+            key={`${videoUrl}:${attempt}`}
             className={styles.projectViewVideo}
+            aria-label={`${project.name} video showcase`}
             controls
             preload="metadata"
             playsInline
+            hidden={videoFailed}
+            onError={handleVideoError}
             poster={project.media.showcasePoster}
-            src={project.media.showcaseVideo}
-          />
+          >
+            <source src={videoUrl} type={useFallback ? 'video/webm' : 'video/mp4'} onError={handleVideoError} />
+          </video>
+        )}
+        {videoFailed && (
+          <div className={styles.projectVideoError} role="status">
+            <p>The video couldn’t load.</p>
+            <button type="button" onClick={() => {
+              setVideoFailed(false);
+              setUseFallback(false);
+              setAttempt(value => value + 1);
+            }}>Retry video</button>
+            <a href={videoUrl} target="_blank" rel="noreferrer">Open video file ↗</a>
+          </div>
         )}
       </div>
 
@@ -66,10 +104,12 @@ export function WorkProjectView({ project, focusOnMount = false, onBack }: WorkP
             <dt>Services</dt>
             <dd>{project.services.join(' / ')}</dd>
           </div>
-          <div>
-            <dt>Year</dt>
-            <dd>{project.year}</dd>
-          </div>
+          {project.year ? (
+            <div>
+              <dt>Year</dt>
+              <dd>{project.year}</dd>
+            </div>
+          ) : null}
         </dl>
 
         {project.placeholder ? (

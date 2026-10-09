@@ -53,6 +53,7 @@ type ActivationPointer = {
   startedAt: number;
   candidateSlotId: number;
   coarsePointer: boolean;
+  hasDragged: boolean;
 };
 
 function compileShader(gl: WebGL2RenderingContext, type: number, source: string) {
@@ -623,17 +624,29 @@ export class WorkSphereEngine {
       startY: y,
       startedAt: performance.now(),
       candidateSlotId,
+      hasDragged: false,
       coarsePointer: event.pointerType === 'touch' || window.matchMedia('(pointer: coarse)').matches,
     };
     this.pointerId = event.pointerId;
     this.canvas.setPointerCapture?.(event.pointerId);
-    this.controller.setSnapTarget(null);
-    this.controller.pointerDown(x, y);
   };
 
   private onPointerMove = (event: PointerEvent) => {
     if (!this.interactive || this.pointerId !== event.pointerId) return;
     const { x, y } = this.localPoint(event);
+    const activation = this.activationPointer;
+    if (!activation) return;
+    if (!activation.hasDragged) {
+      const withinClickTravel = isActivationGesture({
+        startX: activation.startX, startY: activation.startY,
+        endX: x, endY: y, durationMs: 0,
+        coarsePointer: activation.coarsePointer,
+      });
+      if (withinClickTravel) return;
+      activation.hasDragged = true;
+      this.controller.setSnapTarget(null);
+      this.controller.pointerDown(activation.startX, activation.startY);
+    }
     this.controller.pointerMove(x, y);
   };
 
@@ -645,7 +658,6 @@ export class WorkSphereEngine {
     this.activationPointer = null;
     this.controller.pointerUp();
     if (!activation || activation.candidateSlotId < 0) return;
-    const releaseSlotId = hitTestProjectedSlots(x, y, this.projectedSlots());
     const validGesture = isActivationGesture({
       startX: activation.startX,
       startY: activation.startY,
@@ -654,7 +666,7 @@ export class WorkSphereEngine {
       durationMs: performance.now() - activation.startedAt,
       coarsePointer: activation.coarsePointer,
     });
-    if (validGesture && releaseSlotId === activation.candidateSlotId) {
+    if (validGesture && !activation.hasDragged) {
       this.callbacks.onProjectActivate?.(activation.candidateSlotId);
     }
   };

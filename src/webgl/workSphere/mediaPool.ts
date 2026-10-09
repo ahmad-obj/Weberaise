@@ -92,16 +92,18 @@ export class WorkPreviewMediaPool {
 
   updatePriorities(ranked: readonly RankedSlot[]) {
     if (this.destroyed) return;
+    if (!this.allowPlayback) return;
     const desired = selectLiveVideoSlots(ranked, this.liveSlots.length);
-    const existingBySlot = new Map<number, LiveSlot>();
+    const desiredProjects = new Set(desired.map(id => this.slotById.get(id)?.projectIndex));
+    const existingByProject = new Map<number, LiveSlot>();
     for (const slot of this.liveSlots) {
-      if (slot.assignedSlotId >= 0) existingBySlot.set(slot.assignedSlotId, slot);
+      if (slot.assignedProjectIndex >= 0) existingByProject.set(slot.assignedProjectIndex, slot);
     }
 
     const nextAssignments: Array<{ live: LiveSlot; slotId: number }> = [];
-    const free = this.liveSlots.filter(slot => !desired.includes(slot.assignedSlotId));
+    const free = this.liveSlots.filter(slot => !desiredProjects.has(slot.assignedProjectIndex));
     for (const slotId of desired) {
-      const existing = existingBySlot.get(slotId);
+      const existing = existingByProject.get(this.slotById.get(slotId)?.projectIndex ?? -1);
       if (existing) nextAssignments.push({ live: existing, slotId });
       else {
         const live = free.shift();
@@ -114,8 +116,11 @@ export class WorkPreviewMediaPool {
       if (!used.has(live)) this.unassign(live);
     }
     for (const { live, slotId } of nextAssignments) {
-      if (live.assignedSlotId !== slotId) this.assign(live, slotId);
-      if (!live.placeholderActive && this.allowPlayback) {
+      if (live.assignedProjectIndex === this.slotById.get(slotId)?.projectIndex) {
+        // A project moving to another tile keeps its decoder, playhead and GPU frame.
+        live.assignedSlotId = slotId;
+      } else this.assign(live, slotId);
+      if (!live.placeholderActive && this.allowPlayback && live.video.paused) {
         void live.video.play().catch(() => undefined);
       }
     }
@@ -126,7 +131,9 @@ export class WorkPreviewMediaPool {
     let changed = false;
     const gl = this.gl;
     const nowMs = performance.now();
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+    // Mesh UVs use image coordinates (top = 0). Flipping here inverts videos
+    // and, for the atlas, also swaps entire project rows.
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
 
     for (const live of this.liveSlots) {
       if (live.assignedSlotId < 0) continue;
@@ -312,8 +319,8 @@ export class WorkPreviewMediaPool {
   }
 
   private async buildPosterAtlas() {
-    const cellWidth = 1024;
-    const cellHeight = 640;
+    const cellWidth = 640;
+    const cellHeight = 400;
     const canvas = document.createElement('canvas');
     canvas.width = this.atlasGrid * cellWidth;
     canvas.height = this.atlasGrid * cellHeight;
@@ -349,9 +356,8 @@ export class WorkPreviewMediaPool {
 
     const gl = this.gl;
     gl.bindTexture(gl.TEXTURE_2D, this.posterTexture);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
-    gl.generateMipmap(gl.TEXTURE_2D);
   }
 
   private loadImage(src: string): Promise<HTMLImageElement> {
@@ -394,6 +400,7 @@ export class WorkPreviewMediaPool {
   }
 
   private unassign(live: LiveSlot) {
+    if (live.assignedSlotId < 0) return;
     this.cancelFrameCallback(live);
     live.video.pause();
     live.video.removeAttribute('src');

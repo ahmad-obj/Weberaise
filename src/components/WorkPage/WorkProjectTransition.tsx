@@ -11,14 +11,16 @@ export type WorkTransitionRect = ScreenBounds;
 export function getWorkProjectDestination(
   viewportWidth: number,
   viewportHeight: number,
+  aspectRatio = 1.6,
 ): WorkTransitionRect {
+  const targetAspectRatio = Number.isFinite(aspectRatio) && aspectRatio > 0 ? aspectRatio : 1.6;
   const mobile = viewportWidth < 720;
   const side = mobile ? 18 : Math.min(64, Math.max(28, viewportWidth * 0.04));
   const top = Math.min(104, Math.max(68, viewportHeight * 0.07));
   const width = Math.max(1, viewportWidth - side * 2);
   const availableHeight = Math.max(1, viewportHeight - top - 28);
-  const height = Math.min(availableHeight, width / 1.6);
-  const finalWidth = Math.min(width, height * 1.6);
+  const height = Math.min(availableHeight, width / targetAspectRatio);
+  const finalWidth = Math.min(width, height * targetAspectRatio);
   return {
     left: (viewportWidth - finalWidth) / 2,
     top,
@@ -53,7 +55,11 @@ export function WorkProjectTransition({
     const frame = frameRef.current;
     if (!frame) return undefined;
 
-    const destination = getWorkProjectDestination(window.innerWidth, window.innerHeight);
+    const destination = getWorkProjectDestination(
+      window.innerWidth,
+      window.innerHeight,
+      project.media.aspectRatio,
+    );
     const from = direction === 'open' ? sourceRect : destination;
     const to = direction === 'open' ? destination : sourceRect;
     const geometryDuration = reducedMotion ? 0.22 : 0.72;
@@ -129,7 +135,15 @@ export function WorkProjectTransition({
     return () => {
       timeline.kill();
     };
-  }, [direction, onComplete, onOwnership, onProgress, reducedMotion, sourceRect]);
+  }, [
+    direction,
+    onComplete,
+    onOwnership,
+    onProgress,
+    project.media.aspectRatio,
+    reducedMotion,
+    sourceRect,
+  ]);
 
   return (
     <div ref={frameRef} className={styles.projectTransition} aria-hidden="true">

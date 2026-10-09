@@ -22,3 +22,17 @@ test('one-shot hit test preserves physical slot identity and chooses front-most 
   assert.equal(hitTestProjectedSlots(50, 50, projected), 19);
   assert.equal(hitTestProjectedSlots(120, 50, projected), -1);
 });
+
+
+test('pointer press defers camera drag and retains the clicked physical slot', async () => {
+  const { readFileSync } = await import('node:fs');
+  const source = readFileSync(new URL('../src/webgl/workSphere/WorkSphereEngine.ts', import.meta.url), 'utf8');
+  const press = source.slice(source.indexOf('private onPointerDown'), source.indexOf('private onPointerMove'));
+  const move = source.slice(source.indexOf('private onPointerMove'), source.indexOf('private onPointerUp'));
+  const release = source.slice(source.indexOf('private onPointerUp'), source.indexOf('private onPointerCancel'));
+  assert.doesNotMatch(press, /this\.controller\.pointerDown/);
+  assert.match(move, /hasDragged/);
+  assert.match(move, /this\.controller\.pointerDown\(activation\.startX, activation\.startY\)/);
+  assert.match(release, /!activation\.hasDragged/);
+  assert.doesNotMatch(release, /hitTestProjectedSlots/);
+});
